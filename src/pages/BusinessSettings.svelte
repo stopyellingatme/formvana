@@ -1,57 +1,15 @@
 <script lang="ts">
-    // import createValidation from "svelidation";
     import { onMount } from "svelte";
     import BusinessSettingsForm from "../components/forms/business/settings/BusinessSettingsForm.svelte";
     import RadioGroup from "../components/inputs/RadioGroup.svelte";
     import Toggle from "../components/inputs/Toggle.svelte";
     import SettingsSidebar from "../components/_internal/user/SettingsSidebar.svelte";
-    // import { auth } from "../../../stores/auth.store";
     import { bizState } from "../stores/business.store";
-
-    // const {
-    //     createForm,
-    //     createEntries,
-    //     getValues,
-    //     clearErrors,
-    // } = createValidation({
-    //     validateOnEvents: { change: false, input: true, blur: true },
-    //     clearErrorsOnEvents: { reset: false, focus: true },
-    //     listenInputEvents: 1,
-    //     presence: "required",
-    //     trim: true,
-    //     includeAllEntries: false,
-    //     useCustomErrorsStore: false,
-    //     warningsEnabled: true,
-    //     getValues: true,
-    // });
-
-    // const [
-    //     [radio_err, radio_val, radio_inp],
-    //     [toggle_err, toggle_val, toggle_inp],
-    // ] = createEntries([
-    //     {
-    //         type: "number",
-    //         required: false,
-    //         value: [],
-    //     },
-    //     {
-    //         type: "boolean",
-    //         required: false,
-    //     },
-    // ]);
 
     //* You need to define the component prop "params" to capture route params
     export let params = {};
 
     onMount(() => {
-        // if (params && params["id"]) {
-            // console.log(params);
-            // bizState.updateState({ selected_business_id: params["id"] });
-        // }
-
-        // if (params && params["subRoute"]) {
-        //     bizState.updateState({ selected_business_id: params["id"] });
-        // }
     });
 
     const options = [
