@@ -20,7 +20,12 @@ export interface OnEvents {
 export class Form {
   constructor(init?: Partial<Form>) {
     Object.assign(this, init);
+    if (this.model) {
+      this.initial_state = JSON.stringify(this.model);
+    }
   }
+
+  initial_state: any = null;
 
   /**
    * Underlying TS Model.
@@ -79,10 +84,14 @@ export class Form {
   };
 
   linkErrors = (errors: ValidationError[], name: string) => {
+    const errorNames = errors.map((e) => e.property);
+    // console.log(errors, errorNames);
     errors.forEach((err) => {
       this.fields.forEach((field) => {
-        if (field.name === err.property && name === err.property) {
+        if (name === err.property && name === field.name) {
           field.errors.set(err);
+        } else if (name === field.name && errorNames.indexOf(name) === -1) {
+          field.errors.set(null);
         }
       });
     });
@@ -100,6 +109,9 @@ export class Form {
       } else {
         this.errors = [];
         this.valid = true;
+        this.fields.forEach((field) => {
+          field.errors.set(null);
+        });
         console.log("FORM IS VALID! WEEHOO!");
       }
     });
@@ -108,15 +120,18 @@ export class Form {
   validateField = (name: string) => {
     this.linkValues();
     return validate(this.model).then((errors: ValidationError[]) => {
-      this.linkErrors(errors, name);
       if (errors.length > 0) {
         this.errors = errors;
-        console.log("ERRORS: ", errors);
+        // console.log("ERRORS: ", errors);
       } else {
         this.errors = [];
         this.valid = true;
+        this.fields.forEach((field) => {
+          field.errors.set(null);
+        });
         console.log("FORM IS VALID! WEEHOO!");
       }
+      this.linkErrors(errors, name);
     });
   };
 
