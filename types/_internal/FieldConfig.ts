@@ -6,6 +6,7 @@ export class FieldConfig {
     Object.assign(this, init);
   }
 
+  node: HTMLElement;
   el: string;
   name: string; // is also "id"
   type: string = "text"; // Default to text

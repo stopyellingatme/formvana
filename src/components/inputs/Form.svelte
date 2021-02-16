@@ -23,6 +23,7 @@
 
   onDestroy(() => {
     dispatch("destroy", true);
+    form.destroy();
   });
 
   let fw;
