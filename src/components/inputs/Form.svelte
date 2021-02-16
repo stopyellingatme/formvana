@@ -14,11 +14,11 @@
   };
 
   onMount(() => {
-    setTimeout(() => {
-      $form.fields.forEach((field) => {
-        console.log("VAL: ", get(field.value));
-      });
-    }, 10000);
+    // setTimeout(() => {
+    //   $form.fields.forEach((field) => {
+    //     console.log("VAL: ", get(field.value));
+    //   });
+    // }, 10000);
   });
 
   onDestroy(() => {
@@ -51,6 +51,7 @@
                 attrs={field.attributes}
                 valueStore={field.value}
                 errorsStore={field.errors}
+                useInput={$form.useField}
               />
             {:else}
               <!-- else content here -->

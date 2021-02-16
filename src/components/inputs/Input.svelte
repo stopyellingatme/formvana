@@ -9,7 +9,7 @@
 
   export let errorsStore = null;
   export let valueStore = null;
-  // export let useInput = null;
+  export let useInput = null;
 
   export let name;
   export let label;
@@ -31,8 +31,15 @@
   $: cls = _class(
     className,
     "border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500",
-    $errorsStore.length > 0
+    $errorsStore ? $errorsStore.constraints.length > 0 : false
   );
+
+  $: errors = $errorsStore && $errorsStore.constraints;
+
+  setInterval(() => {
+    console.log("ERRORS:: ", errors);
+    
+  }, 5000);
 </script>
 
 <div>
@@ -46,8 +53,9 @@
       class={cls}
       bind:value={$valueStore}
       on:input={handleInput}
+      use:useInput
     />
-    {#if $errorsStore.length > 0}
+    {#if errors}
       <!-- This is the red X in the input box -->
       <div
         class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"
@@ -69,5 +77,7 @@
       </div>
     {/if}
   </div>
-  <InputErrors {errorsStore} />
+  {#if errors}
+    <InputErrors errorsStore={errors} />
+  {/if}
 </div>

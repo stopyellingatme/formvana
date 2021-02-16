@@ -44,6 +44,8 @@ export class Business {
       attributes: { placeholder: "Business Name" },
     })
   )
+  @Length(10, 90)
+  @IsString()
   name: string = "";
 
   @editable
@@ -78,16 +80,16 @@ export class Business {
   activity = {};
   settings = {};
 
-  @editable
-  @field(
-    new FieldConfig({
-      el: "select",
-      type: "text",
-      label: "Business Status",
-      required: true,
-      name: "status",
-    })
-  )
+  // @editable
+  // @field(
+  //   new FieldConfig({
+  //     el: "select",
+  //     type: "text",
+  //     label: "Business Status",
+  //     required: true,
+  //     name: "status",
+  //   })
+  // )
   @IsString()
   status: BusinessStatus = "ACTIVE";
 

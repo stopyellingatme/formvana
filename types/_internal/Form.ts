@@ -1,4 +1,5 @@
 import { ValidationError, validate } from "class-validator";
+import { get } from "svelte/store";
 import { FieldConfig } from "./FieldConfig";
 
 /**
@@ -57,7 +58,9 @@ export class Form {
       this.fields = props.map((prop) => {
         const config = Reflect.getMetadata("field", this.model, prop);
         config.attributes["type"] = config.type;
-        
+        config.form_options = this;
+        // this.model[prop] = config.value;
+
         if (config.el === "select") {
           config.options = [];
         }
@@ -69,8 +72,36 @@ export class Form {
     }
   }
 
-  public validate() {
+  linkValues = () => {
+    let i = 0,
+      len = this.fields.length;
+    for (; len > i; ++i) {
+      this.model[this.fields[i].name] = get(this.fields[i].value);
+    }
+  };
+
+  linkErrors = (errors: ValidationError[]) => {
+    let i = 0,
+      j = 0,
+      len = this.fields.length,
+      lenn = errors.length;
+    for (; len > i; ++i) {
+      for (; lenn > j; ++j) {
+        // console.log(this.fields[i].name, errors[j].property);
+
+        if (this.fields[i].name === errors[j].property) {
+          // console.log("ADDED EEROR TO FIELD: ", this.fields[i]);
+
+          this.fields[i].errors.set(errors[j]);
+        }
+      }
+    }
+  };
+
+  validate = () => {
+    this.linkValues();
     return validate(this.model).then((errors: ValidationError[]) => {
+      this.linkErrors(errors);
       if (errors.length > 0) {
         // TODO: Attatch errors to corresponding field configs
 
@@ -82,13 +113,13 @@ export class Form {
         console.log("FORM IS VALID! WEEHOO!");
       }
     });
-  }
+  };
 
-  public clearErrors() {
+  clearErrors = () => {
     this.errors = [];
-  }
+  };
 
-  public clearValues() {
+  clearValues = () => {
     if (this.fields && this.fields.length > 0) {
       let i = 0,
         len = this.fields.length;
@@ -96,11 +127,28 @@ export class Form {
         this.fields[i].clearValue();
       }
     }
-  }
+  };
 
-  public reset() {
+  reset = () => {
     this.clearErrors();
     this.clearValues();
     this.valid = false;
-  }
+  };
+
+  useField = (node: HTMLElement) => {
+    if (this) {
+      console.log("USE FIELD: ", this);
+
+      const validate_opts = this.validate_on_events;
+      const clear_opts = this.clear_errors_on_events;
+
+      if (validate_opts.input) {
+        node.addEventListener("input", this.validate);
+      }
+
+      if (validate_opts.change) {
+        node.addEventListener("change", this.validate);
+      }
+    }
+  };
 }
