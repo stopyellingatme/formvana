@@ -1,6 +1,5 @@
 import { ValidationError } from "class-validator";
 import { writable, Writable } from "svelte/store";
-import { Form } from "./Form";
 
 export class FieldConfig {
   constructor(init?: Partial<FieldConfig>) {
@@ -32,16 +31,16 @@ export class FieldConfig {
    */
   errors: Writable<ValidationError> = writable(null);
 
-  public clearValue() {
+  clearValue = () => {
     this.value.set(null);
-  }
+  };
 
-  public clearErrors() {
+  clearErrors = () => {
     this.errors.set(null);
-  }
+  };
 
-  public clear() {
+  clear = () => {
     this.clearValue();
     this.clearErrors();
-  }
+  };
 }

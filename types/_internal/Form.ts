@@ -106,14 +106,10 @@ export class Form {
   };
 
   validateField = (name: string) => {
-    // console.log("NAME: ", name);
-
     this.linkValues();
     return validate(this.model).then((errors: ValidationError[]) => {
       this.linkErrors(errors, name);
       if (errors.length > 0) {
-        // TODO: Attatch errors to corresponding field configs
-
         this.errors = errors;
         console.log("ERRORS: ", errors);
       } else {
@@ -146,8 +142,6 @@ export class Form {
 
   useField = (node: HTMLElement) => {
     if (this) {
-      const clear_opts = this.clear_errors_on_events;
-
       if (this.validate_on_events.input) {
         // node.addEventListener("input", this.validate);
         node.addEventListener("input", (ev) => {

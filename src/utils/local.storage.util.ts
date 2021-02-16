@@ -1,4 +1,4 @@
-import { User } from "../../types/user/User";
+// import { User } from "../../types/user/User";
 
 /**
  * Basic functions
