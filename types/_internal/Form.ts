@@ -149,8 +149,13 @@ export class Form {
 
   reset = () => {
     this.clearErrors();
-    this.clearValues();
     this.valid.set(false);
+
+    const initial = JSON.parse(this.initial_state);
+    Object.keys(this.model).forEach(key => {
+      this.model[key] = initial[key];
+    });
+    this.linkModelToFieldValues();
   };
 
   destroy = () => {
@@ -194,6 +199,13 @@ export class Form {
   private linkValues = () => {
     this.fields.forEach((field) => {
       this.model[field.name] = get(field.value);
+    });
+    this.hasChanged();
+  };
+
+  private linkModelToFieldValues = () => {
+    this.fields.forEach((field) => {
+      field.value.set(this.model[field.name]);
     });
     this.hasChanged();
   };

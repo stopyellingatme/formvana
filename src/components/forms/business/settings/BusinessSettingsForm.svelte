@@ -34,7 +34,7 @@
   <div slot="buttons" class="px-4 py-3 text-left bg-gray-50 sm:px-6">
     {#if $changed}
       <button
-        type="submit"
+        on:click|preventDefault={$formState.reset}
         class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-md shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
       >
         Reset
