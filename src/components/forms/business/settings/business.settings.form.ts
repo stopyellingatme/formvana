@@ -11,6 +11,7 @@ function initStore() {
   let form = new Form({
     model: new Business(),
   });
+  form.validate_on_events.focus = false;
   form.makeFields();
   const { subscribe, set, update } = writable({
     ...form,

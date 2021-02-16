@@ -13,6 +13,9 @@
   const handleDestroy = () => {
     // Hanlde it.
   };
+
+  $: valid = $formState.valid;
+  $: changed = $formState.changed;
 </script>
 
 <Form form={formState} on:submit={onSubmit} on:destroy={handleDestroy}>
@@ -28,20 +31,36 @@
     </p>
   </div>
 
-  <div slot="buttons_valid" class="px-4 py-3 text-right bg-gray-50 sm:px-6">
-    <button
-      type="submit"
-      class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-md shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
-    >
-      Save
-    </button>
-  </div>
-  <div slot="buttons_disabled" class="px-4 py-3 text-right bg-gray-50 sm:px-6">
-    <button
-      disabled
-      class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md shadow-sm cursor-not-allowed focus:outline-none"
-    >
-      Save
-    </button>
+  <div slot="buttons" class="px-4 py-3 text-left bg-gray-50 sm:px-6">
+    {#if $changed}
+      <button
+        type="submit"
+        class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-md shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
+      >
+        Reset
+      </button>
+    {:else}
+      <button
+        disabled
+        class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md shadow-sm cursor-not-allowed focus:outline-none"
+      >
+        Reset
+      </button>
+    {/if}
+    {#if $valid}
+      <button
+        type="submit"
+        class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-md shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
+      >
+        Save
+      </button>
+    {:else}
+      <button
+        disabled
+        class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md shadow-sm cursor-not-allowed focus:outline-none"
+      >
+        Save
+      </button>
+    {/if}
   </div>
 </Form>

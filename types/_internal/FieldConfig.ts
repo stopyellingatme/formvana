@@ -6,15 +6,24 @@ export class FieldConfig {
     Object.assign(this, init);
     this.attributes["type"] = this.type;
 
+    if (
+      this.type === "text" ||
+      this.type === "email" ||
+      this.type === "password" ||
+      this.type === "string"
+    ) {
+      this.value.set("");
+    }
+
     if (this.el === "select") {
       this.options = [];
     }
   }
 
-  node: HTMLElement;
-  el: string;
   //! DO NOT SET NAME. IT IS SET AUTOMATICALLY!
   name: string;
+  node: HTMLElement;
+  el: string; // Element to in your frontend render
   type: string = "text"; // Default to text
   label: string;
   className: string;

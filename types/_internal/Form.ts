@@ -2,6 +2,7 @@ import { ValidationError, validate } from "class-validator";
 import { get, writable, Writable } from "svelte/store";
 import { FieldConfig } from "./FieldConfig";
 
+
 /**
  * Main things left to tackle:
  *  - Field defaults built from constructor
@@ -20,7 +21,7 @@ export class Form {
   constructor(init?: Partial<Form>) {
     Object.assign(this, init);
     if (this.model) {
-      this.initial_state = Object.assign({}, this.model);
+      this.initial_state = JSON.stringify(this.model);
     }
   }
 
@@ -45,7 +46,7 @@ export class Form {
   errors: ValidationError[] = [];
 
   loading: boolean = false;
-  changed: boolean = false;
+  changed: Writable<boolean> = writable(false);
   touched: boolean = false;
 
   template_classes: string = "grid grid-cols-4 gap-6 mt-6";
@@ -75,8 +76,6 @@ export class Form {
         config.name = prop;
 
         console.log("FIELD CONFIG: ", config);
-
-        // TODO: fix up that field config. This is where (some of) the magic happens.
         return config;
       });
     }
@@ -105,6 +104,7 @@ export class Form {
     this.linkValues();
     return validate(this.model).then((errors: ValidationError[]) => {
       if (errors.length > 0) {
+        this.valid.set(false);
         this.errors = errors;
         this.linkErrors(errors);
         console.log("ERRORS: ", errors);
@@ -120,6 +120,7 @@ export class Form {
     this.linkValues();
     return validate(this.model).then((errors: ValidationError[]) => {
       if (errors.length > 0) {
+        this.valid.set(false);
         this.errors = errors;
         console.log("ERRORS: ", errors);
         this.linkFieldErrors(errors, name);
@@ -194,6 +195,15 @@ export class Form {
     this.fields.forEach((field) => {
       this.model[field.name] = get(field.value);
     });
+    this.hasChanged();
+  };
+
+  private hasChanged = () => {
+    if (JSON.stringify(this.model) === this.initial_state) {
+      this.changed.set(false);
+      return;
+    }
+    this.changed.set(true);
   };
 
   private linkFieldErrors = (
@@ -207,21 +217,6 @@ export class Form {
     } else {
       field.errors.set(null);
     }
-
-    // const errorNames = errors.map((e) => e.property);
-    // errors.forEach((err) => {
-    //   this.fields.forEach((field) => {
-    //     if (incomingName === field.name) {
-    //       if (incomingName === err.property) {
-    //         field.errors.set(err);
-    //       }
-    //       // The incoming (field) name is not in the list of errors
-    //       else if (errorNames.indexOf(incomingName) === -1) {
-    //         field.errors.set(null);
-    //       }
-    //     }
-    //   });
-    // });
   };
 
   private linkErrors = (errors: ValidationError[]) => {

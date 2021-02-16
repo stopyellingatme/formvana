@@ -26,7 +26,7 @@
     form.destroy();
   });
 
-  $: valid = $form.valid;
+  
 
   let fw;
   let fh;
@@ -64,10 +64,6 @@
       </div>
     </div>
     <!-- Button Area -->
-    {#if $valid}
-       <slot name="buttons_valid" />
-    {:else}
-       <slot name="buttons_disabled" />
-    {/if}
+    <slot name="buttons" />
   </div>
 </form>
