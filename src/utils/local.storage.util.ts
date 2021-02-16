@@ -41,7 +41,7 @@ interface AuthResponse {
   user: any;
 }
 
-export function setAuthData(user: User) {
+export function setAuthData(user) {
   if (!window.localStorage || !window.JSON) {
     return;
   }
