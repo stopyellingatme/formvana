@@ -1,5 +1,5 @@
-import { ValidationError, validate, validateOrReject } from "class-validator";
-import { get } from "svelte/store";
+import { ValidationError, validate } from "class-validator";
+import { get, writable, Writable } from "svelte/store";
 import { FieldConfig } from "./FieldConfig";
 
 /**
@@ -36,7 +36,12 @@ export class Form {
    */
   fields: FieldConfig[] = [];
 
-  valid: boolean = false;
+  /**
+   * this.valid is a "store" so we can change the state of the variable
+   * inside of the class and it (the change) be reflected outside
+   * in the form context.
+   */
+  valid: Writable<boolean> = writable(false);
   errors: ValidationError[] = [];
 
   loading: boolean = false;
@@ -62,14 +67,13 @@ export class Form {
     if (this.model) {
       let props = Reflect.getMetadata("editableProperties", this.model) || [];
       this.fields = props.map((prop) => {
-        const config = Reflect.getMetadata("field", this.model, prop);
-        config.attributes["type"] = config.type;
-        config.form_options = this;
-        // this.model[prop] = config.value;
+        const config: FieldConfig = Reflect.getMetadata(
+          "fieldConfig",
+          this.model,
+          prop
+        );
+        config.name = prop;
 
-        if (config.el === "select") {
-          config.options = [];
-        }
         console.log("FIELD CONFIG: ", config);
 
         // TODO: fix up that field config. This is where (some of) the magic happens.
@@ -105,7 +109,7 @@ export class Form {
         this.linkErrors(errors);
         console.log("ERRORS: ", errors);
       } else {
-        this.valid = true;
+        this.valid.set(true);
         this.clearErrors();
         console.log("FORM IS VALID! WEEHOO!");
       }
@@ -120,7 +124,7 @@ export class Form {
         console.log("ERRORS: ", errors);
         this.linkFieldErrors(errors, name);
       } else {
-        this.valid = true;
+        this.valid.set(true);
         this.clearErrors();
         console.log("FORM IS VALID! WEEHOO!");
       }
@@ -145,7 +149,7 @@ export class Form {
   reset = () => {
     this.clearErrors();
     this.clearValues();
-    this.valid = false;
+    this.valid.set(false);
   };
 
   destroy = () => {
@@ -196,21 +200,28 @@ export class Form {
     errors: ValidationError[],
     incomingName: string
   ) => {
-    const errorNames = errors.map((e) => e.property);
-    // console.log(errors, errorNames);
-    errors.forEach((err) => {
-      this.fields.forEach((field) => {
-        if (incomingName === field.name) {
-          if (incomingName === err.property) {
-            field.errors.set(err);
-          }
-          // The incoming (field) name is not in the list of errors
-          else if (errorNames.indexOf(incomingName) === -1) {
-            field.errors.set(null);
-          }
-        }
-      });
-    });
+    const field = this.fields.filter((f) => f.name === incomingName)[0];
+    const error = errors.filter((e) => e.property === incomingName);
+    if (error && error.length > 0) {
+      field.errors.set(error[0]);
+    } else {
+      field.errors.set(null);
+    }
+
+    // const errorNames = errors.map((e) => e.property);
+    // errors.forEach((err) => {
+    //   this.fields.forEach((field) => {
+    //     if (incomingName === field.name) {
+    //       if (incomingName === err.property) {
+    //         field.errors.set(err);
+    //       }
+    //       // The incoming (field) name is not in the list of errors
+    //       else if (errorNames.indexOf(incomingName) === -1) {
+    //         field.errors.set(null);
+    //       }
+    //     }
+    //   });
+    // });
   };
 
   private linkErrors = (errors: ValidationError[]) => {
@@ -232,55 +243,23 @@ export class Form {
   };
 
   private handleOnValidateEvents = (node) => {
-    if (this.validate_on_events.input) {
-      node.addEventListener("input", (ev) => {
-        this.validateField(node.name);
-      });
-    }
-
-    if (this.validate_on_events.change) {
-      node.addEventListener("change", (ev) => {
-        this.validateField(node.name);
-      });
-    }
-
-    if (this.validate_on_events.focus) {
-      node.addEventListener("focus", (ev) => {
-        this.validateField(node.name);
-      });
-    }
-
-    if (this.validate_on_events.blur) {
-      node.addEventListener("blur", (ev) => {
-        this.validateField(node.name);
-      });
-    }
+    Object.entries(this.validate_on_events).forEach(([key, val]) => {
+      if (val) {
+        node.addEventListener(key, (ev) => {
+          this.validateField(node.name);
+        });
+      }
+    });
   };
 
   private handleOnClearErrorEvents = (node) => {
-    if (this.clear_errors_on_events.input) {
-      node.addEventListener("input", (ev) => {
-        this.clearFieldErrors(node.name);
-      });
-    }
-
-    if (this.clear_errors_on_events.change) {
-      node.addEventListener("change", (ev) => {
-        this.clearFieldErrors(node.name);
-      });
-    }
-
-    if (this.clear_errors_on_events.focus) {
-      node.addEventListener("focus", (ev) => {
-        this.clearFieldErrors(node.name);
-      });
-    }
-
-    if (this.clear_errors_on_events.blur) {
-      node.addEventListener("blur", (ev) => {
-        this.clearFieldErrors(node.name);
-      });
-    }
+    Object.entries(this.clear_errors_on_events).forEach(([key, val]) => {
+      if (val) {
+        node.addEventListener(key, (ev) => {
+          this.clearFieldErrors(node.name);
+        });
+      }
+    });
   };
   //#endregion
 }

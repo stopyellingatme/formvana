@@ -14,17 +14,19 @@
   };
 
   onMount(() => {
-    // setTimeout(() => {
-    //   $form.fields.forEach((field) => {
-    //     console.log("VAL: ", get(field.value));
-    //   });
-    // }, 10000);
+    setTimeout(() => {
+      // $form.fields.forEach((field) => {
+      //   console.log("VAL: ", get(field.value));
+      // });
+    }, 5000);
   });
 
   onDestroy(() => {
     dispatch("destroy", true);
     form.destroy();
   });
+
+  $: valid = $form.valid;
 
   let fw;
   let fh;
@@ -62,6 +64,10 @@
       </div>
     </div>
     <!-- Button Area -->
-    <slot name="buttons" />
+    {#if $valid}
+       <slot name="buttons_valid" />
+    {:else}
+       <slot name="buttons_disabled" />
+    {/if}
   </div>
 </form>

@@ -13,6 +13,6 @@ export function editable(target: any, propertyKey: string) {
 
 export function field(config: FieldConfig) {
   return function (target: any, propertyKey: string) {
-    Reflect.defineMetadata("field", config, target, propertyKey);
+    Reflect.defineMetadata("fieldConfig", config, target, propertyKey);
   };
 }

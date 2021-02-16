@@ -4,11 +4,17 @@ import { writable, Writable } from "svelte/store";
 export class FieldConfig {
   constructor(init?: Partial<FieldConfig>) {
     Object.assign(this, init);
+    this.attributes["type"] = this.type;
+
+    if (this.el === "select") {
+      this.options = [];
+    }
   }
 
   node: HTMLElement;
   el: string;
-  name: string; // is also "id"
+  //! DO NOT SET NAME. IT IS SET AUTOMATICALLY!
+  name: string;
   type: string = "text"; // Default to text
   label: string;
   className: string;

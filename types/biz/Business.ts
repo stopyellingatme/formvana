@@ -26,10 +26,7 @@ export class Business {
       });
     }
   }
-
-  /**
-   ** Business ID
-   */
+  
   id: string;
 
   @editable
@@ -39,7 +36,7 @@ export class Business {
       type: "text",
       label: "Business Name",
       required: true,
-      name: "name",
+      // name: "name",
       className: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Business Name" },
     })
@@ -55,7 +52,7 @@ export class Business {
       type: "text",
       label: "Description",
       required: true,
-      name: "description",
+      // name: "description",
       className: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description" },
     })
@@ -87,10 +84,9 @@ export class Business {
   //     type: "text",
   //     label: "Business Status",
   //     required: true,
-  //     name: "status",
   //   })
   // )
-  @IsString()
+  // @IsString()
   status: BusinessStatus = "ACTIVE";
 
   created_at: Date | string = null;
