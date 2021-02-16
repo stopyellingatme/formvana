@@ -36,10 +36,10 @@
 
   $: errors = $errorsStore && $errorsStore.constraints;
 
-  setInterval(() => {
-    console.log("ERRORS:: ", errors);
+  // setInterval(() => {
+  //   console.log("ERRORS:: ", errors);
     
-  }, 5000);
+  // }, 5000);
 </script>
 
 <div>

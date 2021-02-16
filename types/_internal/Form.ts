@@ -80,33 +80,58 @@ export class Form {
     }
   };
 
-  linkErrors = (errors: ValidationError[]) => {
-    let i = 0,
-      j = 0,
-      len = this.fields.length,
-      lenn = errors.length;
-    for (; len > i; ++i) {
-      for (; lenn > j; ++j) {
-        // console.log(this.fields[i].name, errors[j].property);
+  // linkErrors = (errors: ValidationError[]) => {
+  //   let i = 0,
+  //     j = 0,
+  //     len = this.fields.length,
+  //     lenn = errors.length;
+  //   for (; len > i; ++i) {
+  //     for (; lenn > j; ++j) {
+  //       if (this.fields[i].name === errors[j].property) {
+  //         this.fields[i].errors.set(errors[j]);
+  //       }
+  //     }
+  //   }
+  // };
 
-        if (this.fields[i].name === errors[j].property) {
-          // console.log("ADDED EEROR TO FIELD: ", this.fields[i]);
-
-          this.fields[i].errors.set(errors[j]);
+  linkErrors = (errors: ValidationError[], name: string) => {
+    errors.forEach((err) => {
+      this.fields.forEach((field) => {
+        if (field.name === err.property && name === err.property) {
+          field.errors.set(err);
         }
-      }
-    }
+      });
+    });
   };
 
   validate = () => {
     this.linkValues();
     return validate(this.model).then((errors: ValidationError[]) => {
-      this.linkErrors(errors);
+      // this.linkErrors(errors);
       if (errors.length > 0) {
         // TODO: Attatch errors to corresponding field configs
 
         this.errors = errors;
         console.log("ERRORS: ", errors);
+      } else {
+        this.errors = [];
+        this.valid = true;
+        console.log("FORM IS VALID! WEEHOO!");
+      }
+    });
+  };
+
+  validateField = (name: string) => {
+    // console.log("NAME: ", name);
+
+    this.linkValues();
+    return validate(this.model).then((errors: ValidationError[]) => {
+      this.linkErrors(errors, name);
+      if (errors.length > 0) {
+        // TODO: Attatch errors to corresponding field configs
+
+        this.errors = errors;
+        // console.log("ERRORS: ", errors);
       } else {
         this.errors = [];
         this.valid = true;
@@ -135,18 +160,23 @@ export class Form {
     this.valid = false;
   };
 
+  // TODO: Find a way validate only the node.name
   useField = (node: HTMLElement) => {
     if (this) {
-      console.log("USE FIELD: ", this);
+      // console.log("USE FIELD: ", node);
 
-      const validate_opts = this.validate_on_events;
       const clear_opts = this.clear_errors_on_events;
 
-      if (validate_opts.input) {
-        node.addEventListener("input", this.validate);
+      if (this.validate_on_events.input) {
+        // node.addEventListener("input", this.validate);
+        node.addEventListener("input", (ev) => {
+          console.log(ev);
+          //@ts-ignore
+          this.validateField(node.name);
+        });
       }
 
-      if (validate_opts.change) {
+      if (this.validate_on_events.change) {
         node.addEventListener("change", this.validate);
       }
     }
