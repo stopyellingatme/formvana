@@ -73,26 +73,10 @@ export class Form {
   }
 
   linkValues = () => {
-    let i = 0,
-      len = this.fields.length;
-    for (; len > i; ++i) {
-      this.model[this.fields[i].name] = get(this.fields[i].value);
-    }
+    this.fields.forEach((field) => {
+      this.model[field.name] = get(field.value);
+    });
   };
-
-  // linkErrors = (errors: ValidationError[]) => {
-  //   let i = 0,
-  //     j = 0,
-  //     len = this.fields.length,
-  //     lenn = errors.length;
-  //   for (; len > i; ++i) {
-  //     for (; lenn > j; ++j) {
-  //       if (this.fields[i].name === errors[j].property) {
-  //         this.fields[i].errors.set(errors[j]);
-  //       }
-  //     }
-  //   }
-  // };
 
   linkErrors = (errors: ValidationError[], name: string) => {
     errors.forEach((err) => {
@@ -131,7 +115,7 @@ export class Form {
         // TODO: Attatch errors to corresponding field configs
 
         this.errors = errors;
-        // console.log("ERRORS: ", errors);
+        console.log("ERRORS: ", errors);
       } else {
         this.errors = [];
         this.valid = true;
@@ -160,17 +144,14 @@ export class Form {
     this.valid = false;
   };
 
-  // TODO: Find a way validate only the node.name
   useField = (node: HTMLElement) => {
     if (this) {
-      // console.log("USE FIELD: ", node);
-
       const clear_opts = this.clear_errors_on_events;
 
       if (this.validate_on_events.input) {
         // node.addEventListener("input", this.validate);
         node.addEventListener("input", (ev) => {
-          console.log(ev);
+          // console.log(ev);
           //@ts-ignore
           this.validateField(node.name);
         });

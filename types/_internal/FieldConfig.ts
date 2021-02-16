@@ -6,7 +6,6 @@ export class FieldConfig {
   constructor(init?: Partial<FieldConfig>) {
     Object.assign(this, init);
   }
-  form_options: any = {};
 
   el: string;
   name: string; // is also "id"
