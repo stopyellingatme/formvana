@@ -2,12 +2,14 @@ import { ValidationError, validate } from "class-validator";
 import { get, writable, Writable } from "svelte/store";
 import { FieldConfig } from "./FieldConfig";
 
-
 /**
  * Main things left to tackle:
  *  - Field defaults built from constructor
  *  - Field groups and Field ordering (group styling)
- *  - Add change detection using initial_state
+ *  - Add more form elements for testing
+ *  - Find out how to add options to a selection field elegantly
+ * 
+ *  - Clean up functions and code wherever possible :) 
  */
 
 export interface OnEvents {
@@ -25,6 +27,7 @@ export class Form {
     }
   }
 
+  // This is stringified for quicker comparison
   initial_state: any = null;
 
   /**
@@ -64,7 +67,7 @@ export class Form {
    * This function builds the field configs from the given model
    * using metadata-reflection.
    */
-  makeFields = () => {
+  buildFields = () => {
     if (this.model) {
       let props = Reflect.getMetadata("editableProperties", this.model) || [];
       this.fields = props.map((prop) => {
@@ -101,7 +104,7 @@ export class Form {
 
   validate = () => {
     this.clearErrors();
-    this.linkValues();
+    this.linkValues(true);
     return validate(this.model).then((errors: ValidationError[]) => {
       if (errors.length > 0) {
         this.valid.set(false);
@@ -117,7 +120,7 @@ export class Form {
   };
 
   validateField = (name: string) => {
-    this.linkValues();
+    this.linkValues(true);
     return validate(this.model).then((errors: ValidationError[]) => {
       if (errors.length > 0) {
         this.valid.set(false);
@@ -152,10 +155,10 @@ export class Form {
     this.valid.set(false);
 
     const initial = JSON.parse(this.initial_state);
-    Object.keys(this.model).forEach(key => {
+    Object.keys(this.model).forEach((key) => {
       this.model[key] = initial[key];
     });
-    this.linkModelToFieldValues();
+    this.linkValues(false);
   };
 
   destroy = () => {
@@ -196,19 +199,21 @@ export class Form {
   };
 
   //#region Private Functions
-  private linkValues = () => {
+  private linkValues = (toModel: boolean) => {
     this.fields.forEach((field) => {
-      this.model[field.name] = get(field.value);
+      toModel
+        ? (this.model[field.name] = get(field.value))
+        : field.value.set(this.model[field.name]);
     });
     this.hasChanged();
   };
 
-  private linkModelToFieldValues = () => {
-    this.fields.forEach((field) => {
-      field.value.set(this.model[field.name]);
-    });
-    this.hasChanged();
-  };
+  // private linkModelToFieldValues = () => {
+  //   this.fields.forEach((field) => {
+  //     field.value.set(this.model[field.name]);
+  //   });
+  //   this.hasChanged();
+  // };
 
   private hasChanged = () => {
     if (JSON.stringify(this.model) === this.initial_state) {

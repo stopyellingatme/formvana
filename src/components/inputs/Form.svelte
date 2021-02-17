@@ -14,11 +14,11 @@
   };
 
   onMount(() => {
-    setTimeout(() => {
+    // setTimeout(() => {
       // $form.fields.forEach((field) => {
       //   console.log("VAL: ", get(field.value));
       // });
-    }, 5000);
+    // }, 5000);
   });
 
   onDestroy(() => {

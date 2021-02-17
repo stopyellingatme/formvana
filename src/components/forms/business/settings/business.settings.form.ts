@@ -12,7 +12,7 @@ function initStore() {
     model: new Business(),
   });
   form.validate_on_events.focus = false;
-  form.makeFields();
+  form.buildFields();
   const { subscribe, set, update } = writable({
     ...form,
   });
