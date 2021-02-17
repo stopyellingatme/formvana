@@ -35,7 +35,7 @@ export class Business {
       el: "input",
       type: "text",
       label: "Business Name",
-      required: true,,
+      required: true,
       className: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Business Name" },
     })
@@ -43,6 +43,20 @@ export class Business {
   @Length(10, 90)
   @IsString()
   name: string = "";
+
+  @editable
+  @field(
+    new FieldConfig({
+      el: "input",
+      type: "email",
+      label: "Email Address",
+      required: true,
+      className: "col-span-4 sm:col-span-2",
+      attributes: { placeholder: "Email Address" },
+    })
+  )
+  @IsEmail()
+  email: string = "";
 
   @editable
   @field(

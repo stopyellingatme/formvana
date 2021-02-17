@@ -9,7 +9,6 @@ Out here searching for form nirvana with the help of Typescript and Svelte.
  *  - Field defaults built from constructor
  *  - Field groups and Field ordering (group styling)
  *  - Add more form elements for testing
- *  - Find out how to add options to a selection field elegantly
  * 
  *  - Clean up functions and code wherever possible :) 
 

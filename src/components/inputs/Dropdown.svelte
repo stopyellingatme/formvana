@@ -1,10 +1,9 @@
 <script lang="ts">
   import { fly, fade } from "svelte/transition";
   import { _class } from "../../utils/classes.utils";
-  import { createEventDispatcher, onMount } from "svelte";
+  import { onMount } from "svelte";
   import DropdownOption from "./DropdownOption.svelte";
   import InputErrors from "./InputErrors.svelte";
-  const dispatch = createEventDispatcher();
 
   let active_index = 0;
   let is_focused = false;
@@ -71,6 +70,10 @@
     }
   }
 
+  /**
+   * Capture the element with useInput.
+   * We need it for dispatching the attached validation (or clear) events
+   */
   let node;
 
   const handleChange = (e, val) => {
@@ -78,7 +81,6 @@
     // dispatch("input", $valueStore);
     node.dispatchEvent(new Event("change"));
     menu_open = false;
-
   };
   const handleFocus = (e) => {
     is_focused = true;
@@ -89,7 +91,6 @@
     // dispatch("blur", $valueStore);
     menu_open = false;
   };
-  
 </script>
 
 <svelte:window on:keydown={handleKeyDown} />

@@ -7,7 +7,6 @@ import { FieldConfig } from "./FieldConfig";
  * Main things left to tackle:
  *  - Field groups and Field ordering (group styling)
  *  - Add more form elements for testing
- *  - Find out how to add options to a selection field elegantly
  *
  *  - Clean up functions and code wherever possible :)
  */
@@ -91,8 +90,8 @@ export class Form {
 
   /**
    * This is for Svelte's "use:FUNCTION" feature.
-   * The "use" directive passes the HTML Node on which the directive is
-   * attached, as a parameter to the given function (e.g. use:useField).
+   * The "use" directive passes the HTML Node as
+   * a parameter to the given function (e.g. use:useField(node: HTMLNode)).
    *
    */
   useField = (node: HTMLElement) => {
