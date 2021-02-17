@@ -26,7 +26,7 @@ export class Business {
       });
     }
   }
-  
+
   id: string;
 
   @editable
@@ -35,8 +35,7 @@ export class Business {
       el: "input",
       type: "text",
       label: "Business Name",
-      required: true,
-      // name: "name",
+      required: true,,
       className: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Business Name" },
     })
@@ -52,7 +51,6 @@ export class Business {
       type: "text",
       label: "Description",
       required: true,
-      // name: "description",
       className: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description" },
     })
@@ -77,17 +75,19 @@ export class Business {
   activity = {};
   settings = {};
 
-  // @editable
-  // @field(
-  //   new FieldConfig({
-  //     el: "select",
-  //     type: "text",
-  //     label: "Business Status",
-  //     required: true,
-  //   })
-  // )
-  // @IsString()
-  status: BusinessStatus = "ACTIVE";
+  @editable
+  @field(
+    new FieldConfig({
+      el: "select",
+      type: "select",
+      label: "Business Status",
+      required: true,
+      className: "col-span-4 sm:col-span-2",
+      ref_key: "business_statuses"
+    })
+  )
+  @IsString()
+  status;
 
   created_at: Date | string = null;
   created_by: string = "";

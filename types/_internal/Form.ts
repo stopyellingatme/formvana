@@ -1,15 +1,15 @@
 import { ValidationError, validate } from "class-validator";
 import { get, writable, Writable } from "svelte/store";
+import { field } from "../../src/utils/typescript.utils";
 import { FieldConfig } from "./FieldConfig";
 
 /**
  * Main things left to tackle:
- *  - Field defaults built from constructor
  *  - Field groups and Field ordering (group styling)
  *  - Add more form elements for testing
  *  - Find out how to add options to a selection field elegantly
- * 
- *  - Clean up functions and code wherever possible :) 
+ *
+ *  - Clean up functions and code wherever possible :)
  */
 
 export interface OnEvents {
@@ -17,6 +17,7 @@ export interface OnEvents {
   change: boolean;
   blur: boolean;
   focus: boolean;
+  mount: boolean;
 }
 
 export class Form {
@@ -59,6 +60,7 @@ export class Form {
     input: init,
     blur: init,
     focus: init,
+    mount: false,
   });
   validate_on_events: OnEvents = this.on_events();
   clear_errors_on_events: OnEvents = this.on_events(false);
@@ -77,6 +79,9 @@ export class Form {
           prop
         );
         config.name = prop;
+        if (this.model[prop]) {
+          config.value.set(this.model[prop]);
+        }
 
         console.log("FIELD CONFIG: ", config);
         return config;
@@ -90,9 +95,10 @@ export class Form {
    * attached, as a parameter to the given function (e.g. use:useField).
    *
    */
-  useField = (node: any) => {
+  useField = (node: HTMLElement) => {
     // Attach HTML Node to field so we can remove event listeners later
     this.fields.forEach((field) => {
+      //@ts-ignore
       if (field.name === node.name) {
         field.node = node;
       }
@@ -119,7 +125,7 @@ export class Form {
     });
   };
 
-  validateField = (name: string) => {
+  validateField = (name: string, ev) => {
     this.linkValues(true);
     return validate(this.model).then((errors: ValidationError[]) => {
       if (errors.length > 0) {
@@ -132,6 +138,29 @@ export class Form {
         this.clearErrors();
         console.log("FORM IS VALID! WEEHOO!");
       }
+    });
+  };
+
+  /**
+   * Just pass in the reference data and let the field
+   * configs do the rest.
+   *
+   ** Ref data must be in format:
+   * {
+   *  [field.name]: [
+   *    { label: "Option 1", value: 0 },
+   *    { label: "Option 2", value: 1 },
+   *   ],
+   *  [field.other_name]: [
+   *    { label: "Other Option 1", value: 0 },
+   *    { label: "Other Option 2", value: 1 },
+   *   ],
+   * }
+   */
+  attachRefData = (refs: object) => {
+    const fields = this.fields.filter((f) => f.ref_key);
+    fields.forEach((field) => {
+      field.options = refs[field.ref_key];
     });
   };
 
@@ -167,31 +196,15 @@ export class Form {
       let i = 0,
         len = this.fields.length;
       for (; len > i; ++i) {
-        // Validate Event Listeners
-        this.fields[i].node.removeEventListener("input", (ev) => {
-          this.validateField(this.fields[i].name);
-        });
-        this.fields[i].node.removeEventListener("change", (ev) => {
-          this.validateField(this.fields[i].name);
-        });
-        this.fields[i].node.removeEventListener("focus", (ev) => {
-          this.validateField(this.fields[i].name);
-        });
-        this.fields[i].node.removeEventListener("blur", (ev) => {
-          this.validateField(this.fields[i].name);
-        });
-        // Clear Error Listeners
-        this.fields[i].node.removeEventListener("input", (ev) => {
-          this.clearFieldErrors(this.fields[i].name);
-        });
-        this.fields[i].node.removeEventListener("change", (ev) => {
-          this.clearFieldErrors(this.fields[i].name);
-        });
-        this.fields[i].node.removeEventListener("focus", (ev) => {
-          this.clearFieldErrors(this.fields[i].name);
-        });
-        this.fields[i].node.removeEventListener("blur", (ev) => {
-          this.clearFieldErrors(this.fields[i].name);
+        // Remove all the event listeners!
+        Object.keys(this.on_events).forEach((key) => {
+          this.fields[i].node.removeEventListener(key, (ev) => {
+            this.validateField(this.fields[i].name, ev);
+          });
+
+          this.fields[i].node.removeEventListener(key, (ev) => {
+            this.clearFieldErrors(this.fields[i].name);
+          });
         });
       }
     }
@@ -199,6 +212,8 @@ export class Form {
   };
 
   //#region Private Functions
+
+  // Link values from fields to model or model to fields
   private linkValues = (toModel: boolean) => {
     this.fields.forEach((field) => {
       toModel
@@ -207,13 +222,6 @@ export class Form {
     });
     this.hasChanged();
   };
-
-  // private linkModelToFieldValues = () => {
-  //   this.fields.forEach((field) => {
-  //     field.value.set(this.model[field.name]);
-  //   });
-  //   this.hasChanged();
-  // };
 
   private hasChanged = () => {
     if (JSON.stringify(this.model) === this.initial_state) {
@@ -254,11 +262,12 @@ export class Form {
     });
   };
 
-  private handleOnValidateEvents = (node) => {
+  private handleOnValidateEvents = (node: HTMLElement) => {
     Object.entries(this.validate_on_events).forEach(([key, val]) => {
       if (val) {
         node.addEventListener(key, (ev) => {
-          this.validateField(node.name);
+          //@ts-ignore
+          this.validateField(node.name, ev);
         });
       }
     });

@@ -4,6 +4,7 @@
   import { createEventDispatcher } from "svelte";
   import Input from "./Input.svelte";
   import { get } from "svelte/store";
+  import Dropdown from "./Dropdown.svelte";
   const dispatch = createEventDispatcher();
 
   export let form; // Form State
@@ -15,9 +16,9 @@
 
   onMount(() => {
     // setTimeout(() => {
-      // $form.fields.forEach((field) => {
-      //   console.log("VAL: ", get(field.value));
-      // });
+    // $form.fields.forEach((field) => {
+    //   console.log("VAL: ", get(field.value));
+    // });
     // }, 5000);
   });
 
@@ -25,8 +26,6 @@
     dispatch("destroy", true);
     form.destroy();
   });
-
-  
 
   let fw;
   let fh;
@@ -56,8 +55,16 @@
                 errorsStore={field.errors}
                 useInput={$form.useField}
               />
-            {:else}
-              <!-- else content here -->
+            {:else if field.el === "select" || field.el === "dropdown"}
+              <Dropdown
+                name={field.name}
+                label={field.label}
+                attrs={field.attributes}
+                options={field.options}
+                valueStore={field.value}
+                errorsStore={field.errors}
+                useInput={$form.useField}
+              />
             {/if}
           </div>
         {/each}

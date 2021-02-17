@@ -1,11 +1,6 @@
 <script lang="ts">
   import InputErrors from "./InputErrors.svelte";
   import { _class } from "../../utils/classes.utils";
-  import { createEventDispatcher } from "svelte";
-  const dispatch = createEventDispatcher();
-
-  const handleInput = (e) => dispatch("input", e);
-  let _inputAttributes = {};
 
   export let errorsStore = null;
   export let valueStore = null;
@@ -17,29 +12,22 @@
   export let className =
     "block w-full px-3 py-2 placeholder-gray-400 border border-gray-300 appearance-none transition duration-150 ease-in-out rounded-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300 sm:text-sm sm:leading-5 disabled:cursor-not-allowed";
 
-  $: {
-    _inputAttributes = Object.assign(
-      {
-        autocomplete: "off",
-        autocorrect: "off",
-        spellcheck: false,
-      },
-      attrs
-    );
-  }
+  $: errors = $errorsStore && $errorsStore.constraints;
+
+  $: _inputAttributes = Object.assign(
+    {
+      autocomplete: "off",
+      autocorrect: "off",
+      spellcheck: false,
+    },
+    attrs
+  );
 
   $: cls = _class(
     className,
     "border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500",
-    $errorsStore ? $errorsStore.constraints.length > 0 : false
+    errors ? errors.length > 0 : false
   );
-
-  $: errors = $errorsStore && $errorsStore.constraints;
-
-  // setInterval(() => {
-  //   console.log("ERRORS:: ", errors);
-    
-  // }, 5000);
 </script>
 
 <div>
@@ -52,7 +40,6 @@
       {..._inputAttributes}
       class={cls}
       bind:value={$valueStore}
-      on:input={handleInput}
       use:useInput
     />
     {#if errors}
