@@ -5,6 +5,14 @@ Out here searching for form nirvana with the help of Typescript and Svelte.
 ```commands go here
 ```
 
+* Main things left to tackle:
+ *  - Field defaults built from constructor
+ *  - Field groups and Field ordering (group styling)
+ *  - Add more form elements for testing
+ *  - Find out how to add options to a selection field elegantly
+ * 
+ *  - Clean up functions and code wherever possible :) 
+
 *Note that you will need to have [Node.js](https://nodejs.org) 15.7.0 installed.*
 
 
