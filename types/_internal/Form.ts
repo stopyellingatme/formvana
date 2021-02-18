@@ -1,6 +1,5 @@
 import { ValidationError, validate } from "class-validator";
 import { get, writable, Writable } from "svelte/store";
-import { field } from "../../src/utils/typescript.utils";
 import { FieldConfig } from "./FieldConfig";
 
 /**
@@ -27,11 +26,19 @@ export class Form {
     }
   }
 
+  // constructor(model: any) {
+  //   this.model = model;
+  //   if (model) {
+  //     this.initial_state = JSON.stringify(model);
+  //   }
+  // }
+
   // This is stringified for quicker comparison
   initial_state: any = null;
 
   /**
    * Underlying TS Model.
+   * Whene model is set, call buildFields() to build the fields. 
    */
   model: any = null;
 
