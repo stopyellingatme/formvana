@@ -53,6 +53,7 @@
         if (options[active_index + 1] && options[active_index + 1].value) {
           $valueStore = options[active_index + 1].value;
           active_index = active_index + 1;
+          handleChange(e, $valueStore);
         }
         break;
       case "ArrowUp":
@@ -61,6 +62,7 @@
         if (options[active_index - 1] && options[active_index - 1].value) {
           $valueStore = options[active_index - 1].value;
           active_index = active_index - 1;
+          handleChange(e, $valueStore);
         }
         break;
       case "Escape":

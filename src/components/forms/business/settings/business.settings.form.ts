@@ -122,11 +122,13 @@ export const init = () => {
 export const onSubmit = (ev) => {
   console.log("SUBMIT: ", ev);
 
-  formState.setLoading(true);
+  // formState.setLoading(true);
   // Values come in the order they were created
   // const values: any[] = Array.from(getValues().values());
   // console.log(values);
-  const item = new Business();
+  // const item = new Business();
+  console.log(sget(formState).model);
+  
 
   // updateBusniess(item).then((res) => {
   //     // console.log("BIZ SETTINGS FORM: ", res.data[0]);
