@@ -1,5 +1,6 @@
 <script lang="ts">
   import { _class } from "../../utils/classes.utils";
+	import InputErrors from "./InputErrors.svelte";
 
   export let value;
   export let errorsStore;
@@ -50,4 +51,7 @@
       </p>
     {/if}
   </div>
+  {#if errors}
+    <InputErrors errorsStore={errors} />
+  {/if}
 </div>
