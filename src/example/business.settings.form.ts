@@ -47,9 +47,9 @@ export const init = () => {
   // getBusiness(SOME_STATE.BUSINESS_ID).then((data) => {
   //  Get current form state
   //     const form = sget(formState);
-  //     const biz = new Business(data);
-  //     form.model = biz;
+  //     form.model = new Business(data);
   //     form.buildFields();
+
   //     formState.updateState({ form: form });
   // });
 };

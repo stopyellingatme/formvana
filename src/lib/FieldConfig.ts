@@ -46,6 +46,7 @@ export class FieldConfig {
   label: string;
   classname: string;
   required: boolean = false;
+  hint?: string;
 
   value: Writable<any> = writable(null);
 

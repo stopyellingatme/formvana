@@ -67,6 +67,7 @@ export class Business {
       label: "Description",
       required: true,
       classname: "col-span-4 sm:col-span-2",
+      hint: "This will be seen publicly",
       attributes: { placeholder: "Description" },
     })
   )

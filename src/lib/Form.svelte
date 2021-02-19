@@ -4,6 +4,7 @@
   import { createEventDispatcher } from "svelte";
   import Input from "./inputs/Input.svelte";
   import Dropdown from "./inputs/Dropdown.svelte";
+  import Textarea from "./inputs/Textarea.svelte";
   const dispatch = createEventDispatcher();
 
   //* Form State
@@ -64,8 +65,17 @@
                 errorsStore={field.errors}
                 useInput={$form.useField}
               />
-            {:else}
+            {:else if field.el === "textarea"}
               <!-- More fields go here! -->
+              <Textarea
+                name={field.name}
+                label={field.label}
+                hint={field.hint}
+                attrs={field.attributes}
+                valueStore={field.value}
+                errorsStore={field.errors}
+                useInput={$form.useField}
+              />
             {/if}
           </div>
         {/each}
