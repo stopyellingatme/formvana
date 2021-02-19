@@ -1,76 +1,72 @@
 import { get as sget, writable } from "svelte/store";
-import {
-  getBusiness,
-  updateBusniess,
-  bizState,
-} from "../../../../stores/business.store";
+import { bizState } from "../../../../stores/business.store";
 import { Business } from "../../../../../types/biz/Business";
 import { Form } from "../../../../../types/_internal/Form";
 
 const ref_data = {
-    user_statuses: [
-      {
-        key: "ACTIVE",
-        value: "ACTIVE",
-      },
-      {
-        key: "DISABLED",
-        value: "DISABLED",
-      },
-    ],
-    user_roles: [
-      {
-        key: "ADMINISTRATOR",
-        value: "ADMINISTRATOR",
-      },
-      {
-        key: "OWNER",
-        value: "OWNER",
-      },
-      {
-        key: "MANAGER",
-        value: "MANAGER",
-      },
-      {
-        key: "CLERK",
-        value: "CLERK",
-      },
-      {
-        key: "MEMBER",
-        value: "MEMBER",
-      },
-      {
-        key: "VIP",
-        value: "VIP",
-      },
-    ],
-    business_statuses: [
-      {
-        key: "ACTIVE",
-        value: "ACTIVE",
-      },
-      {
-        key: "PENDING",
-        value: "PENDING",
-      },
-      {
-        key: "SUSPENDED",
-        value: "SUSPENDED",
-      },
-      {
-        key: "ARCHIVED",
-        value: "ARCHIVED",
-      },
-    ],
-  };
+  user_statuses: [
+    {
+      key: "ACTIVE",
+      value: "ACTIVE",
+    },
+    {
+      key: "DISABLED",
+      value: "DISABLED",
+    },
+  ],
+  user_roles: [
+    {
+      key: "ADMINISTRATOR",
+      value: "ADMINISTRATOR",
+    },
+    {
+      key: "OWNER",
+      value: "OWNER",
+    },
+    {
+      key: "MANAGER",
+      value: "MANAGER",
+    },
+    {
+      key: "CLERK",
+      value: "CLERK",
+    },
+    {
+      key: "MEMBER",
+      value: "MEMBER",
+    },
+    {
+      key: "VIP",
+      value: "VIP",
+    },
+  ],
+  business_statuses: [
+    {
+      key: "ACTIVE",
+      value: "ACTIVE",
+    },
+    {
+      key: "PENDING",
+      value: "PENDING",
+    },
+    {
+      key: "SUSPENDED",
+      value: "SUSPENDED",
+    },
+    {
+      key: "ARCHIVED",
+      value: "ARCHIVED",
+    },
+  ],
+};
 
 function initStore() {
   let form = new Form({
     model: new Business(),
   });
-  form.validate_on_events.focus = false;
-  form.buildFields();
+  // form.validate_on_events.focus = false;
   form.attachRefData(ref_data);
+  form.buildFields();
   const { subscribe, set, update } = writable({
     ...form,
   });
@@ -128,7 +124,6 @@ export const onSubmit = (ev) => {
   // console.log(values);
   // const item = new Business();
   console.log(sget(formState).model);
-  
 
   // updateBusniess(item).then((res) => {
   //     // console.log("BIZ SETTINGS FORM: ", res.data[0]);
