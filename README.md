@@ -1,8 +1,8 @@
 # Formvana
 
-_Out here searching for form nirvana with the help of Typescript and (currently) Svelte._
+_Searching for form nirvana with the help of Typescript and (currently) Svelte._
 
----- What I Want ----
+**What I Want!**
 
 - Sinlge source of truth for my Forms
 - Form Generator/Dynamic Form (Inspired by Ngx-Formly)
@@ -29,7 +29,9 @@ Using this pattern, along with class-validator, allows a beautiful Form handling
 The Form.fields array makes it easy to itterate over and generate form fields dymanically. There are form options which specify when to validate input or clear errors (on input, change, focus, blur, etc.).
 It's also very easy to get data out of the Form by calling Form.model.
 
+----
 ## YourTsModel.ts (Business.ts)
+Simple Example with 4 editable fields.
 
 ```ts
 // Business.ts
@@ -183,12 +185,12 @@ This generates the form dynamically based on the @fields on the TS model. I woul
 
 \*\* Main things left to tackle:
 
-- - !Field groups and Field ordering (group styling)
-- - Remove Tailwind dependencies
-- - Remove Svelte dependency? - Maybe fork it?
-- - Add more form elements for testing with svelte
-- - Do some documentation on this mfer
-- Clean up functions and code wherever possible :)
+- Field groups/Field ordering and Layout (group styling)
+- Remove Tailwind dependencies
+- Remove Svelte dependency? - Maybe fork it?
+- Add more form elements for testing with svelte
+- Do some documentation on this mfer
+- Write tests to generate 100s of form configs, add data/validate, test performance
 
 ---
 
