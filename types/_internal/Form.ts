@@ -10,6 +10,11 @@ export interface OnEvents {
   mount: boolean;
 }
 
+export enum LinkOnEvent {
+  Always,
+  Valid
+}
+
 export class Form {
   constructor(init?: Partial<Form>) {
     Object.assign(this, init);
@@ -17,13 +22,6 @@ export class Form {
       this.initial_state = JSON.stringify(this.model);
     }
   }
-
-  // constructor(model: any) {
-  //   this.model = model;
-  //   if (model) {
-  //     this.initial_state = JSON.stringify(model);
-  //   }
-  // }
 
   // This is stringified for quicker comparison
   initial_state: any = null;
@@ -51,8 +49,6 @@ export class Form {
   changed: Writable<boolean> = writable(false);
   touched: boolean = false;
 
-  template_classes: string = "grid grid-cols-4 gap-6 mt-6";
-
   on_events = (init: boolean = true): OnEvents => ({
     change: init,
     input: init,
@@ -62,6 +58,10 @@ export class Form {
   });
   validate_on_events: OnEvents = this.on_events();
   clear_errors_on_events: OnEvents = this.on_events(false);
+  link_fields_to_model_on: LinkOnEvent = 0;
+
+  template_classes: string = "grid grid-cols-4 gap-6 mt-6";
+  layout: any;
 
   /**
    * This function builds the field configs from the given model
@@ -121,7 +121,7 @@ export class Form {
 
   validate = () => {
     this.clearErrors();
-    this.linkValues(true);
+    this.link_fields_to_model_on === LinkOnEvent.Always && this.linkValues(true);
     return validate(this.model).then((errors: ValidationError[]) => {
       if (errors.length > 0) {
         this.valid.set(false);
@@ -129,6 +129,7 @@ export class Form {
         this.linkErrors(errors);
         console.log("ERRORS: ", errors);
       } else {
+        this.link_fields_to_model_on === LinkOnEvent.Valid && this.linkValues(true);
         this.valid.set(true);
         this.clearErrors();
         console.log("FORM IS VALID! WEEHOO!");
@@ -137,7 +138,7 @@ export class Form {
   };
 
   validateField = (name: string, ev) => {
-    this.linkValues(true);
+    this.link_fields_to_model_on === LinkOnEvent.Always && this.linkValues(true);
     return validate(this.model).then((errors: ValidationError[]) => {
       if (errors.length > 0) {
         this.valid.set(false);
@@ -145,6 +146,7 @@ export class Form {
         console.log("ERRORS: ", errors);
         this.linkFieldErrors(errors, name);
       } else {
+        this.link_fields_to_model_on === LinkOnEvent.Valid && this.linkValues(true);
         this.valid.set(true);
         this.clearErrors();
         console.log("FORM IS VALID! WEEHOO!");

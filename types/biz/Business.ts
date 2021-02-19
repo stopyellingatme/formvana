@@ -30,6 +30,8 @@ export class Business {
   id: string;
 
   @editable
+  @Length(10, 90)
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
@@ -40,11 +42,10 @@ export class Business {
       attributes: { placeholder: "Business Name" },
     })
   )
-  @Length(10, 90)
-  @IsString()
   name: string = "";
 
   @editable
+  @IsEmail()
   @field(
     new FieldConfig({
       el: "input",
@@ -55,13 +56,13 @@ export class Business {
       attributes: { placeholder: "Email Address" },
     })
   )
-  @IsEmail()
   email: string = "";
 
   @editable
+  @Length(10, 240)
   @field(
     new FieldConfig({
-      el: "input",
+      el: "textarea",
       type: "text",
       label: "Description",
       required: true,
@@ -69,7 +70,6 @@ export class Business {
       attributes: { placeholder: "Description" },
     })
   )
-  @Length(10, 240)
   description: string = "";
   avatar_url: string = "";
 
@@ -80,16 +80,8 @@ export class Business {
   state: string = "";
   zip: string = "";
 
-  employees: any[] = []; // [Not Mapped]
-  members: any[] = []; // [Not Mapped]
-  high_score_customer_name: string = "";
-  high_score_customer_score: number = 0;
-
-  misc = {};
-  activity = {};
-  settings = {};
-
   @editable
+  @IsString()
   @field(
     new FieldConfig({
       el: "select",
@@ -97,14 +89,8 @@ export class Business {
       label: "Business Status",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      ref_key: "business_statuses"
+      ref_key: "business_statuses",
     })
   )
-  @IsString()
   status;
-
-  created_at: Date | string = null;
-  created_by: string = "";
-  updated_at: Date | string = null;
-  updated_by: string = "";
 }

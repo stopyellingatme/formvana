@@ -41,6 +41,8 @@ class Business {
   id: string;
 
   @editable
+  @Length(10, 90)
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
@@ -51,11 +53,10 @@ class Business {
       attributes: { placeholder: "Business Name" },
     })
   )
-  @Length(10, 90)
-  @IsString()
   name: string = "";
 
   @editable
+  @IsEmail()
   @field(
     new FieldConfig({
       el: "input",
@@ -66,13 +67,13 @@ class Business {
       attributes: { placeholder: "Email Address" },
     })
   )
-  @IsEmail()
   email: string = "";
 
   @editable
+  @Length(10, 240)
   @field(
     new FieldConfig({
-      el: "input",
+      el: "textarea",
       type: "text",
       label: "Description",
       required: true,
@@ -80,7 +81,6 @@ class Business {
       attributes: { placeholder: "Description" },
     })
   )
-  @Length(10, 240)
   description: string = "";
   avatar_url: string = "";
 
@@ -92,6 +92,7 @@ class Business {
   zip: string = "";
 
   @editable
+  @IsString()
   @field(
     new FieldConfig({
       el: "select",
@@ -102,7 +103,6 @@ class Business {
       ref_key: "business_statuses",
     })
   )
-  @IsString()
   status;
 }
 ```
@@ -165,7 +165,7 @@ This is where the specialized (reflect-metadata) decorators are declared.
 
 ## Form.svelte
 
-This is what generates the form dynamically based on the @fields on the TS model. I would like to remove the tailwind parts for broader use, but it's nice for testing right now.
+This generates the form dynamically based on the @fields on the TS model. I would like to remove the tailwind parts for broader use, but it's good for testing right now.
 
 ---
 
@@ -184,10 +184,11 @@ This is what generates the form dynamically based on the @fields on the TS model
 - - Remove Svelte dependency? - Maybe fork it?
 - - Add more form elements for testing with svelte
 - - Do some documentation on this mfer
--
-- - Clean up functions and code wherever possible :)
+- Clean up functions and code wherever possible :)
 
-<!-- *Note that you will need to have [Node.js](https://nodejs.org) 15.7.0 installed, for now.* -->
+---
+
+*Note that you will need to have [Node.js](https://nodejs.org) 15.7.0 installed, for now.*
 
 ## So, for now, you can run it like an app
 
