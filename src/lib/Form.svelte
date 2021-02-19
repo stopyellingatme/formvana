@@ -43,7 +43,7 @@
       <slot name="header" />
 
       <!-- Form Wrapper Div (col num, col gaps, etc.) -->
-      <div class={$form.template_classes}>
+      <div class={$form.form_classes[2]}>
         {#each $form.fields as field, i}
           <div class={field.classname}>
             {#if field.el === "input"}

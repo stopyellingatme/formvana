@@ -113,7 +113,6 @@ class Business {
 }
 ```
 
----
 
 ## Form.ts
 
@@ -155,7 +154,7 @@ _SECTION TODO:_
 - how events (validation/clear errors) are handled/can be set
 - layout setup
 
----
+
 
 ## FieldConfig.ts
 
@@ -164,7 +163,7 @@ The constructor will attempt to parse the input type and add a sensable default 
 
 Also contains the HTML Node which is being validated/targeted.
 
----
+
 
 ## typescript.utils.ts
 
@@ -176,7 +175,6 @@ This is where the specialized (reflect-metadata) decorators are declared.
 
 [Got the idea from here.](https://www.meziantou.net/generate-an-html-form-from-an-object-in-typescript.htm)
 
----
 
 ## Form.svelte
 
@@ -184,7 +182,6 @@ This generates the form dynamically based on the @fields on the TS model. I woul
 
 Eventually the area with inputs will be a named \<slot\> to pass in something like a \<Fields prop={field} \\> type of component.
 
----
 
 ## Recommended Use
 

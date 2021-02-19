@@ -58,17 +58,21 @@ export class Form {
   });
   validate_on_events: OnEvents = this.on_events();
   clear_errors_on_events: OnEvents = this.on_events(false);
+
+  // When should we link the field values to the model values?
   link_fields_to_model_on: LinkOnEvent = 0;
 
   // Order within array determines order to be applied
   form_classes: string[] = [
     "shadow sm:rounded-md",
     "px-4 py-6 bg-white sm:p-6",
+    "grid grid-cols-4 gap-6 mt-6"
   ];
-  // Classes that go directly around the form fields
-  template_classes: string = "grid grid-cols-4 gap-6 mt-6";
 
-  // TODO: Define the layout object.
+  /**
+   * TODO: Define the layout object.
+   * Determines the ordering of the fields
+   */
   layout: any;
 
   /**
