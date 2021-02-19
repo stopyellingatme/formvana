@@ -67,11 +67,18 @@ export class Form {
   ];
   // Classes that go directly around the form fields
   template_classes: string = "grid grid-cols-4 gap-6 mt-6";
+
+  // TODO: Define the layout object.
   layout: any;
 
   /**
-   * This function builds the field configs from the given model
-   * using metadata-reflection.
+   * * Here be the Functions. Beware.
+   * * Here be the Functions. Beware.
+   * * Here be the Functions. Beware.
+   */
+
+  /**
+   * Build the field configs from the given model using metadata-reflection.
    */
   buildFields = () => {
     if (this.model) {

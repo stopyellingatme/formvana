@@ -1,6 +1,6 @@
 import { get as sget, writable } from "svelte/store";
-import { Business } from "./Business"
-import { Form } from "../lib/Form"
+import { Business } from "./Business";
+import { Form } from "../lib/Form";
 import { refs } from "./ref.data.store";
 
 function initStore() {
@@ -45,7 +45,7 @@ export const init = () => {
 
   // Update form with data fetched from DB
   // getBusiness(SOME_STATE.BUSINESS_ID).then((data) => {
-  //  Get current form state   
+  //  Get current form state
   //     const form = sget(formState);
   //     const biz = new Business(data);
   //     form.model = biz;

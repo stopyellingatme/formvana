@@ -27,7 +27,7 @@
       Business Settings
     </h2>
     <p class="mt-1 text-sm text-gray-500">
-      This is a test. This is only a test. Bleep bloop. 
+      This is a test. This is only a test. Bleep bloop.
     </p>
   </div>
 

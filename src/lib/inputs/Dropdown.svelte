@@ -48,21 +48,21 @@
     if (!is_focused) return;
     switch (e.key) {
       case "ArrowDown":
-        e.preventDefault();
         menu_open = true;
+        e.preventDefault();
         if (options[active_index + 1] && options[active_index + 1].value) {
           $valueStore = options[active_index + 1].value;
           active_index = active_index + 1;
-          handleChange(e, $valueStore);
+          node.dispatchEvent(new Event("change"));
         }
         break;
       case "ArrowUp":
-        e.preventDefault();
         menu_open = true;
+        e.preventDefault();
         if (options[active_index - 1] && options[active_index - 1].value) {
           $valueStore = options[active_index - 1].value;
           active_index = active_index - 1;
-          handleChange(e, $valueStore);
+          node.dispatchEvent(new Event("change"));
         }
         break;
       case "Escape":
@@ -80,7 +80,6 @@
 
   const handleChange = (e, val) => {
     $valueStore = val;
-    // dispatch("input", $valueStore);
     node.dispatchEvent(new Event("change"));
     menu_open = false;
   };
