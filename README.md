@@ -115,7 +115,7 @@ Model and fields are different things.
 So, call form.buildFields() to build the fields with the model's field configurations.
 If there's data in the model's fields already, it will be reflected in the fields.value as well.
 
--- REFERENCE DATA!
+-- REFERENCE DATA! --
 Attach reference data to dropdowns by calling form.attachRefData.
 Note: ref data MUST BE in the format {"ref_key": [
 {value: 0, label: "First Choice"},
