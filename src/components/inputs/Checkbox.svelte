@@ -16,7 +16,7 @@
     export let name;
     export let id = name;
     export let checked = false;
-    export let className =
+    export let classname =
         "w-4 h-4 text-indigo-600 transition duration-150 ease-in-out form-checkbox";
 </script>
 
@@ -25,7 +25,7 @@
     {name}
     type="checkbox"
     {checked}
-    class={className}
+    class={classname}
     use:useInput
     bind:value={$valueStore}
     on:change={handleInput} />

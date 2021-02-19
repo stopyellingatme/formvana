@@ -1,6 +1,12 @@
 import { ValidationError } from "class-validator";
 import { writable, Writable } from "svelte/store";
 
+export interface FieldGroup {
+  name: string;
+  classname?: string;
+  label?: string;
+}
+
 export class FieldConfig {
   constructor(init?: Partial<FieldConfig>) {
     Object.assign(this, init);
@@ -32,18 +38,21 @@ export class FieldConfig {
     }
   }
 
-  //! DO NOT SET NAME. IT IS SET AUTOMATICALLY BY FORM.TS!
+  //! DO NOT SET NAME. IT'S SET AUTOMATICALLY BY FORM.TS!
   name: string;
   node: HTMLElement;
   el: string; // Element to render in your frontend
   type: string = "text"; // Defaults to text
   label: string;
-  className: string;
+  classname: string;
+  required: boolean = false;
 
   value: Writable<any> = writable(null);
-  required: boolean = false;
+
   options?: any[];
   ref_key?: string; // Reference data key
+
+  group?: FieldGroup;
 
   /**
    * * String array of things like:

@@ -18,12 +18,12 @@
   export let label;
   export let name;
   export let attrs = {};
-  export let className =
+  export let classname =
     "bg-white relative w-full border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm";
 
   $: errors = $errorsStore && $errorsStore.constraints;
   $: cls = _class(
-    className,
+    classname,
     "border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500",
     errors ? errors.length > 0 : false
   );

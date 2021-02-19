@@ -36,7 +36,7 @@ export class Business {
       type: "text",
       label: "Business Name",
       required: true,
-      className: "col-span-4 sm:col-span-2",
+      classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Business Name" },
     })
   )
@@ -51,7 +51,7 @@ export class Business {
       type: "email",
       label: "Email Address",
       required: true,
-      className: "col-span-4 sm:col-span-2",
+      classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email Address" },
     })
   )
@@ -65,7 +65,7 @@ export class Business {
       type: "text",
       label: "Description",
       required: true,
-      className: "col-span-4 sm:col-span-2",
+      classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description" },
     })
   )
@@ -96,7 +96,7 @@ export class Business {
       type: "select",
       label: "Business Status",
       required: true,
-      className: "col-span-4 sm:col-span-2",
+      classname: "col-span-4 sm:col-span-2",
       ref_key: "business_statuses"
     })
   )

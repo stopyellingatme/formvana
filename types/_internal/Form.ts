@@ -1,14 +1,6 @@
 import { ValidationError, validate } from "class-validator";
 import { get, writable, Writable } from "svelte/store";
-import { FieldConfig } from "./FieldConfig";
-
-/**
- * Main things left to tackle:
- *  - Field groups and Field ordering (group styling)
- *  - Add more form elements for testing
- *
- *  - Clean up functions and code wherever possible :)
- */
+import { FieldConfig, FieldGroup } from "./FieldConfig";
 
 export interface OnEvents {
   input: boolean;
@@ -38,7 +30,7 @@ export class Form {
 
   /**
    * Underlying TS Model.
-   * Whene model is set, call buildFields() to build the fields. 
+   * Whene model is set, call buildFields() to build the fields.
    */
   model: any = null;
 
@@ -85,6 +77,7 @@ export class Form {
           prop
         );
         config.name = prop;
+        // If the model has a value, attach it to the field config
         if (this.model[prop]) {
           config.value.set(this.model[prop]);
         }
@@ -93,6 +86,18 @@ export class Form {
         return config;
       });
     }
+  };
+
+  /**
+   * 
+   * @param layout:
+   * {
+   *  
+   * }
+   */
+  setLayout = (layout: object[]) => {
+    // ReOrder fields based on layout object
+
   };
 
   /**

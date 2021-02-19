@@ -45,7 +45,7 @@
       <!-- Form Wrapper Div (col num, col gaps, etc.) -->
       <div class={$form.template_classes}>
         {#each $form.fields as field, i}
-          <div class={field.className}>
+          <div class={field.classname}>
             {#if field.el === "input"}
               <Input
                 name={field.name}
