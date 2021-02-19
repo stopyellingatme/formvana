@@ -111,15 +111,17 @@ class Business {
 
 ## Form.ts
 
+- Model and Fields
+
 The model above can be attached either by new Form({model: new Business()}) or form.model = new Busniess().
-However, this only sets the model.
-Model and fields are different things.
-So, call form.buildFields() to build the fields with the model's field configurations.
-If there's data in the model's fields already, it will be reflected in the fields.value as well.
+However, this ONLY sets the model.
+MODEL AND FIELDS ARE DIFFERENT THINGS!
+So, set the model and call form.buildFields() to build the fields with the model's field configurations.
+If there's data in the model fields already, it will be reflected in the fields.value as well.
 
 - REFERENCE DATA:
 
-Attach reference data to dropdowns by calling form.attachRefData().
+Attach reference data to dropdowns by calling form.attachRefData(refData).
 
 Note: Reference data MUST BE in the format:
 
@@ -131,6 +133,8 @@ Note: Reference data MUST BE in the format:
 	]
 }
 ```
+
+AND! Make sure to call form.destroy() to remove event listeners!
 
 ---
 

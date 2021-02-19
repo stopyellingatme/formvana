@@ -36,9 +36,9 @@
   bind:clientHeight={fh}
   bind:clientWidth={fw}
 >
-  <div class="shadow sm:rounded-md">
+  <div class={$form.form_classes[0]}>
     <LoadingIndicator visible={$form.loading} w={fw} h={fh} />
-    <div class="px-4 py-6 bg-white sm:p-6">
+    <div class={$form.form_classes[1]}>
       <!-- Header Area -->
       <slot name="header" />
 

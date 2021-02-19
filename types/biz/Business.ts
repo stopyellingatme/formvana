@@ -59,7 +59,7 @@ export class Business {
   email: string = "";
 
   @editable
-  @Length(10, 240)
+  @Length(10, 350)
   @field(
     new FieldConfig({
       el: "textarea",
