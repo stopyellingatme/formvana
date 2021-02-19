@@ -6,8 +6,6 @@ import postcss from "rollup-plugin-postcss";
 import typescript from "@rollup/plugin-typescript";
 import json from "@rollup/plugin-json";
 import { terser } from "rollup-plugin-terser";
-// import alias from "rollup-plugin-alias";
-// const path = require("path");
 
 const production = !process.env.ROLLUP_WATCH;
 

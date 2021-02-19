@@ -1,16 +1,15 @@
 <script>
   import { onDestroy, onMount } from "svelte";
-  import LoadingIndicator from "../LoadingIndicator.svelte";
+  import LoadingIndicator from "./LoadingIndicator.svelte";
   import { createEventDispatcher } from "svelte";
-  import Input from "./Input.svelte";
-  import { get } from "svelte/store";
-  import Dropdown from "./Dropdown.svelte";
+  import Input from "./inputs/Input.svelte";
+  import Dropdown from "./inputs/Dropdown.svelte";
   const dispatch = createEventDispatcher();
 
-  export let form; // Form State
+  //* Form State
+  export let form;
 
   const handleSubmit = (e) => {
-    console.log(e);
     dispatch("submit", e);
   };
 
@@ -65,6 +64,8 @@
                 errorsStore={field.errors}
                 useInput={$form.useField}
               />
+            {:else}
+              <!-- More fields go here! -->
             {/if}
           </div>
         {/each}

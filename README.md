@@ -1,6 +1,8 @@
 # Formvana
 
-_Searching for form nirvana with the help of Typescript and (currently) Svelte._
+_**Searching for Form Nirvana with the help of Typescript and (currently) Svelte.**_
+----
+
 
 **What I Want!**
 
@@ -9,6 +11,8 @@ _Searching for form nirvana with the help of Typescript and (currently) Svelte._
 - Easy Form data IO (form.model to get data, form.buildFields to set data)
 - Strong, fast Validation (via [class-validator](https://github.com/typestack/class-validator))
 - Field Groups/Field Layout is nice too
+
+---
 
 ## VERY EARLY PRE-ALPHA LIBRARY
 
@@ -125,7 +129,9 @@ If there's data in the model fields already, it will be reflected in the fields.
 
 Attach reference data to dropdowns by calling form.attachRefData(refData).
 
-Note: Reference data MUST BE in the format:
+**Note:** attachRefData can only be called after fields are built. You gotta have fields to attach the data too.
+
+**Another Note:** Reference data MUST BE in the format:
 
 ```
 {
@@ -136,11 +142,12 @@ Note: Reference data MUST BE in the format:
 }
 ```
 
-AND! Make sure to call form.destroy() to remove event listeners!
+**AND! Make sure to call form.destroy() to remove event listeners!**
 
----
+^^ I'm working on a way to do some of this automagically.
 
-_TODO:_
+
+_SECTION TODO:_
 
 - The useField (svelte specific) stuff
 - - how event handlers are hooked to fields
@@ -161,11 +168,13 @@ Also contains the HTML Node which is being validated/targeted.
 
 ## typescript.utils.ts
 
-This is where the specialized (reflect-metadata) decorators are declared.
+This is where the specialized (reflect-metadata) decorators are declared. 
 
 ```
 @editable and @field
 ```
+
+[Got the idea from here.](https://www.meziantou.net/generate-an-html-form-from-an-object-in-typescript.htm)
 
 ---
 
@@ -173,11 +182,14 @@ This is where the specialized (reflect-metadata) decorators are declared.
 
 This generates the form dynamically based on the @fields on the TS model. I would like to remove the tailwind parts for broader use, but it's good for testing right now.
 
+Eventually the area with inputs will be a named \<slot\> to pass in something like a \<Fields prop={field} \\> type of component.
+
 ---
 
 ## Recommended Use
 
 ```commands go here
+Just run it and see how you feel about this whole method.
 
 ```
 
@@ -187,10 +199,10 @@ This generates the form dynamically based on the @fields on the TS model. I woul
 
 - Field groups/Field ordering and Layout (group styling)
 - Remove Tailwind dependencies
-- Remove Svelte dependency? - Maybe fork it?
 - Add more form elements for testing with svelte
 - Do some documentation on this mfer
 - Write tests to generate 100s of form configs, add data/validate, test performance
+- Remove Svelte dependency? - Maybe fork it?
 
 ---
 

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { onSubmit, init, formState } from "./business.settings.form";
-  import Form from "../../../inputs/Form.svelte";
+  import Form from "../lib/Form.svelte";
 
   onMount(() => {
     setTimeout(() => {
@@ -24,10 +24,10 @@
       id="payment_details_heading"
       class="text-lg font-medium leading-6 text-gray-900"
     >
-      Business Details
+      Business Settings
     </h2>
     <p class="mt-1 text-sm text-gray-500">
-      This information will be displayed publicly so be careful what you share.
+      This is a test. This is only a test. Bleep bloop. 
     </p>
   </div>
 
