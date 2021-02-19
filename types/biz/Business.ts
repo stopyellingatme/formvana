@@ -107,49 +107,4 @@ export class Business {
   created_by: string = "";
   updated_at: Date | string = null;
   updated_by: string = "";
-
-  public bso() {
-    const save_object = JSON.parse(JSON.stringify(this));
-    delete save_object["employees"];
-    delete save_object["members"];
-    return save_object;
-  }
-}
-
-export class EmployeeBusinessLink {
-  id: number = 0;
-  business_id: string = "";
-  user_id: string = "";
-
-  active: boolean = true;
-
-  created_at: Date | string = null;
-  created_by: string = "";
-  updated_at: Date | string = null;
-  updated_by: string = "";
-
-  public link(bus_id, user_id) {
-    this.business_id = bus_id;
-    this.user_id = user_id;
-    return this;
-  }
-}
-
-export class MemberBusinessLink {
-  id: number = 0;
-  business_id: string = "";
-  user_id: string = "";
-
-  active: boolean = true;
-
-  created_at: Date | string = null;
-  created_by: string = "";
-  updated_at: Date | string = null;
-  updated_by: string = "";
-
-  public link(bus_id, user_id) {
-    this.business_id = bus_id;
-    this.user_id = user_id;
-    return this;
-  }
 }
