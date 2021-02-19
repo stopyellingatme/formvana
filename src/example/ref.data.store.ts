@@ -51,8 +51,8 @@ export const data = {
       value: "ACTIVE",
     },
     {
-      key: "PANDING",
-      value: "PANDING",
+      key: "PENDING",
+      value: "PENDING",
     },
     {
       key: "SUSPENDED",
