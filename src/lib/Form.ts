@@ -17,13 +17,21 @@ export enum LinkOnEvent {
 
 export class Form {
   constructor(init?: Partial<Form>) {
-    Object.assign(this, init);
+    // Object.assign(this, init);
+    Object.keys(this).forEach((key) => {
+      if (init[key]) {
+        this[key] = init[key];
+      }
+    });
     if (this.model) {
       this.initial_state = JSON.stringify(this.model);
     }
   }
 
-  // This is stringified for quicker comparison
+  /**
+   * Stringified for quicker comparison
+   * Could be a better way of doing this, but for now, this works.
+   */
   initial_state: any = null;
 
   /**
@@ -66,7 +74,7 @@ export class Form {
   form_classes: string[] = [
     "shadow sm:rounded-md",
     "px-4 py-6 bg-white sm:p-6",
-    "grid grid-cols-4 gap-6 mt-6"
+    "grid grid-cols-4 gap-6 mt-6",
   ];
 
   /**
@@ -76,9 +84,9 @@ export class Form {
   layout: any;
 
   /**
-   * * Here be the Functions. Beware.
-   * * Here be the Functions. Beware.
-   * * Here be the Functions. Beware.
+   * * Here be Functions. Beware.
+   * * Here be Functions. Beware.
+   * * Here be Functions. Beware.
    */
 
   /**

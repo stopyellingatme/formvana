@@ -33,6 +33,19 @@ Using this pattern, along with class-validator, allows a beautiful Form handling
 The Form.fields array makes it easy to itterate over and generate form fields dymanically. There are form options which specify when to validate input or clear errors (on input, change, focus, blur, etc.).
 It's also very easy to get data out of the Form by calling Form.model.
 
+---
+
+\*\* Main things left to tackle:
+
+- Field groups/Field ordering and Layout (group styling)
+- Remove Tailwind dependencies
+- Nested forms?
+- Add more form elements for testing with svelte
+- Do some documentation on this mfer
+- Write tests to generate 100s of form configs, add data/validate, test performance
+- Remove Svelte dependency? - Maybe fork it?
+
+
 ----
 ## YourTsModel.ts (Business.ts)
 Simple Example with 4 editable fields.
@@ -116,15 +129,20 @@ class Business {
 
 ## Form.ts
 
-- Model and Fields
+- Model and Fields (form.model & form.fields)
 
 The model above can be attached either by new Form({model: new Business()}) or form.model = new Busniess().
-However, this ONLY sets the model.
-MODEL AND FIELDS ARE DIFFERENT THINGS!
-So, set the model and call form.buildFields() to build the fields with the model's field configurations.
-If there's data in the model fields already, it will be reflected in the fields.value as well.
 
-- REFERENCE DATA:
+However, this ONLY sets the model.
+
+MODEL AND FIELDS ARE DIFFERENT THINGS!
+
+So, set the model and call form.buildFields() to build the fields with the model's field configurations.
+
+If the model already has data, it will be reflected in the fields.value as well.
+
+---
+**REFERENCE DATA:**
 
 Attach reference data to dropdowns by calling form.attachRefData(refData).
 
@@ -140,13 +158,14 @@ Attach reference data to dropdowns by calling form.attachRefData(refData).
 	]
 }
 ```
+---
 
 **AND! Make sure to call form.destroy() to remove event listeners!**
 
 ^^ I'm working on a way to do some of this automagically.
 
 
-_SECTION TODO:_
+_FORM.TS TODO:_
 
 - The useField (svelte specific) stuff
 - - how event handlers are hooked to fields
@@ -189,17 +208,6 @@ Eventually the area with inputs will be a named \<slot\> to pass in something li
 Just run it and see how you feel about this whole method.
 
 ```
-
----
-
-\*\* Main things left to tackle:
-
-- Field groups/Field ordering and Layout (group styling)
-- Remove Tailwind dependencies
-- Add more form elements for testing with svelte
-- Do some documentation on this mfer
-- Write tests to generate 100s of form configs, add data/validate, test performance
-- Remove Svelte dependency? - Maybe fork it?
 
 ---
 
