@@ -2,7 +2,7 @@
   import { _class } from "../../utils/classes.utils";
 	import InputErrors from "./InputErrors.svelte";
 
-  export let value;
+  export let valueStore;
   export let errorsStore;
   export let useInput;
 
@@ -38,11 +38,10 @@
   </label>
   <div class="mt-1">
     <textarea
-      id={name}
       {name}
       {..._inputAttributes}
       class={cls}
-      bind:value={$value}
+      bind:value={$valueStore}
       use:useInput
     />
     {#if hint}

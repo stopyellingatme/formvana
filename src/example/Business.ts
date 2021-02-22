@@ -75,6 +75,19 @@ export class Business {
   avatar_url: string = "";
 
   // Address
+  @editable
+  @Length(5, 200)
+  @field(
+    new FieldConfig({
+      el: "input",
+      type: "text",
+      label: "Address Line 1",
+      required: true,
+      classname: "col-span-4 sm:col-span-2",
+      attributes: { placeholder: "Address 1" },
+      group: { name: "address", label: "Business Location" },
+    })
+  )
   address_1: string = "";
   address_2: string = "";
   city: string = "";

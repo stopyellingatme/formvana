@@ -12,6 +12,9 @@ function initStore() {
   form.buildFields();
   form.attachRefData(sget(refs));
 
+  const layout = ["description", "status", "email", "name"];
+  form.setLayout(layout);
+
   // And add it to the store...
   const { subscribe, set, update } = writable({
     ...form,
@@ -38,8 +41,14 @@ export const formState = initStore();
 
 export const init = () => {
   formState.setLoading(true);
+  // const layout = ["description", "status", "email", "name"];
+  // formState.updateState({ layout: layout });
 
   setTimeout(() => {
+    // const newState = sget(formState).buildStoredLayout(sget(formState));
+    // console.log(newState);
+    // formState.updateState({ ...newState });
+
     formState.setLoading(false);
   }, 1000);
 

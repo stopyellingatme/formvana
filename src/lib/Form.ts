@@ -1,5 +1,5 @@
 import { ValidationError, validate } from "class-validator";
-import { get, writable, Writable } from "svelte/store";
+import { get, Readable, writable, Writable } from "svelte/store";
 import { FieldConfig, FieldGroup } from "./FieldConfig";
 
 export interface OnEvents {
@@ -78,10 +78,10 @@ export class Form {
   ];
 
   /**
-   * TODO: Define the layout object.
-   * Determines the ordering of the fields
+   * Determines the ordering of the fields.
+   * Simply an array of field (or group) names in the order to be displayed
    */
-  layout: any;
+  layout: string[] = [];
 
   /**
    * * Here be Functions. Beware.
@@ -110,18 +110,61 @@ export class Form {
         console.log("FIELD CONFIG: ", config);
         return config;
       });
+
+      setTimeout(() => {
+        // Decreases initial input lag due to building field errors.
+        this.preValidate();
+      }, 10);
     }
   };
 
   /**
-   *
-   * @param layout:
-   * {
-   *
-   * }
+   * Set the field order.
+   * Layout param is simply an array of field (or group)
+   * names in the order to be displayed.
+   * Leftover fields are appended to bottom of form.
    */
-  setLayout = (layout: object[]) => {
-    // ReOrder fields based on layout object
+  setLayout = (layout: string[]) => {
+    this.layout = layout;
+    this.buildLayout();
+  };
+
+  buildLayout = () => {
+    let fields = [];
+    let leftovers = [];
+    this.layout.forEach((item) => {
+      this.fields.forEach((field) => {
+        if (field.name === item || (field.group && field.group.name === item)) {
+          fields.push(field);
+        } else if (
+          leftovers.indexOf(field) === -1 &&
+          this.layout.indexOf(field.name) === -1
+        ) {
+          leftovers.push(field);
+        }
+      });
+    });
+    this.fields = [...fields, ...leftovers];
+  };
+
+  // Use this if you're trying to set the layout after store initialization
+  buildStoredLayout = (formState: any) => {
+    let fields = [];
+    let leftovers = [];
+    formState.layout.forEach((item) => {
+      formState.fields.forEach((field) => {
+        if (field.name === item || (field.group && field.group.name === item)) {
+          fields.push(field);
+        } else if (
+          leftovers.indexOf(field) === -1 &&
+          formState.layout.indexOf(field.name) === -1
+        ) {
+          leftovers.push(field);
+        }
+      });
+    });
+    formState.fields = [...fields, ...leftovers];
+    return formState;
   };
 
   /**
@@ -163,7 +206,7 @@ export class Form {
     });
   };
 
-  validateField = (name: string, ev) => {
+  preValidate = () => {
     this.link_fields_to_model_on === LinkOnEvent.Always &&
       this.linkValues(true);
     return validate(this.model).then((errors: ValidationError[]) => {
@@ -171,7 +214,19 @@ export class Form {
         this.valid.set(false);
         this.errors = errors;
         console.log("ERRORS: ", errors);
-        this.linkFieldErrors(errors, name);
+      }
+    });
+  };
+
+  validateField = (field: FieldConfig, ev) => {
+    this.link_fields_to_model_on === LinkOnEvent.Always &&
+      this.linkValues(true);
+    return validate(this.model).then((errors: ValidationError[]) => {
+      if (errors.length > 0) {
+        this.valid.set(false);
+        this.errors = errors;
+        // console.log("ERRORS: ", errors);
+        this.linkFieldErrors(errors, field);
       } else {
         this.link_fields_to_model_on === LinkOnEvent.Valid &&
           this.linkValues(true);
@@ -229,6 +284,9 @@ export class Form {
       this.model[key] = initial[key];
     });
     this.linkValues(false);
+    // setTimeout(() => {
+    //   this.preValidate();
+    // }, 1);
   };
 
   destroy = () => {
@@ -256,11 +314,13 @@ export class Form {
 
   // Link values from fields to model or model to fields
   private linkValues = (toModel: boolean) => {
-    this.fields.forEach((field) => {
+    let i = 0,
+      len = this.fields.length;
+    for (; len > i; ++i) {
       toModel
-        ? (this.model[field.name] = get(field.value))
-        : field.value.set(this.model[field.name]);
-    });
+        ? (this.model[this.fields[i].name] = get(this.fields[i].value))
+        : this.fields[i].value.set(this.model[this.fields[i].name]);
+    }
     this.hasChanged();
   };
 
@@ -272,12 +332,8 @@ export class Form {
     this.changed.set(true);
   };
 
-  private linkFieldErrors = (
-    errors: ValidationError[],
-    incomingName: string
-  ) => {
-    const field = this.fields.filter((f) => f.name === incomingName)[0];
-    const error = errors.filter((e) => e.property === incomingName);
+  private linkFieldErrors = (errors: ValidationError[], field: FieldConfig) => {
+    const error = errors.filter((e) => e.property === field.name);
     if (error && error.length > 0) {
       field.errors.set(error[0]);
     } else {
@@ -304,11 +360,12 @@ export class Form {
   };
 
   private handleOnValidateEvents = (node: HTMLElement) => {
+    //@ts-ignore
+    const field = this.fields.filter((f) => f.name === node.name)[0];
     Object.entries(this.validate_on_events).forEach(([key, val]) => {
       if (val) {
         node.addEventListener(key, (ev) => {
-          //@ts-ignore
-          this.validateField(node.name, ev);
+          this.validateField(field, ev);
         });
       }
     });

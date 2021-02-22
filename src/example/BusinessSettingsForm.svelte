@@ -9,9 +9,11 @@
     }, 0);
   });
 
-  onDestroy(() => {});
+  onDestroy(() => {
+    handleDestroy();
+  });
   const handleDestroy = () => {
-    // Hanlde it.
+    $formState.destroy();
   };
 
   $: valid = $formState.valid;
@@ -20,10 +22,7 @@
 
 <Form form={formState} on:submit={onSubmit} on:destroy={handleDestroy}>
   <div slot="header">
-    <h2
-      id="payment_details_heading"
-      class="text-lg font-medium leading-6 text-gray-900"
-    >
+    <h2 class="text-lg font-medium leading-6 text-gray-900">
       Business Settings
     </h2>
     <p class="mt-1 text-sm text-gray-500">
@@ -31,7 +30,7 @@
     </p>
   </div>
 
-  <div slot="buttons" class="px-4 py-3 text-left bg-gray-50 sm:px-6">
+  <div slot="buttons" class="px-4 py-3 text-right bg-gray-50 sm:px-6">
     {#if $changed}
       <button
         on:click|preventDefault={$formState.reset}
