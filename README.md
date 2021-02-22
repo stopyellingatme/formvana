@@ -18,8 +18,16 @@ _**Searching for Form Nirvana with the help of Typescript and (currently) Svelte
 
 Currently depends on:
 
-- Tailwindcss (form styling)
 - Svelte (form generation)
+- Tailwindcss (form styling)
+
+**MUST HAVE!!!**
+
+```json
+  // tsconfig.json
+  "emitDecoratorMetadata": true,
+  "experimentalDecorators": true,
+```
 
 The mission is to have a "single source of truth" for Form data.
 We do this using the reflect-metadata typescript library which allows us to add new decorators (@field, @editable) to a typescript class.
@@ -47,8 +55,11 @@ It's also very easy to get data out of the Form by calling Form.model.
 
 
 ----
-## YourTsModel.ts (Business.ts)
-Simple Example with 4 editable fields.
+## &bull; YourTsModel.ts (e.g. Business.ts)
+
+<details>
+
+<summary>Simple Example with 4 editable fields.</summary>
 
 ```ts
 // Business.ts
@@ -126,8 +137,11 @@ class Business {
 }
 ```
 
+</details>
 
-## Form.ts
+
+
+## &bull; Form.ts
 
 - Model and Fields (form.model & form.fields)
 
@@ -148,9 +162,9 @@ Attach reference data to dropdowns by calling form.attachRefData(refData).
 
 **Note:** attachRefData can only be called after fields are built. You gotta have fields to attach the data too.
 
-**Another Note:** Reference data MUST BE in the format:
+**Another Note:** Reference data MUST BE in the format (for now):
 
-```
+```json
 {
 	"ref_key": [
 		{value: 0, label: "First Choice"},
@@ -175,16 +189,101 @@ _FORM.TS TODO:_
 
 
 
-## FieldConfig.ts
+## &bull; FieldConfig.ts
 
 Form.fields are of type FieldConfig.ts
 The constructor will attempt to parse the input type and add a sensable default to the field.value (type text defaults to "", type number defaults to 0, etc.).
 
 Also contains the HTML Node which is being validated/targeted.
 
+<details> 
+
+<summary>The current default Field Configuration class looks like this.</summary>
+
+```ts
+class FieldConfig {
+  constructor(init?: Partial<FieldConfig>) {
+    Object.assign(this, init);
+    this.attributes["type"] = this.type;
+
+    if (
+      this.type === "text" ||
+      this.type === "email" ||
+      this.type === "password" ||
+      this.type === "string"
+    ) {
+      this.value.set("");
+    }
+
+    if (this.type === "number") {
+      this.value.set(0);
+    }
+
+    if (this.type === "decimal") {
+      this.value.set(0.0);
+    }
+
+    if (this.type === "boolean" || this.type === "choice") {
+      this.value.set(false);
+    }
+
+    if (this.el === "select" || this.el === "dropdown") {
+      this.options = [];
+    }
+  }
+
+  //! DO NOT SET NAME. IT'S SET AUTOMATICALLY BY FORM.TS!
+  name: string;
+  node: HTMLElement;
+  el: string; // Element to render in your frontend
+  type: string = "text"; // Defaults to text
+  label: string;
+  classname: string;
+  required: boolean = false;
+  hint?: string;
+
+  value: Writable<any> = writable(null);
+
+  options?: any[];
+  ref_key?: string; // Reference data key
+
+  group?: FieldGroup;
+
+  /**
+   * * String array of things like:
+   * -- type="text || email || password || whatever"
+   * -- class='input class'
+   * -- disabled
+   * -- title='input title'
+   * -- etc.
+   */
+  attributes: object = {};
+
+  /**
+   * Validation Errors!
+   */
+  errors: Writable<ValidationError> = writable(null);
+
+  clearValue = () => {
+    this.value.set(null);
+  };
+
+  clearErrors = () => {
+    this.errors.set(null);
+  };
+
+  clear = () => {
+    this.clearValue();
+    this.clearErrors();
+  };
+}
+```
+
+</details>
 
 
-## typescript.utils.ts
+
+## &bull; typescript.utils.ts
 
 This is where the specialized (reflect-metadata) decorators are declared. 
 
@@ -195,7 +294,7 @@ This is where the specialized (reflect-metadata) decorators are declared.
 [Got the idea from here.](https://www.meziantou.net/generate-an-html-form-from-an-object-in-typescript.htm)
 
 
-## Form.svelte
+## &bull; Form.svelte
 
 This generates the form dynamically based on the @fields on the TS model. I would like to remove the tailwind parts for broader use, but it's good for testing right now.
 

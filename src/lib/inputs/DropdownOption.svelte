@@ -2,10 +2,6 @@
 	import { createEventDispatcher } from "svelte";
 	const dispatch = createEventDispatcher();
 
-	const handleClick = (e) => {
-		dispatch("click", value);
-	};
-
 	const toggleHighlight = () => (highlighted = !highlighted);
 
 	let highlighted = false;
@@ -20,10 +16,10 @@
 	{id}
 	role="option"
 	value={key}
-	on:click={handleClick}
+	on:click={dispatch("click", value)}
 	on:mouseenter={toggleHighlight}
 	on:mouseleave={toggleHighlight}
-	class="relative py-2 pl-3  {highlighted ? 'text-white bg-indigo-600' : 'text-gray-900'} cursor-pointer select-none pr-9">
+	class="relative z-40 py-2 pl-3  {highlighted ? 'text-white bg-indigo-600' : 'text-gray-900'} cursor-pointer select-none pr-9">
 	<span class="sr-only">{value}</span>
 	<span class="block truncate {selected ? 'font-semibold' : 'font-normal'}">
 		{value}
