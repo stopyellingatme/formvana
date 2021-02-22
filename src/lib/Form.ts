@@ -298,7 +298,7 @@ export class Form {
         // Remove all the event listeners!
         Object.keys(this.on_events).forEach((key) => {
           this.fields[i].node.removeEventListener(key, (ev) => {
-            this.validateField(this.fields[i].name, ev);
+            this.validateField(this.fields[i], ev);
           });
 
           this.fields[i].node.removeEventListener(key, (ev) => {

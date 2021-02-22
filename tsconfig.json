@@ -3,7 +3,6 @@
         "target": "esNext",
         "moduleResolution": "node",
         "module": "esNext",
-        "declaration": true,
         "noLib": false,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
@@ -15,9 +14,11 @@
         "noImplicitReturns": false,
         "noImplicitUseStrict": false,
         "listFiles": false,
-        "noEmitHelpers": true
+        "noEmitHelpers": true,
     },
-    "include": ["src/**/*"],
+    "include": [
+        "src/**/*",
+    ],
     "exclude": [
         "node_modules"
     ],
