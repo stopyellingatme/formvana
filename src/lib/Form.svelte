@@ -72,7 +72,7 @@
                 label={field.label}
                 hint={field.hint}
                 attrs={field.attributes}
-                valueStore={field.value}
+                value={field.value}
                 errorsStore={field.errors}
                 useInput={$form.useField}
               />
