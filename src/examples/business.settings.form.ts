@@ -9,7 +9,6 @@ function initStore() {
     model: new Business(),
   });
   form.validate_on_events.focus = false;
-  form.buildFields();
   form.attachRefData(sget(refs));
 
   const layout = ["description", "status", "email", "name"];
@@ -54,7 +53,7 @@ export const init = () => {
 
   // Update form with data fetched from DB
   // getBusiness(SOME_STATE.BUSINESS_ID).then((data) => {
-  //  Get current form state
+  //   Get current form state
   //     const form = sget(formState);
   //     form.model = new Business(data);
   //     form.buildFields();

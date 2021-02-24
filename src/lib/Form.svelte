@@ -25,6 +25,17 @@
     form.destroy();
   });
 
+  /**
+   * Well, it looks like we're gonna have to 
+   * make this thing handle the FormGroup and
+   * FormStepper stuff.
+   * 
+   * $: fields are_of_type {
+   *      type: "default | group | stepper",
+   *      item: FieldConfig | FieldGroup | FieldStepper
+   *    }
+   */
+
   let fw;
   let fh;
 </script>

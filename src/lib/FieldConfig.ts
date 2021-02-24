@@ -3,7 +3,13 @@ import { writable, Writable } from "svelte/store";
 
 export interface FieldGroup {
   name: string;
-  classname?: string;
+  classnames?: string[]; // Order determines when to be applied
+  label?: string;
+}
+
+export interface FieldStep {
+  index: number;
+  classnames?: string[]; // Order determines when to be applied
   label?: string;
 }
 
@@ -36,24 +42,30 @@ export class FieldConfig {
     if (this.el === "select" || this.el === "dropdown") {
       this.options = [];
     }
+
+    if (!this.attributes["title"]) {
+      this.attributes["title"] = this.label || this.name;
+    }
   }
 
   //! DO NOT SET NAME. IT'S SET AUTOMATICALLY BY FORM.TS!
   name: string;
+  // Main use is to add and remove event listeners
   node: HTMLElement;
   el: string; // Element to render in your frontend
-  type: string = "text"; // Defaults to text
+  type: string = "text"; // Defaults to text, for now
   label: string;
   classname: string;
   required: boolean = false;
-  hint?: string;
 
   value: Writable<any> = writable(null);
 
   options?: any[];
   ref_key?: string; // Reference data key
-
+  
+  hint?: string; // Mainly for textarea, for now
   group?: FieldGroup;
+  step?: FieldStep;
 
   /**
    * * String array of things like:
@@ -67,6 +79,8 @@ export class FieldConfig {
 
   /**
    * Validation Errors!
+   * We're mainly looking for the class-validator "constraints"
+   * One ValidationError object can have multiple errors (constraints)
    */
   errors: Writable<ValidationError> = writable(null);
 

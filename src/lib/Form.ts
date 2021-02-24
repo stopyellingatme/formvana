@@ -1,6 +1,6 @@
-import { ValidationError, validate } from "class-validator";
-import { get, Readable, writable, Writable } from "svelte/store";
-import { FieldConfig, FieldGroup } from "./FieldConfig";
+import { ValidationError, validate, ValidatorOptions } from "class-validator";
+import { get, writable, Writable } from "svelte/store";
+import { FieldConfig } from "./FieldConfig";
 
 export interface OnEvents {
   input: boolean;
@@ -25,14 +25,29 @@ export class Form {
     });
     if (this.model) {
       this.initial_state = JSON.stringify(this.model);
+      this.buildFields();
     }
   }
+
+  validation_options: ValidatorOptions = {
+    skipMissingProperties: false,
+    // whitelist: false,
+    // forbidNonWhitelisted: true,
+    // dismissDefaultMessages: true,
+    // groups: [],
+    validationError: {
+      target: false,
+      value: false,
+    },
+    forbidUnknownValues: true,
+    // stopAtFirstError: false,
+  };
 
   /**
    * Stringified for quicker comparison
    * Could be a better way of doing this, but for now, this works.
    */
-  initial_state: any = null;
+  readonly initial_state: any = null;
 
   /**
    * Underlying TS Model.
@@ -103,18 +118,13 @@ export class Form {
         );
         config.name = prop;
         // If the model has a value, attach it to the field config
+        // 0, "", [], etc. are set in the constructor based on type.
         if (this.model[prop]) {
           config.value.set(this.model[prop]);
         }
-
         console.log("FIELD CONFIG: ", config);
         return config;
       });
-
-      setTimeout(() => {
-        // Decreases initial input lag due to building field errors.
-        this.preValidate();
-      }, 10);
     }
   };
 
@@ -134,7 +144,11 @@ export class Form {
     let leftovers = [];
     this.layout.forEach((item) => {
       this.fields.forEach((field) => {
-        if (field.name === item || (field.group && field.group.name === item)) {
+        if (
+          field.name === item ||
+          (field.group && field.group.name === item) ||
+          (field.step && `${field.step.index}` === item)
+        ) {
           fields.push(field);
         } else if (
           leftovers.indexOf(field) === -1 &&
@@ -190,51 +204,45 @@ export class Form {
     this.clearErrors();
     this.link_fields_to_model_on === LinkOnEvent.Always &&
       this.linkValues(true);
-    return validate(this.model).then((errors: ValidationError[]) => {
-      if (errors.length > 0) {
-        this.valid.set(false);
-        this.errors = errors;
-        this.linkErrors(errors);
-        console.log("ERRORS: ", errors);
-      } else {
-        this.link_fields_to_model_on === LinkOnEvent.Valid &&
-          this.linkValues(true);
-        this.valid.set(true);
-        this.clearErrors();
-        console.log("FORM IS VALID! WEEHOO!");
+    return validate(this.model, this.validation_options).then(
+      (errors: ValidationError[]) => {
+        if (errors.length > 0) {
+          this.valid.set(false);
+          this.errors = errors;
+          this.linkErrors(errors);
+          console.log("ERRORS: ", errors);
+        } else {
+          this.link_fields_to_model_on === LinkOnEvent.Valid &&
+            this.linkValues(true);
+          this.valid.set(true);
+          this.clearErrors();
+          console.log("FORM IS VALID! WEEHOO!");
+        }
+        this.hasChanged();
       }
-    });
-  };
-
-  preValidate = () => {
-    this.link_fields_to_model_on === LinkOnEvent.Always &&
-      this.linkValues(true);
-    return validate(this.model).then((errors: ValidationError[]) => {
-      if (errors.length > 0) {
-        this.valid.set(false);
-        this.errors = errors;
-        console.log("ERRORS: ", errors);
-      }
-    });
+    );
   };
 
   validateField = (field: FieldConfig, ev) => {
     this.link_fields_to_model_on === LinkOnEvent.Always &&
       this.linkValues(true);
-    return validate(this.model).then((errors: ValidationError[]) => {
-      if (errors.length > 0) {
-        this.valid.set(false);
-        this.errors = errors;
-        // console.log("ERRORS: ", errors);
-        this.linkFieldErrors(errors, field);
-      } else {
-        this.link_fields_to_model_on === LinkOnEvent.Valid &&
-          this.linkValues(true);
-        this.valid.set(true);
-        this.clearErrors();
-        console.log("FORM IS VALID! WEEHOO!");
+    return validate(this.model, this.validation_options).then(
+      (errors: ValidationError[]) => {
+        if (errors.length > 0) {
+          this.valid.set(false);
+          this.errors = errors;
+          // console.log("ERRORS: ", errors);
+          this.linkFieldErrors(errors, field);
+        } else {
+          this.link_fields_to_model_on === LinkOnEvent.Valid &&
+            this.linkValues(true);
+          this.valid.set(true);
+          this.clearErrors();
+          console.log("FORM IS VALID! WEEHOO!");
+        }
+        this.hasChanged();
       }
-    });
+    );
   };
 
   /**
@@ -278,15 +286,13 @@ export class Form {
   reset = () => {
     this.clearErrors();
     this.valid.set(false);
+    this.changed.set(false);
 
     const initial = JSON.parse(this.initial_state);
     Object.keys(this.model).forEach((key) => {
       this.model[key] = initial[key];
     });
     this.linkValues(false);
-    // setTimeout(() => {
-    //   this.preValidate();
-    // }, 1);
   };
 
   destroy = () => {
@@ -312,7 +318,7 @@ export class Form {
 
   //#region Private Functions
 
-  // Link values from fields to model or model to fields
+  // Link values FROM FIELDS toMODEL or MODEL to FIELDS
   private linkValues = (toModel: boolean) => {
     let i = 0,
       len = this.fields.length;
@@ -321,11 +327,13 @@ export class Form {
         ? (this.model[this.fields[i].name] = get(this.fields[i].value))
         : this.fields[i].value.set(this.model[this.fields[i].name]);
     }
-    this.hasChanged();
   };
 
   private hasChanged = () => {
-    if (JSON.stringify(this.model) === this.initial_state) {
+    if (
+      JSON.stringify(this.model) === this.initial_state &&
+      this.errors.length === 0
+    ) {
       this.changed.set(false);
       return;
     }
