@@ -1,6 +1,5 @@
 <script lang="ts">
   import InputErrors from "./InputErrors.svelte";
-  import { _class } from "../../utils/classes.utils";
 
   export let errorsStore = null;
   export let valueStore = null;
@@ -9,12 +8,15 @@
   export let name;
   export let label;
   export let attrs = {};
-  export let classname =
+
+  let default_class =
     "block w-full px-3 py-2 placeholder-gray-400 border border-gray-300 appearance-none transition duration-150 ease-in-out rounded-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300 sm:text-sm sm:leading-5 disabled:cursor-not-allowed";
+  let error_class =
+    "block w-full px-3 py-2 placeholder-red-300 border border-red-300 appearance-none transition text-red-900 duration-150 ease-in-out rounded-md focus:outline-none focus:ring-red-500 focus:shadow-outline-red focus:border-red-300 sm:text-sm sm:leading-5 disabled:cursor-not-allowed";
 
   $: errors = $errorsStore && $errorsStore.constraints;
 
-  $: _inputAttributes = Object.assign(
+  $: input_attributes = Object.assign(
     {
       autocomplete: "off",
       autocorrect: "off",
@@ -23,11 +25,8 @@
     attrs
   );
 
-  $: cls = _class(
-    classname,
-    "border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500",
-    errors ? errors.length > 0 : false
-  );
+  $: cls =
+    $errorsStore && $errorsStore.constraints ? error_class : default_class;
 </script>
 
 <div>
@@ -37,7 +36,7 @@
   <div class="relative mt-1 rounded-md shadow-sm">
     <input
       {name}
-      {..._inputAttributes}
+      {...input_attributes}
       class={cls}
       bind:value={$valueStore}
       use:useInput

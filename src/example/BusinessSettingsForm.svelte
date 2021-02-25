@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import { onSubmit, init, formState } from "./business.settings.form";
-  import Form from "../lib/Form.svelte";
+  import { onSubmit, init, formState } from "./stores/business.settings.form";
+  import Form from "../../package/Form.svelte";
 
   onMount(() => {
     setTimeout(() => {
