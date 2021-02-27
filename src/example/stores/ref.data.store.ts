@@ -19,32 +19,6 @@ export const data = {
       value: "DISABLED",
     },
   ],
-  user_roles: [
-    {
-      key: "ADMINISTRATOR",
-      value: "ADMINISTRATOR",
-    },
-    {
-      key: "OWNER",
-      value: "OWNER",
-    },
-    {
-      key: "MANAGER",
-      value: "MANAGER",
-    },
-    {
-      key: "CLERK",
-      value: "CLERK",
-    },
-    {
-      key: "MEMBER",
-      value: "MEMBER",
-    },
-    {
-      key: "VIP",
-      value: "VIP",
-    },
-  ],
   business_statuses: [
     {
       key: "ACTIVE",

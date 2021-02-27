@@ -1,6 +1,10 @@
 {
   "name": "formvana",
   "version": "0.0.2",
+  "repository": "https://github.com/stopyellingatme/formvana",
+  "description": "Searching for Form Nirvana with Typescript and Svelte.",
+  "module": "index.mjs",
+  "main": "index.js",
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",

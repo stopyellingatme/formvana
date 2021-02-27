@@ -1,19 +1,33 @@
 {
-    "compileOnSave": false,
     "compilerOptions": {
-      "baseUrl": "./",
-      "outDir": "./",
-      "sourceMap": true,
-      "declaration": true,
-      "downlevelIteration": true,
-      "experimentalDecorators": true,
-      "moduleResolution": "node",
-      "importHelpers": true,
-      "target": "esNext",
-      "module": "esnext",
-      "lib": [
-        "es2018",
-        "dom"
-      ]
-    }
-  }
+        "baseUrl": "./",
+        "outDir": "./",
+        "target": "esNext",
+        "module": "esNext",
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "declaration": true,
+        "declarationMap": true,
+        "declarationDir": "./",
+        "noLib": false,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "pretty": true,
+        "downlevelIteration": true,
+        "esModuleInterop": true,
+        "importHelpers": false,
+        "noEmitHelpers": true,
+        "lib": [
+            "es2018",
+            "dom"
+        ]
+    },
+    "include": [
+        "src/**/*",
+        "package/**/*",
+    ],
+    "exclude": [
+        "node_modules"
+    ],
+    "compileOnSave": false
+}
