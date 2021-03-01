@@ -3790,30 +3790,39 @@ var LinkOnEvent;
 var Form = /** @class */ (function () {
     function Form(init) {
         var _this = this;
-        this.validation_options = {
-            skipMissingProperties: false,
-            // whitelist: false,
-            // forbidNonWhitelisted: true,
-            // dismissDefaultMessages: true,
-            // groups: [],
-            validationError: {
-                target: false,
-                value: false
-            },
-            forbidUnknownValues: true
-        };
         /**
          * Stringified for quicker comparison
          * Could be a better way of doing this, but for now, this works.
          */
         this.initial_state = null;
         /**
+         * Validation options are the exact same used in
+         * class-validator.
+         * Biggest performance increase comes from the "validationError"
+         * option, with "target" being set to false (so the whole model is not attached to
+         * each error message).
+         */
+        this.validation_options = {
+            skipMissingProperties: false,
+            whitelist: false,
+            forbidNonWhitelisted: false,
+            dismissDefaultMessages: false,
+            groups: [],
+            validationError: {
+                target: false,
+                value: false
+            },
+            forbidUnknownValues: true,
+            stopAtFirstError: false
+        };
+        /**
          * Underlying TS Model.
-         * Whene model is set, call buildFields() to build the fields.
+         * When model is set, call buildFields() to build the fields.
          */
         this.model = null;
         /**
-         * Fields are built from the model's metadata using reflection
+         * Fields are built from the model's metadata using reflection.
+         * If model is set, call buildFields().
          */
         this.fields = [];
         /**
@@ -4107,7 +4116,6 @@ var Form = /** @class */ (function () {
                 }
             });
         };
-        // Object.assign(this, init);
         Object.keys(this).forEach(function (key) {
             if (init[key]) {
                 _this[key] = init[key];

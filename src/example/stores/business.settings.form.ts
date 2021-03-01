@@ -1,6 +1,6 @@
 import { get as sget, writable } from "svelte/store";
 import { Business } from "../types/Business";
-import { Form } from "../../../package/Form";
+import { Form } from "../../../package/typescript/Form";
 import { refs } from "./ref.data.store";
 
 function initStore() {

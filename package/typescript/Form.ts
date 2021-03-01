@@ -1,6 +1,6 @@
 import { ValidationError, validate, ValidatorOptions } from "class-validator";
 import { get, writable, Writable } from "svelte/store";
-import { FieldConfig } from "./FieldConfig";
+import { FieldConfig } from "./";
 
 export interface OnEvents {
   input: boolean;
@@ -17,7 +17,6 @@ export enum LinkOnEvent {
 
 export class Form {
   constructor(init?: Partial<Form>) {
-    // Object.assign(this, init);
     Object.keys(this).forEach((key) => {
       if (init[key]) {
         this[key] = init[key];
@@ -29,20 +28,6 @@ export class Form {
     }
   }
 
-  validation_options: ValidatorOptions = {
-    skipMissingProperties: false,
-    // whitelist: false,
-    // forbidNonWhitelisted: true,
-    // dismissDefaultMessages: true,
-    // groups: [],
-    validationError: {
-      target: false,
-      value: false,
-    },
-    forbidUnknownValues: true,
-    // stopAtFirstError: false,
-  };
-
   /**
    * Stringified for quicker comparison
    * Could be a better way of doing this, but for now, this works.
@@ -50,13 +35,35 @@ export class Form {
   readonly initial_state: any = null;
 
   /**
+   * Validation options are the exact same used in
+   * class-validator.
+   * Biggest performance increase comes from the "validationError"
+   * option, with "target" being set to false (so the whole model is not attached to
+   * each error message).
+   */
+  validation_options: ValidatorOptions = {
+    skipMissingProperties: false,
+    whitelist: false,
+    forbidNonWhitelisted: false,
+    dismissDefaultMessages: false,
+    groups: [],
+    validationError: {
+      target: false,
+      value: false,
+    },
+    forbidUnknownValues: true,
+    stopAtFirstError: false,
+  };
+
+  /**
    * Underlying TS Model.
-   * Whene model is set, call buildFields() to build the fields.
+   * When model is set, call buildFields() to build the fields.
    */
   model: any = null;
 
   /**
-   * Fields are built from the model's metadata using reflection
+   * Fields are built from the model's metadata using reflection.
+   * If model is set, call buildFields().
    */
   fields: FieldConfig[] = [];
 
@@ -72,7 +79,7 @@ export class Form {
   changed: Writable<boolean> = writable(false);
   touched: boolean = false;
 
-  on_events = (init: boolean = true): OnEvents => ({
+  private on_events = (init: boolean = true): OnEvents => ({
     change: init,
     input: init,
     blur: init,
@@ -107,7 +114,7 @@ export class Form {
   /**
    * Build the field configs from the given model using metadata-reflection.
    */
-  buildFields = () => {
+  buildFields = (): void => {
     if (this.model) {
       let props = Reflect.getMetadata("editableProperties", this.model) || [];
       this.fields = props.map((prop) => {
@@ -134,12 +141,12 @@ export class Form {
    * names in the order to be displayed.
    * Leftover fields are appended to bottom of form.
    */
-  setLayout = (layout: string[]) => {
+  setLayout = (layout: string[]): void => {
     this.layout = layout;
     this.buildLayout();
   };
 
-  buildLayout = () => {
+  buildLayout = (): void => {
     let fields = [];
     let leftovers = [];
     this.layout.forEach((item) => {
@@ -162,7 +169,7 @@ export class Form {
   };
 
   // Use this if you're trying to set the layout after store initialization
-  buildStoredLayout = (formState: any) => {
+  buildStoredLayout = (formState: any): Writable<any> => {
     let fields = [];
     let leftovers = [];
     formState.layout.forEach((item) => {
@@ -187,7 +194,7 @@ export class Form {
    * a parameter to the given function (e.g. use:useField(node: HTMLNode)).
    *
    */
-  useField = (node: HTMLElement) => {
+  useField = (node: HTMLElement): void => {
     // Attach HTML Node to field so we can remove event listeners later
     this.fields.forEach((field) => {
       //@ts-ignore
@@ -200,7 +207,7 @@ export class Form {
     this.handleOnClearErrorEvents(node);
   };
 
-  validate = () => {
+  validate = (): Promise<void> => {
     this.clearErrors();
     this.link_fields_to_model_on === LinkOnEvent.Always &&
       this.linkValues(true);
@@ -223,7 +230,7 @@ export class Form {
     );
   };
 
-  validateField = (field: FieldConfig, ev) => {
+  validateField = (field: FieldConfig, ev): Promise<void> => {
     this.link_fields_to_model_on === LinkOnEvent.Always &&
       this.linkValues(true);
     return validate(this.model, this.validation_options).then(
@@ -261,21 +268,21 @@ export class Form {
    *   ],
    * }
    */
-  attachRefData = (refs: object) => {
+  attachRefData = (refs: object): void => {
     const fields = this.fields.filter((f) => f.ref_key);
     fields.forEach((field) => {
       field.options = refs[field.ref_key];
     });
   };
 
-  clearErrors = () => {
+  clearErrors = (): void => {
     this.errors = [];
     this.fields.forEach((field) => {
       field.errors.set(null);
     });
   };
 
-  clearValues = () => {
+  clearValues = (): void => {
     if (this.fields && this.fields.length > 0) {
       this.fields.forEach((field) => {
         field.value.set(null);
@@ -283,7 +290,7 @@ export class Form {
     }
   };
 
-  reset = () => {
+  reset = (): void => {
     this.clearErrors();
     this.valid.set(false);
     this.changed.set(false);
@@ -295,7 +302,7 @@ export class Form {
     this.linkValues(false);
   };
 
-  destroy = () => {
+  destroy = (): void => {
     if (this.fields && this.fields.length > 0) {
       // This is the fastest way to loop in JS. Too fast to use in nested loops.
       let i = 0,
@@ -319,7 +326,7 @@ export class Form {
   //#region Private Functions
 
   // Link values FROM FIELDS toMODEL or MODEL to FIELDS
-  private linkValues = (toModel: boolean) => {
+  private linkValues = (toModel: boolean): void => {
     let i = 0,
       len = this.fields.length;
     for (; len > i; ++i) {
@@ -329,7 +336,7 @@ export class Form {
     }
   };
 
-  private hasChanged = () => {
+  private hasChanged = (): void => {
     if (
       JSON.stringify(this.model) === this.initial_state &&
       this.errors.length === 0
@@ -340,7 +347,10 @@ export class Form {
     this.changed.set(true);
   };
 
-  private linkFieldErrors = (errors: ValidationError[], field: FieldConfig) => {
+  private linkFieldErrors = (
+    errors: ValidationError[],
+    field: FieldConfig
+  ): void => {
     const error = errors.filter((e) => e.property === field.name);
     if (error && error.length > 0) {
       field.errors.set(error[0]);
@@ -349,7 +359,7 @@ export class Form {
     }
   };
 
-  private linkErrors = (errors: ValidationError[]) => {
+  private linkErrors = (errors: ValidationError[]): void => {
     errors.forEach((err) => {
       this.fields.forEach((field) => {
         if (err.property === field.name) {
@@ -359,7 +369,7 @@ export class Form {
     });
   };
 
-  private clearFieldErrors = (name) => {
+  private clearFieldErrors = (name): void => {
     this.fields.forEach((field) => {
       if (field.name === name) {
         field.errors.set(null);
@@ -367,7 +377,7 @@ export class Form {
     });
   };
 
-  private handleOnValidateEvents = (node: HTMLElement) => {
+  private handleOnValidateEvents = (node: HTMLElement): void => {
     //@ts-ignore
     const field = this.fields.filter((f) => f.name === node.name)[0];
     Object.entries(this.validate_on_events).forEach(([key, val]) => {
@@ -379,7 +389,7 @@ export class Form {
     });
   };
 
-  private handleOnClearErrorEvents = (node) => {
+  private handleOnClearErrorEvents = (node): void => {
     Object.entries(this.clear_errors_on_events).forEach(([key, val]) => {
       if (val) {
         node.addEventListener(key, (ev) => {

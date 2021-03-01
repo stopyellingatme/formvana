@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from "svelte";
   import LoadingIndicator from "./LoadingIndicator.svelte";
   import { createEventDispatcher } from "svelte";
-  import Field from "./inputs/Field.svelte";
+  import Field from "./svelte/inputs/Field.svelte";
   const dispatch = createEventDispatcher();
 
   //* Form State

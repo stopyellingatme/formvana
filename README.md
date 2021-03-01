@@ -170,7 +170,7 @@ If the model's fields already have data, the field data will be reflected in for
 `TODO:`
 1. Styling references.
 2. How layout is handled.
-3. validate_on and clear_errors_on stuff.
+3. validate_on and clear_errors_on_events stuff.
 4. And what's going on with errors. How are those handled?
 
 ---

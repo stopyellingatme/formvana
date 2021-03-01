@@ -11,8 +11,8 @@ import {
   Max,
   IsString,
 } from "class-validator";
-import { editable, field } from "../../../package/typescript.utils";
-import { FieldConfig } from "../../../package/FieldConfig";
+import { editable, field } from "../../../package/typescript";
+import { FieldConfig } from "../../../package/typescript";
 
 export type BusinessStatus = "ACTIVE" | "PENDING" | "SUSPENDED" | "ARCHIVED";
 
