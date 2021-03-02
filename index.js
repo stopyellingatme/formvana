@@ -842,48 +842,6 @@
         $inject_state() { }
     }
 
-    /*! *****************************************************************************
-    Copyright (c) Microsoft Corporation.
-
-    Permission to use, copy, modify, and/or distribute this software for any
-    purpose with or without fee is hereby granted.
-
-    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-    PERFORMANCE OF THIS SOFTWARE.
-    ***************************************************************************** */
-
-    var __assign = function() {
-        __assign = Object.assign || function __assign(t) {
-            for (var s, i = 1, n = arguments.length; i < n; i++) {
-                s = arguments[i];
-                for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-            }
-            return t;
-        };
-        return __assign.apply(this, arguments);
-    };
-
-    function __decorate(decorators, target, key, desc) {
-        var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-        if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-        else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-        return c > 3 && r && Object.defineProperty(target, key, r), r;
-    }
-
-    /** @deprecated */
-    function __spreadArrays() {
-        for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-        for (var r = Array(s), k = 0, i = 0; i < il; i++)
-            for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-                r[k] = a[j];
-        return r;
-    }
-
     const subscriber_queue = [];
     /**
      * Create a `Writable` store that allows both updating and reading by subscription.
@@ -934,6 +892,32 @@
             };
         }
         return { set, update, subscribe };
+    }
+
+    /*! *****************************************************************************
+    Copyright (c) Microsoft Corporation.
+
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted.
+
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+    PERFORMANCE OF THIS SOFTWARE.
+    ***************************************************************************** */
+
+    function __decorate(decorators, target, key, desc) {
+        var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+        if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+        else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+        return c > 3 && r && Object.defineProperty(target, key, r), r;
+    }
+
+    function __metadata(metadataKey, metadataValue) {
+        if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(metadataKey, metadataValue);
     }
 
     /**
@@ -2498,6 +2482,483 @@
         }
     }
 
+    class FieldConfig {
+        constructor(init) {
+            this.type = "text"; // Defaults to text, for now
+            this.required = false;
+            this.value = writable(null);
+            /**
+             * * String array of things like:
+             * -- type="text || email || password || whatever"
+             * -- class='input class'
+             * -- disabled
+             * -- title='input title'
+             * -- etc.
+             */
+            this.attributes = {};
+            /**
+             * Validation Errors!
+             * We're mainly looking for the class-validator "constraints"
+             * One ValidationError object can have multiple errors (constraints)
+             */
+            this.errors = writable(null);
+            this.clearValue = () => {
+                this.value.set(null);
+            };
+            this.clearErrors = () => {
+                this.errors.set(null);
+            };
+            this.clear = () => {
+                this.clearValue();
+                this.clearErrors();
+            };
+            Object.assign(this, init);
+            this.attributes["type"] = this.type;
+            if (this.type === "text" ||
+                this.type === "email" ||
+                this.type === "password" ||
+                this.type === "string") {
+                this.value.set("");
+            }
+            if (this.type === "number") {
+                this.value.set(0);
+            }
+            if (this.type === "decimal") {
+                this.value.set(0.0);
+            }
+            if (this.type === "boolean" || this.type === "choice") {
+                this.value.set(false);
+            }
+            if (this.el === "select" || this.el === "dropdown") {
+                this.options = [];
+            }
+            if (!this.attributes["title"]) {
+                this.attributes["title"] = this.label || this.name;
+            }
+        }
+    }
+
+    /**
+     * Determines which events to validate/clear validation, on.
+     */
+    class OnEvents {
+        constructor(eventsOn = true, init) {
+            this.input = true;
+            this.change = true;
+            this.blur = true;
+            this.focus = true;
+            this.mount = false;
+            Object.assign(this, init);
+            // If eventsOn if false, turn off all event listeners
+            if (!eventsOn) {
+                Object.keys(this).forEach((key) => {
+                    this[key] = false;
+                });
+            }
+        }
+    }
+    var LinkOnEvent;
+    (function (LinkOnEvent) {
+        LinkOnEvent[LinkOnEvent["Always"] = 0] = "Always";
+        LinkOnEvent[LinkOnEvent["Valid"] = 1] = "Valid";
+    })(LinkOnEvent || (LinkOnEvent = {}));
+    /**
+     * Form is NOT valid, initially.
+     *
+     * Recommended Use:
+     *  - Call new Form()
+     *  - Set the model
+     *  - optionally attach reference data (attachRefData())
+     *  - spread operator Form into writable store (e.g. writeable({...form}); )
+     *
+     */
+    class Form {
+        constructor(init) {
+            /**
+             * Stringified for quicker comparison
+             * Might be a better way of doing this, but for now, this works.
+             *
+             * This is the model's initial state.
+             */
+            this.initial_state = null;
+            /**
+             * Validation options are the exact same used in
+             * class-validator.
+             * Biggest perf increase comes from the "validationError" option,
+             * with "target" being set to false
+             * (so the whole model is not attached to each error message).
+             */
+            this.validation_options = {
+                skipMissingProperties: false,
+                whitelist: false,
+                forbidNonWhitelisted: false,
+                dismissDefaultMessages: false,
+                groups: [],
+                validationError: {
+                    target: false,
+                    value: false,
+                },
+                forbidUnknownValues: true,
+                stopAtFirstError: false,
+            };
+            /**
+             * Underlying TS Model.
+             * When model is set, call buildFields() to build the fields.
+             */
+            this.model = null;
+            /**
+             * Fields are built from the model's metadata using reflection.
+             * If model is set, call buildFields().
+             */
+            this.fields = [];
+            /**
+             * this.valid is a "store" so we can change the state of the variable
+             * inside of the class and it (the change) be reflected outside
+             * in the form context.
+             */
+            this.valid = writable(false);
+            this.errors = [];
+            this.loading = false;
+            this.changed = writable(false);
+            this.touched = false;
+            this.validate_on_events = new OnEvents();
+            this.clear_errors_on_events = new OnEvents(false);
+            // When should we link the field values to the model values?
+            this.link_fields_to_model = LinkOnEvent.Always;
+            // Order within array determines order to be applied
+            this.classes = [];
+            /**
+             * Determines the ordering of the fields.
+             * Simply an array of field (or group or stepper) names in the
+             * order to be displayed
+             */
+            this.layout = [];
+            // Reference Data
+            this.refs = null;
+            /**
+             * * Here be Functions. Beware.
+             * * Here be Functions. Beware.
+             * * Here be Functions. Beware.
+             */
+            /**
+             * Build the field configs from the given model using metadata-reflection.
+             */
+            this.buildFields = () => {
+                if (this.model) {
+                    // Grab the editableProperties from the @editable decorator
+                    let props = Reflect.getMetadata("editableProperties", this.model) || [];
+                    // Map the @editable fields to the form.fields array.
+                    this.fields = props.map((prop) => {
+                        // Get the FieldConfig using metadata reflection
+                        const config = Reflect.getMetadata("fieldConfig", this.model, prop);
+                        //! SET THE NAME OF THE FIELD!
+                        config.name = prop;
+                        // If the model has a value, attach it to the field config
+                        // 0, "", [], etc. are set in the constructor based on type.
+                        if (this.model[prop]) {
+                            config.value.set(this.model[prop]);
+                        }
+                        console.log("FIELD CONFIG: ", config);
+                        // Return the enriched field config
+                        return config;
+                    });
+                }
+            };
+            /**
+             * Set the field order.
+             * Layout param is simply an array of field (or group)
+             * names in the order to be displayed.
+             * Leftover fields are appended to bottom of form.
+             */
+            this.setLayout = (layout) => {
+                this.layout = layout;
+                this.buildLayout();
+            };
+            this.buildLayout = () => {
+                let fields = [];
+                let leftovers = [];
+                // Loop over the layout...
+                this.layout.forEach((item) => {
+                    // and the fields...
+                    this.fields.forEach((field) => {
+                        // If the field.name and the layout name match...
+                        if (field.name === item ||
+                            (field.group && field.group.name === item) ||
+                            (field.step && `${field.step.index}` === item)) {
+                            // Then push it to the fields array
+                            fields.push(field);
+                        }
+                        else if (leftovers.indexOf(field) === -1 &&
+                            this.layout.indexOf(field.name) === -1) {
+                            // Field is not in the layout, so push it to bottom of layout.
+                            leftovers.push(field);
+                        }
+                    });
+                });
+                this.fields = [...fields, ...leftovers];
+            };
+            /**
+             * * Use this if you're trying to update the layout after initialization
+             * Like this:
+             * const layout = ["description", "status", "email", "name"];
+             * const newState = sget(formState).buildStoredLayout(formState, layout);
+             * formState.updateState({ ...newState });
+             */
+            this.buildStoredLayout = (formState, layout) => {
+                let fields = [];
+                let leftovers = [];
+                // Update the layout
+                formState.update((state) => state.layout = layout);
+                // Get the Form state
+                const state = get_store_value(formState);
+                state.layout.forEach((item) => {
+                    state.fields.forEach((field) => {
+                        if (field.name === item ||
+                            (field.group && field.group.name === item) ||
+                            (field.step && `${field.step.index}` === item)) {
+                            fields.push(field);
+                        }
+                        else if (leftovers.indexOf(field) === -1 &&
+                            state.layout.indexOf(field.name) === -1) {
+                            leftovers.push(field);
+                        }
+                    });
+                });
+                state.fields = [...fields, ...leftovers];
+                return state;
+            };
+            /**
+             * This is for Svelte's "use:FUNCTION" feature.
+             * The "use" directive passes the HTML Node as
+             * a parameter to the given function (e.g. use:useField(node: HTMLNode)).
+             */
+            this.useField = (node) => {
+                // Attach HTML Node to field so we can remove event listeners later
+                this.fields.forEach((field) => {
+                    //@ts-ignore
+                    if (field.name === node.name) {
+                        field.node = node;
+                    }
+                });
+                this.handleOnValidateEvents(node);
+                this.handleOnClearErrorEvents(node);
+            };
+            /**
+             * Validate the field!
+             */
+            this.validateField = (field) => {
+                // Link the input from the field to the model.
+                this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
+                // Return class-validator validate function.
+                // Validate the model with given validation config.
+                return validate(this.model, this.validation_options).then((errors) => {
+                    this.handleValidation(true, errors, field);
+                });
+            };
+            // Validate the form!
+            this.validate = () => {
+                this.clearErrors();
+                this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
+                return validate(this.model, this.validation_options).then((errors) => {
+                    this.handleValidation(false, errors);
+                });
+            };
+            /**
+             * Just pass in the reference data and let the field
+             * configs do the rest.
+             *
+             ** Ref data must be in format:
+             * {
+             *  [field.name]: [
+             *    { label: "Option 1", value: 0 },
+             *    { label: "Option 2", value: 1 },
+             *   ],
+             *  [field.other_name]: [
+             *    { label: "Other Option 1", value: 0 },
+             *    { label: "Other Option 2", value: 1 },
+             *   ],
+             * }
+             */
+            this.attachRefData = (refs) => {
+                const fields_with_ref_keys = this.fields.filter((f) => f.ref_key);
+                if (refs) {
+                    fields_with_ref_keys.forEach((field) => {
+                        field.options = refs[field.ref_key];
+                    });
+                }
+                else if (this.refs) {
+                    fields_with_ref_keys.forEach((field) => {
+                        field.options = this.refs[field.ref_key];
+                    });
+                }
+                // else {
+                //   const fields_with_ref_keys = this.fields.filter((f) => f.ref_key);
+                //   fields_with_ref_keys.forEach((field) => {
+                //     field.options = refs[field.ref_key];
+                //   });
+                // }
+            };
+            this.clearErrors = () => {
+                this.errors = [];
+                this.fields.forEach((field) => {
+                    field.errors.set(null);
+                });
+            };
+            this.clearValues = () => {
+                if (this.fields && this.fields.length > 0) {
+                    this.fields.forEach((field) => {
+                        field.value.set(null);
+                    });
+                }
+            };
+            // Resets to the inital state of the form.
+            this.reset = () => {
+                this.clearErrors();
+                this.valid.set(false);
+                this.changed.set(false);
+                const initial = JSON.parse(this.initial_state);
+                Object.keys(this.model).forEach((key) => {
+                    this.model[key] = initial[key];
+                });
+                this.linkValues(false);
+            };
+            /**
+             *! Make sure to call this when the component is unloaded/destroyed
+             */
+            this.destroy = () => {
+                // Remove the event listeners
+                if (this.fields && this.fields.length > 0) {
+                    this.fields.forEach((f) => {
+                        // Remove all the event listeners!
+                        Object.keys(this.validate_on_events).forEach((key) => {
+                            f.node.removeEventListener(key, (ev) => {
+                                this.validateField(f);
+                            });
+                        });
+                        Object.keys(this.clear_errors_on_events).forEach((key) => {
+                            f.node.removeEventListener(key, (ev) => {
+                                this.clearFieldErrors(f.name);
+                            });
+                        });
+                    });
+                }
+                // Reset everything else.
+                this.reset();
+            };
+            // Link values FROM FIELDS toMODEL or MODEL to FIELDS
+            this.linkValues = (toModel) => {
+                let i = 0, len = this.fields.length;
+                for (; len > i; ++i) {
+                    toModel
+                        ? (this.model[this.fields[i].name] = get_store_value(this.fields[i].value))
+                        : this.fields[i].value.set(this.model[this.fields[i].name]);
+                }
+            };
+            this.hasChanged = () => {
+                if (JSON.stringify(this.model) === this.initial_state &&
+                    this.errors.length === 0) {
+                    this.changed.set(false);
+                    return;
+                }
+                this.changed.set(true);
+            };
+            this.linkFieldErrors = (errors, field) => {
+                const error = errors.filter((e) => e.property === field.name);
+                if (error && error.length > 0) {
+                    field.errors.set(error[0]);
+                }
+                else {
+                    field.errors.set(null);
+                }
+            };
+            this.linkErrors = (errors) => {
+                errors.forEach((err) => {
+                    this.fields.forEach((field) => {
+                        if (err.property === field.name) {
+                            field.errors.set(err);
+                        }
+                    });
+                });
+            };
+            this.clearFieldErrors = (name) => {
+                this.fields.forEach((field) => {
+                    if (field.name === name) {
+                        field.errors.set(null);
+                    }
+                });
+            };
+            this.handleOnValidateEvents = (node) => {
+                // Get the field, for passing to the validateField func
+                //@ts-ignore
+                const field = this.fields.filter((f) => f.name === node.name)[0];
+                Object.entries(this.validate_on_events).forEach(([key, val]) => {
+                    // If the OnEvent is true, then add the event listener
+                    if (val) {
+                        node.addEventListener(key, (ev) => {
+                            this.validateField(field);
+                        });
+                    }
+                });
+            };
+            this.handleOnClearErrorEvents = (node) => {
+                Object.entries(this.clear_errors_on_events).forEach(([key, val]) => {
+                    // If the OnEvent is true, then add the event listener
+                    if (val) {
+                        node.addEventListener(key, (ev) => {
+                            this.clearFieldErrors(node.name);
+                        });
+                    }
+                });
+            };
+            Object.keys(this).forEach((key) => {
+                if (init[key]) {
+                    this[key] = init[key];
+                }
+            });
+            if (this.model) {
+                this.initial_state = JSON.stringify(this.model);
+                this.buildFields();
+            }
+            if (this.layout && this.layout.length > 0) {
+                this.setLayout(this.layout);
+            }
+            if (this.refs) {
+                this.attachRefData();
+            }
+        }
+        updateInitialState() {
+            if (this.model) {
+                this.initial_state = JSON.stringify(this.model);
+            }
+        }
+        // #region PRIVATE FUNCTIONS
+        handleValidation(isField = true, errors, field) {
+            // There are errors!
+            if (errors.length > 0) {
+                this.valid.set(false); // Form is not valid
+                this.errors = errors;
+                // console.log("ERRORS: ", errors);
+                if (isField) {
+                    // Link errors to field (to show validation errors)
+                    this.linkFieldErrors(errors, field);
+                }
+                else {
+                    // This is validatino for the whole form!
+                    this.linkErrors(errors);
+                }
+            }
+            else {
+                // If the config tells us to link the values only when the form
+                // is valid, then link them here.
+                this.link_fields_to_model === LinkOnEvent.Valid && this.linkValues(true);
+                this.valid.set(true); // Form is valid!
+                this.clearErrors(); // Clear form errors
+            }
+            // Check for changes
+            this.hasChanged();
+        }
+    }
+
     /*! *****************************************************************************
     Copyright (C) Microsoft. All rights reserved.
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use
@@ -3631,7 +4092,7 @@
     })(Reflect$1 || (Reflect$1 = {}));
 
     function editable(target, propertyKey) {
-        var properties = Reflect.getMetadata("editableProperties", target) || [];
+        let properties = Reflect.getMetadata("editableProperties", target) || [];
         if (properties.indexOf(propertyKey) < 0) {
             properties.push(propertyKey);
         }
@@ -3643,67 +4104,8 @@
         };
     }
 
-    var FieldConfig = /** @class */ (function () {
-        function FieldConfig(init) {
-            var _this = this;
-            this.type = "text"; // Defaults to text, for now
-            this.required = false;
-            this.value = writable(null);
-            /**
-             * * String array of things like:
-             * -- type="text || email || password || whatever"
-             * -- class='input class'
-             * -- disabled
-             * -- title='input title'
-             * -- etc.
-             */
-            this.attributes = {};
-            /**
-             * Validation Errors!
-             * We're mainly looking for the class-validator "constraints"
-             * One ValidationError object can have multiple errors (constraints)
-             */
-            this.errors = writable(null);
-            this.clearValue = function () {
-                _this.value.set(null);
-            };
-            this.clearErrors = function () {
-                _this.errors.set(null);
-            };
-            this.clear = function () {
-                _this.clearValue();
-                _this.clearErrors();
-            };
-            Object.assign(this, init);
-            this.attributes["type"] = this.type;
-            if (this.type === "text" ||
-                this.type === "email" ||
-                this.type === "password" ||
-                this.type === "string") {
-                this.value.set("");
-            }
-            if (this.type === "number") {
-                this.value.set(0);
-            }
-            if (this.type === "decimal") {
-                this.value.set(0.0);
-            }
-            if (this.type === "boolean" || this.type === "choice") {
-                this.value.set(false);
-            }
-            if (this.el === "select" || this.el === "dropdown") {
-                this.options = [];
-            }
-            if (!this.attributes["title"]) {
-                this.attributes["title"] = this.label || this.name;
-            }
-        }
-        return FieldConfig;
-    }());
-
-    var Business = /** @class */ (function () {
-        function Business(init) {
-            var _this = this;
+    class Business {
+        constructor(init) {
             this.name = "";
             this.email = "";
             this.description = "";
@@ -3715,425 +4117,82 @@
             this.state = "";
             this.zip = "";
             if (init) {
-                Object.keys(this).forEach(function (key) {
+                Object.keys(this).forEach((key) => {
                     if (init[key]) {
-                        _this[key] = init[key];
+                        this[key] = init[key];
                     }
                 });
             }
         }
-        __decorate([
-            editable,
-            Length(10, 90),
-            IsString(),
-            field(new FieldConfig({
-                el: "input",
-                type: "text",
-                label: "Business Name",
-                required: true,
-                classname: "col-span-4 sm:col-span-2",
-                attributes: { placeholder: "Business Name" }
-            }))
-        ], Business.prototype, "name");
-        __decorate([
-            editable,
-            IsEmail(),
-            field(new FieldConfig({
-                el: "input",
-                type: "email",
-                label: "Email Address",
-                required: true,
-                classname: "col-span-4 sm:col-span-2",
-                attributes: { placeholder: "Email Address" }
-            }))
-        ], Business.prototype, "email");
-        __decorate([
-            editable,
-            Length(10, 350),
-            field(new FieldConfig({
-                el: "textarea",
-                type: "text",
-                label: "Description",
-                required: true,
-                classname: "col-span-4 sm:col-span-2",
-                hint: "This will be seen publicly",
-                attributes: { placeholder: "Description" }
-            }))
-        ], Business.prototype, "description");
-        __decorate([
-            editable,
-            Length(5, 200),
-            field(new FieldConfig({
-                el: "input",
-                type: "text",
-                label: "Address Line 1",
-                required: true,
-                classname: "col-span-4 sm:col-span-2",
-                attributes: { placeholder: "Address 1" },
-                group: { name: "address", label: "Business Location" }
-            }))
-        ], Business.prototype, "address_1");
-        __decorate([
-            editable,
-            IsString(),
-            field(new FieldConfig({
-                el: "select",
-                type: "select",
-                label: "Business Status",
-                required: true,
-                classname: "col-span-4 sm:col-span-2",
-                ref_key: "business_statuses"
-            }))
-        ], Business.prototype, "status");
-        return Business;
-    }());
-
-    var LinkOnEvent;
-    (function (LinkOnEvent) {
-        LinkOnEvent[LinkOnEvent["Always"] = 0] = "Always";
-        LinkOnEvent[LinkOnEvent["Valid"] = 1] = "Valid";
-    })(LinkOnEvent || (LinkOnEvent = {}));
-    var Form = /** @class */ (function () {
-        function Form(init) {
-            var _this = this;
-            /**
-             * Stringified for quicker comparison
-             * Could be a better way of doing this, but for now, this works.
-             */
-            this.initial_state = null;
-            /**
-             * Validation options are the exact same used in
-             * class-validator.
-             * Biggest performance increase comes from the "validationError"
-             * option, with "target" being set to false (so the whole model is not attached to
-             * each error message).
-             */
-            this.validation_options = {
-                skipMissingProperties: false,
-                whitelist: false,
-                forbidNonWhitelisted: false,
-                dismissDefaultMessages: false,
-                groups: [],
-                validationError: {
-                    target: false,
-                    value: false
-                },
-                forbidUnknownValues: true,
-                stopAtFirstError: false
-            };
-            /**
-             * Underlying TS Model.
-             * When model is set, call buildFields() to build the fields.
-             */
-            this.model = null;
-            /**
-             * Fields are built from the model's metadata using reflection.
-             * If model is set, call buildFields().
-             */
-            this.fields = [];
-            /**
-             * this.valid is a "store" so we can change the state of the variable
-             * inside of the class and it (the change) be reflected outside
-             * in the form context.
-             */
-            this.valid = writable(false);
-            this.errors = [];
-            this.loading = false;
-            this.changed = writable(false);
-            this.touched = false;
-            this.on_events = function (init) {
-                if (init === void 0) { init = true; }
-                return ({
-                    change: init,
-                    input: init,
-                    blur: init,
-                    focus: init,
-                    mount: false
-                });
-            };
-            this.validate_on_events = this.on_events();
-            this.clear_errors_on_events = this.on_events(false);
-            // When should we link the field values to the model values?
-            this.link_fields_to_model_on = 0;
-            // Order within array determines order to be applied
-            this.form_classes = [
-                "shadow sm:rounded-md",
-                "px-4 py-6 bg-white sm:p-6",
-                "grid grid-cols-4 gap-6 mt-6",
-            ];
-            /**
-             * Determines the ordering of the fields.
-             * Simply an array of field (or group) names in the order to be displayed
-             */
-            this.layout = [];
-            /**
-             * * Here be Functions. Beware.
-             * * Here be Functions. Beware.
-             * * Here be Functions. Beware.
-             */
-            /**
-             * Build the field configs from the given model using metadata-reflection.
-             */
-            this.buildFields = function () {
-                if (_this.model) {
-                    var props = Reflect.getMetadata("editableProperties", _this.model) || [];
-                    _this.fields = props.map(function (prop) {
-                        var config = Reflect.getMetadata("fieldConfig", _this.model, prop);
-                        config.name = prop;
-                        // If the model has a value, attach it to the field config
-                        // 0, "", [], etc. are set in the constructor based on type.
-                        if (_this.model[prop]) {
-                            config.value.set(_this.model[prop]);
-                        }
-                        console.log("FIELD CONFIG: ", config);
-                        return config;
-                    });
-                }
-            };
-            /**
-             * Set the field order.
-             * Layout param is simply an array of field (or group)
-             * names in the order to be displayed.
-             * Leftover fields are appended to bottom of form.
-             */
-            this.setLayout = function (layout) {
-                _this.layout = layout;
-                _this.buildLayout();
-            };
-            this.buildLayout = function () {
-                var fields = [];
-                var leftovers = [];
-                _this.layout.forEach(function (item) {
-                    _this.fields.forEach(function (field) {
-                        if (field.name === item ||
-                            (field.group && field.group.name === item) ||
-                            (field.step && "" + field.step.index === item)) {
-                            fields.push(field);
-                        }
-                        else if (leftovers.indexOf(field) === -1 &&
-                            _this.layout.indexOf(field.name) === -1) {
-                            leftovers.push(field);
-                        }
-                    });
-                });
-                _this.fields = __spreadArrays(fields, leftovers);
-            };
-            // Use this if you're trying to set the layout after store initialization
-            this.buildStoredLayout = function (formState) {
-                var fields = [];
-                var leftovers = [];
-                formState.layout.forEach(function (item) {
-                    formState.fields.forEach(function (field) {
-                        if (field.name === item || (field.group && field.group.name === item)) {
-                            fields.push(field);
-                        }
-                        else if (leftovers.indexOf(field) === -1 &&
-                            formState.layout.indexOf(field.name) === -1) {
-                            leftovers.push(field);
-                        }
-                    });
-                });
-                formState.fields = __spreadArrays(fields, leftovers);
-                return formState;
-            };
-            /**
-             * This is for Svelte's "use:FUNCTION" feature.
-             * The "use" directive passes the HTML Node as
-             * a parameter to the given function (e.g. use:useField(node: HTMLNode)).
-             *
-             */
-            this.useField = function (node) {
-                // Attach HTML Node to field so we can remove event listeners later
-                _this.fields.forEach(function (field) {
-                    //@ts-ignore
-                    if (field.name === node.name) {
-                        field.node = node;
-                    }
-                });
-                _this.handleOnValidateEvents(node);
-                _this.handleOnClearErrorEvents(node);
-            };
-            this.validate = function () {
-                _this.clearErrors();
-                _this.link_fields_to_model_on === LinkOnEvent.Always &&
-                    _this.linkValues(true);
-                return validate(_this.model, _this.validation_options).then(function (errors) {
-                    if (errors.length > 0) {
-                        _this.valid.set(false);
-                        _this.errors = errors;
-                        _this.linkErrors(errors);
-                        console.log("ERRORS: ", errors);
-                    }
-                    else {
-                        _this.link_fields_to_model_on === LinkOnEvent.Valid &&
-                            _this.linkValues(true);
-                        _this.valid.set(true);
-                        _this.clearErrors();
-                        console.log("FORM IS VALID! WEEHOO!");
-                    }
-                    _this.hasChanged();
-                });
-            };
-            this.validateField = function (field, ev) {
-                _this.link_fields_to_model_on === LinkOnEvent.Always &&
-                    _this.linkValues(true);
-                return validate(_this.model, _this.validation_options).then(function (errors) {
-                    if (errors.length > 0) {
-                        _this.valid.set(false);
-                        _this.errors = errors;
-                        // console.log("ERRORS: ", errors);
-                        _this.linkFieldErrors(errors, field);
-                    }
-                    else {
-                        _this.link_fields_to_model_on === LinkOnEvent.Valid &&
-                            _this.linkValues(true);
-                        _this.valid.set(true);
-                        _this.clearErrors();
-                        console.log("FORM IS VALID! WEEHOO!");
-                    }
-                    _this.hasChanged();
-                });
-            };
-            /**
-             * Just pass in the reference data and let the field
-             * configs do the rest.
-             *
-             ** Ref data must be in format:
-             * {
-             *  [field.name]: [
-             *    { label: "Option 1", value: 0 },
-             *    { label: "Option 2", value: 1 },
-             *   ],
-             *  [field.other_name]: [
-             *    { label: "Other Option 1", value: 0 },
-             *    { label: "Other Option 2", value: 1 },
-             *   ],
-             * }
-             */
-            this.attachRefData = function (refs) {
-                var fields = _this.fields.filter(function (f) { return f.ref_key; });
-                fields.forEach(function (field) {
-                    field.options = refs[field.ref_key];
-                });
-            };
-            this.clearErrors = function () {
-                _this.errors = [];
-                _this.fields.forEach(function (field) {
-                    field.errors.set(null);
-                });
-            };
-            this.clearValues = function () {
-                if (_this.fields && _this.fields.length > 0) {
-                    _this.fields.forEach(function (field) {
-                        field.value.set(null);
-                    });
-                }
-            };
-            this.reset = function () {
-                _this.clearErrors();
-                _this.valid.set(false);
-                _this.changed.set(false);
-                var initial = JSON.parse(_this.initial_state);
-                Object.keys(_this.model).forEach(function (key) {
-                    _this.model[key] = initial[key];
-                });
-                _this.linkValues(false);
-            };
-            this.destroy = function () {
-                if (_this.fields && _this.fields.length > 0) {
-                    // This is the fastest way to loop in JS. Too fast to use in nested loops.
-                    var i_1 = 0, len = _this.fields.length;
-                    for (; len > i_1; ++i_1) {
-                        // Remove all the event listeners!
-                        Object.keys(_this.on_events).forEach(function (key) {
-                            _this.fields[i_1].node.removeEventListener(key, function (ev) {
-                                _this.validateField(_this.fields[i_1], ev);
-                            });
-                            _this.fields[i_1].node.removeEventListener(key, function (ev) {
-                                _this.clearFieldErrors(_this.fields[i_1].name);
-                            });
-                        });
-                    }
-                }
-                _this.reset();
-            };
-            //#region Private Functions
-            // Link values FROM FIELDS toMODEL or MODEL to FIELDS
-            this.linkValues = function (toModel) {
-                var i = 0, len = _this.fields.length;
-                for (; len > i; ++i) {
-                    toModel
-                        ? (_this.model[_this.fields[i].name] = get_store_value(_this.fields[i].value))
-                        : _this.fields[i].value.set(_this.model[_this.fields[i].name]);
-                }
-            };
-            this.hasChanged = function () {
-                if (JSON.stringify(_this.model) === _this.initial_state &&
-                    _this.errors.length === 0) {
-                    _this.changed.set(false);
-                    return;
-                }
-                _this.changed.set(true);
-            };
-            this.linkFieldErrors = function (errors, field) {
-                var error = errors.filter(function (e) { return e.property === field.name; });
-                if (error && error.length > 0) {
-                    field.errors.set(error[0]);
-                }
-                else {
-                    field.errors.set(null);
-                }
-            };
-            this.linkErrors = function (errors) {
-                errors.forEach(function (err) {
-                    _this.fields.forEach(function (field) {
-                        if (err.property === field.name) {
-                            field.errors.set(err);
-                        }
-                    });
-                });
-            };
-            this.clearFieldErrors = function (name) {
-                _this.fields.forEach(function (field) {
-                    if (field.name === name) {
-                        field.errors.set(null);
-                    }
-                });
-            };
-            this.handleOnValidateEvents = function (node) {
-                //@ts-ignore
-                var field = _this.fields.filter(function (f) { return f.name === node.name; })[0];
-                Object.entries(_this.validate_on_events).forEach(function (_a) {
-                    var key = _a[0], val = _a[1];
-                    if (val) {
-                        node.addEventListener(key, function (ev) {
-                            _this.validateField(field, ev);
-                        });
-                    }
-                });
-            };
-            this.handleOnClearErrorEvents = function (node) {
-                Object.entries(_this.clear_errors_on_events).forEach(function (_a) {
-                    var key = _a[0], val = _a[1];
-                    if (val) {
-                        node.addEventListener(key, function (ev) {
-                            _this.clearFieldErrors(node.name);
-                        });
-                    }
-                });
-            };
-            Object.keys(this).forEach(function (key) {
-                if (init[key]) {
-                    _this[key] = init[key];
-                }
-            });
-            if (this.model) {
-                this.initial_state = JSON.stringify(this.model);
-                this.buildFields();
-            }
-        }
-        return Form;
-    }());
+    }
+    __decorate([
+        editable,
+        Length(10, 90),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Business Name",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Business Name" },
+        })),
+        __metadata("design:type", String)
+    ], Business.prototype, "name", void 0);
+    __decorate([
+        editable,
+        IsEmail(),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email Address",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email Address" },
+        })),
+        __metadata("design:type", String)
+    ], Business.prototype, "email", void 0);
+    __decorate([
+        editable,
+        Length(10, 350),
+        field(new FieldConfig({
+            el: "textarea",
+            type: "text",
+            label: "Description",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            hint: "This will be seen publicly",
+            attributes: { placeholder: "Description" },
+        })),
+        __metadata("design:type", String)
+    ], Business.prototype, "description", void 0);
+    __decorate([
+        editable,
+        Length(5, 200),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Address Line 1",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Address 1" },
+            group: { name: "address", label: "Business Location" },
+        })),
+        __metadata("design:type", String)
+    ], Business.prototype, "address_1", void 0);
+    __decorate([
+        editable,
+        IsString(),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "Business Status",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "status", void 0);
 
     /**
      * Reference data can be accessed by (example):
@@ -4143,85 +4202,89 @@
      * ref_data is an object (map-ish-thing) of
      * <string, array<key, value>>
      */
-    var data = {
+    const data = {
         user_statuses: [
             {
                 key: "ACTIVE",
-                value: "ACTIVE"
+                value: "ACTIVE",
             },
             {
                 key: "DISABLED",
-                value: "DISABLED"
+                value: "DISABLED",
             },
         ],
         business_statuses: [
             {
                 key: "ACTIVE",
-                value: "ACTIVE"
+                value: "ACTIVE",
             },
             {
                 key: "PENDING",
-                value: "PENDING"
+                value: "PENDING",
             },
             {
                 key: "SUSPENDED",
-                value: "SUSPENDED"
+                value: "SUSPENDED",
             },
             {
                 key: "ARCHIVED",
-                value: "ARCHIVED"
+                value: "ARCHIVED",
             },
-        ]
+        ],
     };
     function init$1() {
-        var _a = writable(data), subscribe = _a.subscribe, set = _a.set, update = _a.update;
+        const { subscribe, set, update } = writable(data);
         return {
-            subscribe: subscribe,
-            set: set,
-            setItems: function (items) { return update(function (s) { return setItems(s, items); }); }
+            subscribe,
+            set,
+            setItems: (items) => update((s) => setItems(s, items)),
         };
     }
-    var setItems = function (state, items) {
+    const setItems = (state, items) => {
         state = items;
         return state;
     };
-    var refs = init$1();
+    const refs = init$1();
 
     function initStore() {
         // Just gonna set up the form real quick...
-        var form = new Form({
-            model: new Business()
+        let form = new Form({
+            model: new Business(),
+            layout: ["description", "status", "email", "name"],
+            classes: [
+                "shadow sm:rounded-md",
+                "px-4 py-6 bg-white sm:p-6",
+                "grid grid-cols-4 gap-6 mt-6",
+            ],
+            validate_on_events: new OnEvents(true, { focus: false }),
+            refs: get_store_value(refs),
         });
-        form.validate_on_events.focus = false;
-        form.attachRefData(get_store_value(refs));
-        var layout = ["description", "status", "email", "name"];
-        form.setLayout(layout);
         // And add it to the store...
-        var _a = writable(__assign({}, form)), subscribe = _a.subscribe, set = _a.set, update = _a.update;
+        const { subscribe, update } = writable({
+            ...form,
+        });
         return {
-            subscribe: subscribe,
-            set: set,
-            updateState: function (updates) { return update(function (s) { return updateState(s, updates); }); },
-            setLoading: function (loading) { return update(function (s) { return setLoading(s, loading); }); }
+            subscribe,
+            updateState: (updates) => update((s) => updateState(s, updates)),
+            setLoading: (loading) => update((s) => setLoading(s, loading)),
         };
     }
-    var updateState = function (state, updates) {
+    const updateState = (state, updates) => {
         Object.assign(state, updates);
         return state;
     };
-    var setLoading = function (state, loading) {
+    const setLoading = (state, loading) => {
         state.loading = loading;
         return state;
     };
-    var formState = initStore();
-    var init$2 = function () {
+    const formState = initStore();
+    const init$2 = () => {
         formState.setLoading(true);
         // const layout = ["description", "status", "email", "name"];
-        // formState.updateState({ layout: layout });
-        setTimeout(function () {
-            // const newState = sget(formState).buildStoredLayout(sget(formState));
-            // console.log(newState);
-            // formState.updateState({ ...newState });
+        // const newState = sget(formState).buildStoredLayout(formState, layout);
+        // console.log(newState);
+        // formState.updateState({ ...newState });
+        setTimeout(() => {
             formState.setLoading(false);
         }, 1000);
         // Update form with data fetched from DB
@@ -4229,11 +4292,12 @@
         //   Get current form state
         //     const form = sget(formState);
         //     form.model = new Business(data);
+        //     form.updateInitialState();
         //     form.buildFields();
         //     formState.updateState({ form: form });
         // });
     };
-    var onSubmit = function (ev) {
+    const onSubmit = (ev) => {
         console.log("SUBMIT: ", ev);
         console.log(get_store_value(formState));
         // formState.setLoading(true);
@@ -4244,9 +4308,9 @@
         // });
     };
 
-    /* package/LoadingIndicator.svelte generated by Svelte v3.32.3 */
+    /* package/svelte/LoadingIndicator.svelte generated by Svelte v3.32.3 */
 
-    const file = "package/LoadingIndicator.svelte";
+    const file = "package/svelte/LoadingIndicator.svelte";
 
     // (7:0) {#if visible}
     function create_if_block(ctx) {
@@ -4472,10 +4536,10 @@
     	}
     }
 
-    /* package/inputs/InputErrors.svelte generated by Svelte v3.32.3 */
+    /* package/svelte/inputs/InputErrors.svelte generated by Svelte v3.32.3 */
 
     const { Object: Object_1 } = globals;
-    const file$1 = "package/inputs/InputErrors.svelte";
+    const file$1 = "package/svelte/inputs/InputErrors.svelte";
 
     function get_each_context(ctx, list, i) {
     	const child_ctx = ctx.slice();
@@ -4696,10 +4760,10 @@
     	}
     }
 
-    /* package/inputs/Input.svelte generated by Svelte v3.32.3 */
+    /* package/svelte/inputs/Input.svelte generated by Svelte v3.32.3 */
 
     const { Object: Object_1$1 } = globals;
-    const file$2 = "package/inputs/Input.svelte";
+    const file$2 = "package/svelte/inputs/Input.svelte";
 
     // (44:4) {#if errors}
     function create_if_block_1(ctx) {
@@ -5182,8 +5246,8 @@
         };
     }
 
-    /* package/inputs/DropdownOption.svelte generated by Svelte v3.32.3 */
-    const file$3 = "package/inputs/DropdownOption.svelte";
+    /* package/svelte/inputs/DropdownOption.svelte generated by Svelte v3.32.3 */
+    const file$3 = "package/svelte/inputs/DropdownOption.svelte";
 
     // (27:1) {#if selected}
     function create_if_block$3(ctx) {
@@ -5479,10 +5543,10 @@
     	}
     }
 
-    /* package/inputs/Dropdown.svelte generated by Svelte v3.32.3 */
+    /* package/svelte/inputs/Dropdown.svelte generated by Svelte v3.32.3 */
 
     const { Object: Object_1$2 } = globals;
-    const file$4 = "package/inputs/Dropdown.svelte";
+    const file$4 = "package/svelte/inputs/Dropdown.svelte";
 
     function get_each_context$1(ctx, list, i) {
     	const child_ctx = ctx.slice();
@@ -6333,10 +6397,10 @@
     	}
     }
 
-    /* package/inputs/Textarea.svelte generated by Svelte v3.32.3 */
+    /* package/svelte/inputs/Textarea.svelte generated by Svelte v3.32.3 */
 
     const { Object: Object_1$3 } = globals;
-    const file$5 = "package/inputs/Textarea.svelte";
+    const file$5 = "package/svelte/inputs/Textarea.svelte";
 
     // (46:4) {#if hint}
     function create_if_block_1$2(ctx) {
@@ -6814,8 +6878,8 @@
     	}
     }
 
-    /* package/inputs/Field.svelte generated by Svelte v3.32.3 */
-    const file$6 = "package/inputs/Field.svelte";
+    /* package/svelte/inputs/Field.svelte generated by Svelte v3.32.3 */
+    const file$6 = "package/svelte/inputs/Field.svelte";
 
     // (30:36) 
     function create_if_block_2$1(ctx) {
@@ -7194,8 +7258,8 @@
     	}
     }
 
-    /* package/Form.svelte generated by Svelte v3.32.3 */
-    const file$7 = "package/Form.svelte";
+    /* package/svelte/Form.svelte generated by Svelte v3.32.3 */
+    const file$7 = "package/svelte/Form.svelte";
     const get_buttons_slot_changes = dirty => ({});
     const get_buttons_slot_context = ctx => ({});
 
@@ -7321,14 +7385,14 @@
 
     			t2 = space();
     			if (buttons_slot) buttons_slot.c();
-    			attr_dev(div0, "class", div0_class_value = /*$form*/ ctx[3].form_classes[2]);
+    			attr_dev(div0, "class", div0_class_value = /*$form*/ ctx[3].classes[2]);
     			add_location(div0, file$7, 54, 6, 1272);
-    			attr_dev(div1, "class", div1_class_value = /*$form*/ ctx[3].form_classes[1]);
-    			add_location(div1, file$7, 49, 4, 1115);
-    			attr_dev(div2, "class", div2_class_value = /*$form*/ ctx[3].form_classes[0]);
-    			add_location(div2, file$7, 47, 2, 1012);
+    			attr_dev(div1, "class", div1_class_value = /*$form*/ ctx[3].classes[1]);
+    			add_location(div1, file$7, 49, 4, 1120);
+    			attr_dev(div2, "class", div2_class_value = /*$form*/ ctx[3].classes[0]);
+    			add_location(div2, file$7, 47, 2, 1022);
     			add_render_callback(() => /*form_1_elementresize_handler*/ ctx[7].call(form_1));
-    			add_location(form_1, file$7, 42, 0, 911);
+    			add_location(form_1, file$7, 42, 0, 921);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -7406,11 +7470,11 @@
     				check_outros();
     			}
 
-    			if (!current || dirty & /*$form*/ 8 && div0_class_value !== (div0_class_value = /*$form*/ ctx[3].form_classes[2])) {
+    			if (!current || dirty & /*$form*/ 8 && div0_class_value !== (div0_class_value = /*$form*/ ctx[3].classes[2])) {
     				attr_dev(div0, "class", div0_class_value);
     			}
 
-    			if (!current || dirty & /*$form*/ 8 && div1_class_value !== (div1_class_value = /*$form*/ ctx[3].form_classes[1])) {
+    			if (!current || dirty & /*$form*/ 8 && div1_class_value !== (div1_class_value = /*$form*/ ctx[3].classes[1])) {
     				attr_dev(div1, "class", div1_class_value);
     			}
 
@@ -7420,7 +7484,7 @@
     				}
     			}
 
-    			if (!current || dirty & /*$form*/ 8 && div2_class_value !== (div2_class_value = /*$form*/ ctx[3].form_classes[0])) {
+    			if (!current || dirty & /*$form*/ 8 && div2_class_value !== (div2_class_value = /*$form*/ ctx[3].classes[0])) {
     				attr_dev(div2, "class", div2_class_value);
     			}
     		},
@@ -7616,11 +7680,11 @@
     			p = element("p");
     			p.textContent = "This is a test. This is only a test. Bleep bloop.";
     			attr_dev(h2, "class", "text-lg font-medium leading-6 text-gray-900");
-    			add_location(h2, file$8, 24, 4, 553);
+    			add_location(h2, file$8, 24, 4, 560);
     			attr_dev(p, "class", "mt-1 text-sm text-gray-500");
-    			add_location(p, file$8, 27, 4, 648);
+    			add_location(p, file$8, 27, 4, 655);
     			attr_dev(div, "slot", "header");
-    			add_location(div, file$8, 23, 2, 529);
+    			add_location(div, file$8, 23, 2, 536);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -7654,7 +7718,7 @@
     			button.textContent = "Reset";
     			button.disabled = true;
     			attr_dev(button, "class", "inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md shadow-sm cursor-not-allowed focus:outline-none");
-    			add_location(button, file$8, 41, 6, 1206);
+    			add_location(button, file$8, 41, 6, 1213);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, button, anchor);
@@ -7687,7 +7751,7 @@
     			button = element("button");
     			button.textContent = "Reset";
     			attr_dev(button, "class", "inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-md shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900");
-    			add_location(button, file$8, 34, 6, 858);
+    			add_location(button, file$8, 34, 6, 865);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, button, anchor);
@@ -7738,7 +7802,7 @@
     			button.textContent = "Save";
     			button.disabled = true;
     			attr_dev(button, "class", "inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md shadow-sm cursor-not-allowed focus:outline-none");
-    			add_location(button, file$8, 56, 6, 1801);
+    			add_location(button, file$8, 56, 6, 1808);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, button, anchor);
@@ -7769,7 +7833,7 @@
     			button.textContent = "Save";
     			attr_dev(button, "type", "submit");
     			attr_dev(button, "class", "inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-md shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900");
-    			add_location(button, file$8, 49, 6, 1483);
+    			add_location(button, file$8, 49, 6, 1490);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, button, anchor);
@@ -7819,7 +7883,7 @@
     			if_block1.c();
     			attr_dev(div, "slot", "buttons");
     			attr_dev(div, "class", "px-4 py-3 text-right bg-gray-50 sm:px-6");
-    			add_location(div, file$8, 32, 2, 764);
+    			add_location(div, file$8, 32, 2, 771);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);

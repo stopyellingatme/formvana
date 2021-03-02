@@ -1,37 +1,39 @@
 import { get as sget, writable } from "svelte/store";
 import { Business } from "../types/Business";
-import { Form } from "../../../package/typescript/Form";
+import { Form, OnEvents } from "../../../package/typescript";
 import { refs } from "./ref.data.store";
 
 function initStore() {
   // Just gonna set up the form real quick...
   let form = new Form({
     model: new Business(),
+    layout: ["description", "status", "email", "name"],
+    classes: [
+      "shadow sm:rounded-md",
+      "px-4 py-6 bg-white sm:p-6",
+      "grid grid-cols-4 gap-6 mt-6",
+    ],
+    validate_on_events: new OnEvents(true, { focus: false }),
+    refs: sget(refs),
   });
-  form.validate_on_events.focus = false;
-  form.attachRefData(sget(refs));
-
-  const layout = ["description", "status", "email", "name"];
-  form.setLayout(layout);
 
   // And add it to the store...
-  const { subscribe, set, update } = writable({
+  const { subscribe, update } = writable({
     ...form,
   });
 
   return {
     subscribe,
-    set,
     updateState: (updates) => update((s) => updateState(s, updates)),
     setLoading: (loading) => update((s) => setLoading(s, loading)),
   };
 }
-export const updateState = (state, updates) => {
+const updateState = (state, updates) => {
   Object.assign(state, updates);
   return state;
 };
 
-export const setLoading = (state, loading) => {
+const setLoading = (state, loading) => {
   state.loading = loading;
   return state;
 };
@@ -41,13 +43,11 @@ export const formState = initStore();
 export const init = () => {
   formState.setLoading(true);
   // const layout = ["description", "status", "email", "name"];
-  // formState.updateState({ layout: layout });
+  // const newState = sget(formState).buildStoredLayout(formState, layout);
+  // console.log(newState);
+  // formState.updateState({ ...newState });
 
   setTimeout(() => {
-    // const newState = sget(formState).buildStoredLayout(sget(formState));
-    // console.log(newState);
-    // formState.updateState({ ...newState });
-
     formState.setLoading(false);
   }, 1000);
 
@@ -56,6 +56,7 @@ export const init = () => {
   //   Get current form state
   //     const form = sget(formState);
   //     form.model = new Business(data);
+  //     form.updateInitialState();
   //     form.buildFields();
 
   //     formState.updateState({ form: form });

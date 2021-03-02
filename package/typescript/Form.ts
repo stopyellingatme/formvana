@@ -1,13 +1,27 @@
-import { ValidationError, validate, ValidatorOptions } from "class-validator";
+import { ValidationError, ValidatorOptions } from "class-validator/types";
+import { validate } from "class-validator";
 import { get, writable, Writable } from "svelte/store";
 import { FieldConfig } from "./";
 
-export interface OnEvents {
-  input: boolean;
-  change: boolean;
-  blur: boolean;
-  focus: boolean;
-  mount: boolean;
+/**
+ * Determines which events to validate/clear validation, on.
+ */
+export class OnEvents {
+  constructor(eventsOn: boolean = true, init?: Partial<OnEvents>) {
+    Object.assign(this, init);
+    // If eventsOn if false, turn off all event listeners
+    if (!eventsOn) {
+      Object.keys(this).forEach((key) => {
+        this[key] = false;
+      });
+    }
+  }
+
+  input: boolean = true;
+  change: boolean = true;
+  blur: boolean = true;
+  focus: boolean = true;
+  mount: boolean = false;
 }
 
 export enum LinkOnEvent {
@@ -15,6 +29,16 @@ export enum LinkOnEvent {
   Valid,
 }
 
+/**
+ * Form is NOT valid, initially.
+ *
+ * Recommended Use:
+ *  - Call new Form()
+ *  - Set the model
+ *  - optionally attach reference data (attachRefData())
+ *  - spread operator Form into writable store (e.g. writeable({...form}); )
+ *
+ */
 export class Form {
   constructor(init?: Partial<Form>) {
     Object.keys(this).forEach((key) => {
@@ -26,20 +50,28 @@ export class Form {
       this.initial_state = JSON.stringify(this.model);
       this.buildFields();
     }
+    if (this.layout && this.layout.length > 0) {
+      this.setLayout(this.layout);
+    }
+    if (this.refs) {
+      this.attachRefData();
+    }
   }
 
   /**
    * Stringified for quicker comparison
-   * Could be a better way of doing this, but for now, this works.
+   * Might be a better way of doing this, but for now, this works.
+   *
+   * This is the model's initial state.
    */
-  readonly initial_state: any = null;
+  private initial_state: any = null;
 
   /**
    * Validation options are the exact same used in
    * class-validator.
-   * Biggest performance increase comes from the "validationError"
-   * option, with "target" being set to false (so the whole model is not attached to
-   * each error message).
+   * Biggest perf increase comes from the "validationError" option,
+   * with "target" being set to false
+   * (so the whole model is not attached to each error message).
    */
   validation_options: ValidatorOptions = {
     skipMissingProperties: false,
@@ -79,31 +111,24 @@ export class Form {
   changed: Writable<boolean> = writable(false);
   touched: boolean = false;
 
-  private on_events = (init: boolean = true): OnEvents => ({
-    change: init,
-    input: init,
-    blur: init,
-    focus: init,
-    mount: false,
-  });
-  validate_on_events: OnEvents = this.on_events();
-  clear_errors_on_events: OnEvents = this.on_events(false);
+  validate_on_events: OnEvents = new OnEvents();
+  clear_errors_on_events: OnEvents = new OnEvents(false);
 
   // When should we link the field values to the model values?
-  link_fields_to_model_on: LinkOnEvent = 0;
+  link_fields_to_model: LinkOnEvent = LinkOnEvent.Always;
 
   // Order within array determines order to be applied
-  form_classes: string[] = [
-    "shadow sm:rounded-md",
-    "px-4 py-6 bg-white sm:p-6",
-    "grid grid-cols-4 gap-6 mt-6",
-  ];
+  classes: string[] = [];
 
   /**
    * Determines the ordering of the fields.
-   * Simply an array of field (or group) names in the order to be displayed
+   * Simply an array of field (or group or stepper) names in the
+   * order to be displayed
    */
   layout: string[] = [];
+
+  // Reference Data
+  refs: any = null;
 
   /**
    * * Here be Functions. Beware.
@@ -116,20 +141,27 @@ export class Form {
    */
   buildFields = (): void => {
     if (this.model) {
+      // Grab the editableProperties from the @editable decorator
       let props = Reflect.getMetadata("editableProperties", this.model) || [];
+      // Map the @editable fields to the form.fields array.
       this.fields = props.map((prop) => {
+        // Get the FieldConfig using metadata reflection
         const config: FieldConfig = Reflect.getMetadata(
           "fieldConfig",
           this.model,
           prop
         );
+        //! SET THE NAME OF THE FIELD!
         config.name = prop;
+
         // If the model has a value, attach it to the field config
         // 0, "", [], etc. are set in the constructor based on type.
         if (this.model[prop]) {
           config.value.set(this.model[prop]);
         }
+
         console.log("FIELD CONFIG: ", config);
+        // Return the enriched field config
         return config;
       });
     }
@@ -149,8 +181,49 @@ export class Form {
   buildLayout = (): void => {
     let fields = [];
     let leftovers = [];
+    // Loop over the layout...
     this.layout.forEach((item) => {
+      // and the fields...
       this.fields.forEach((field) => {
+        // If the field.name and the layout name match...
+        if (
+          field.name === item ||
+          (field.group && field.group.name === item) ||
+          (field.step && `${field.step.index}` === item)
+        ) {
+          // Then push it to the fields array
+          fields.push(field);
+        } else if (
+          leftovers.indexOf(field) === -1 &&
+          this.layout.indexOf(field.name) === -1
+        ) {
+          // Field is not in the layout, so push it to bottom of layout.
+          leftovers.push(field);
+        }
+      });
+    });
+    this.fields = [...fields, ...leftovers];
+  };
+
+  /**
+   * * Use this if you're trying to update the layout after initialization
+   * Like this:
+   * const layout = ["description", "status", "email", "name"];
+   * const newState = sget(formState).buildStoredLayout(formState, layout);
+   * formState.updateState({ ...newState });
+   */
+  buildStoredLayout = (
+    formState: Writable<any>,
+    layout: string[]
+  ): Writable<any> => {
+    let fields = [];
+    let leftovers = [];
+    // Update the layout
+    formState.update((state) => state.layout = layout);
+    // Get the Form state
+    const state = get(formState);
+    state.layout.forEach((item) => {
+      state.fields.forEach((field) => {
         if (
           field.name === item ||
           (field.group && field.group.name === item) ||
@@ -159,40 +232,20 @@ export class Form {
           fields.push(field);
         } else if (
           leftovers.indexOf(field) === -1 &&
-          this.layout.indexOf(field.name) === -1
+          state.layout.indexOf(field.name) === -1
         ) {
           leftovers.push(field);
         }
       });
     });
-    this.fields = [...fields, ...leftovers];
-  };
-
-  // Use this if you're trying to set the layout after store initialization
-  buildStoredLayout = (formState: any): Writable<any> => {
-    let fields = [];
-    let leftovers = [];
-    formState.layout.forEach((item) => {
-      formState.fields.forEach((field) => {
-        if (field.name === item || (field.group && field.group.name === item)) {
-          fields.push(field);
-        } else if (
-          leftovers.indexOf(field) === -1 &&
-          formState.layout.indexOf(field.name) === -1
-        ) {
-          leftovers.push(field);
-        }
-      });
-    });
-    formState.fields = [...fields, ...leftovers];
-    return formState;
+    state.fields = [...fields, ...leftovers];
+    return state;
   };
 
   /**
    * This is for Svelte's "use:FUNCTION" feature.
    * The "use" directive passes the HTML Node as
    * a parameter to the given function (e.g. use:useField(node: HTMLNode)).
-   *
    */
   useField = (node: HTMLElement): void => {
     // Attach HTML Node to field so we can remove event listeners later
@@ -207,47 +260,28 @@ export class Form {
     this.handleOnClearErrorEvents(node);
   };
 
-  validate = (): Promise<void> => {
-    this.clearErrors();
-    this.link_fields_to_model_on === LinkOnEvent.Always &&
-      this.linkValues(true);
+  /**
+   * Validate the field!
+   */
+  validateField = (field: FieldConfig): Promise<void> => {
+    // Link the input from the field to the model.
+    this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
+    // Return class-validator validate function.
+    // Validate the model with given validation config.
     return validate(this.model, this.validation_options).then(
       (errors: ValidationError[]) => {
-        if (errors.length > 0) {
-          this.valid.set(false);
-          this.errors = errors;
-          this.linkErrors(errors);
-          console.log("ERRORS: ", errors);
-        } else {
-          this.link_fields_to_model_on === LinkOnEvent.Valid &&
-            this.linkValues(true);
-          this.valid.set(true);
-          this.clearErrors();
-          console.log("FORM IS VALID! WEEHOO!");
-        }
-        this.hasChanged();
+        this.handleValidation(true, errors, field);
       }
     );
   };
 
-  validateField = (field: FieldConfig, ev): Promise<void> => {
-    this.link_fields_to_model_on === LinkOnEvent.Always &&
-      this.linkValues(true);
+  // Validate the form!
+  validate = (): Promise<void> => {
+    this.clearErrors();
+    this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
     return validate(this.model, this.validation_options).then(
       (errors: ValidationError[]) => {
-        if (errors.length > 0) {
-          this.valid.set(false);
-          this.errors = errors;
-          // console.log("ERRORS: ", errors);
-          this.linkFieldErrors(errors, field);
-        } else {
-          this.link_fields_to_model_on === LinkOnEvent.Valid &&
-            this.linkValues(true);
-          this.valid.set(true);
-          this.clearErrors();
-          console.log("FORM IS VALID! WEEHOO!");
-        }
-        this.hasChanged();
+        this.handleValidation(false, errors);
       }
     );
   };
@@ -268,11 +302,23 @@ export class Form {
    *   ],
    * }
    */
-  attachRefData = (refs: object): void => {
-    const fields = this.fields.filter((f) => f.ref_key);
-    fields.forEach((field) => {
-      field.options = refs[field.ref_key];
-    });
+  attachRefData = (refs?: object): void => {
+    const fields_with_ref_keys = this.fields.filter((f) => f.ref_key);
+    if (refs) {
+      fields_with_ref_keys.forEach((field) => {
+        field.options = refs[field.ref_key];
+      });
+    } else if (this.refs) {
+      fields_with_ref_keys.forEach((field) => {
+        field.options = this.refs[field.ref_key];
+      });
+    }
+    // else {
+    //   const fields_with_ref_keys = this.fields.filter((f) => f.ref_key);
+    //   fields_with_ref_keys.forEach((field) => {
+    //     field.options = refs[field.ref_key];
+    //   });
+    // }
   };
 
   clearErrors = (): void => {
@@ -290,6 +336,7 @@ export class Form {
     }
   };
 
+  // Resets to the inital state of the form.
   reset = (): void => {
     this.clearErrors();
     this.valid.set(false);
@@ -302,28 +349,64 @@ export class Form {
     this.linkValues(false);
   };
 
+  /**
+   *! Make sure to call this when the component is unloaded/destroyed
+   */
   destroy = (): void => {
+    // Remove the event listeners
     if (this.fields && this.fields.length > 0) {
-      // This is the fastest way to loop in JS. Too fast to use in nested loops.
-      let i = 0,
-        len = this.fields.length;
-      for (; len > i; ++i) {
+      this.fields.forEach((f) => {
         // Remove all the event listeners!
-        Object.keys(this.on_events).forEach((key) => {
-          this.fields[i].node.removeEventListener(key, (ev) => {
-            this.validateField(this.fields[i], ev);
-          });
-
-          this.fields[i].node.removeEventListener(key, (ev) => {
-            this.clearFieldErrors(this.fields[i].name);
+        Object.keys(this.validate_on_events).forEach((key) => {
+          f.node.removeEventListener(key, (ev) => {
+            this.validateField(f);
           });
         });
-      }
+        Object.keys(this.clear_errors_on_events).forEach((key) => {
+          f.node.removeEventListener(key, (ev) => {
+            this.clearFieldErrors(f.name);
+          });
+        });
+      });
     }
+    // Reset everything else.
     this.reset();
   };
 
-  //#region Private Functions
+  updateInitialState() {
+    if (this.model) {
+      this.initial_state = JSON.stringify(this.model);
+    }
+  }
+  // #region PRIVATE FUNCTIONS
+
+  private handleValidation(
+    isField: boolean = true,
+    errors: ValidationError[],
+    field?: FieldConfig
+  ) {
+    // There are errors!
+    if (errors.length > 0) {
+      this.valid.set(false); // Form is not valid
+      this.errors = errors;
+      // console.log("ERRORS: ", errors);
+      if (isField) {
+        // Link errors to field (to show validation errors)
+        this.linkFieldErrors(errors, field);
+      } else {
+        // This is validatino for the whole form!
+        this.linkErrors(errors);
+      }
+    } else {
+      // If the config tells us to link the values only when the form
+      // is valid, then link them here.
+      this.link_fields_to_model === LinkOnEvent.Valid && this.linkValues(true);
+      this.valid.set(true); // Form is valid!
+      this.clearErrors(); // Clear form errors
+    }
+    // Check for changes
+    this.hasChanged();
+  }
 
   // Link values FROM FIELDS toMODEL or MODEL to FIELDS
   private linkValues = (toModel: boolean): void => {
@@ -378,12 +461,14 @@ export class Form {
   };
 
   private handleOnValidateEvents = (node: HTMLElement): void => {
+    // Get the field, for passing to the validateField func
     //@ts-ignore
     const field = this.fields.filter((f) => f.name === node.name)[0];
     Object.entries(this.validate_on_events).forEach(([key, val]) => {
+      // If the OnEvent is true, then add the event listener
       if (val) {
         node.addEventListener(key, (ev) => {
-          this.validateField(field, ev);
+          this.validateField(field);
         });
       }
     });
@@ -391,6 +476,7 @@ export class Form {
 
   private handleOnClearErrorEvents = (node): void => {
     Object.entries(this.clear_errors_on_events).forEach(([key, val]) => {
+      // If the OnEvent is true, then add the event listener
       if (val) {
         node.addEventListener(key, (ev) => {
           this.clearFieldErrors(node.name);

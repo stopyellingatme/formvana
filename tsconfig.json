@@ -1,14 +1,15 @@
 {
     "compilerOptions": {
         "baseUrl": "./",
-        "outDir": "./",
         "target": "esNext",
         "module": "esNext",
         "moduleResolution": "node",
         "sourceMap": true,
+        "allowJs": true,
         "declaration": true,
         "declarationMap": true,
         "declarationDir": "./",
+        "emitDeclarationOnly": true,
         "noLib": false,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
@@ -17,6 +18,7 @@
         "esModuleInterop": true,
         "importHelpers": false,
         "noEmitHelpers": true,
+        "outDir": "./",
         "lib": [
             "es2018",
             "dom"

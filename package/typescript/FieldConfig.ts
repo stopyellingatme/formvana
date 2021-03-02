@@ -1,4 +1,4 @@
-import { ValidationError } from "class-validator";
+import { ValidationError } from "class-validator/types";
 import { writable, Writable } from "svelte/store";
 
 export interface FieldGroup {
@@ -48,13 +48,17 @@ export class FieldConfig {
     }
   }
 
-  //! DO NOT SET NAME. IT'S SET AUTOMATICALLY BY FORM.TS!
+  //! DO NOT SET NAME. IT'S SET AUTOMATICALLY IN FORM.TS!
   name: string;
-  // Main use is to add and remove event listeners
+  
+  // Used to add and remove event listeners
   node: HTMLElement;
+  
   el: string; // Element to render in your frontend
   type: string = "text"; // Defaults to text, for now
   label: string;
+
+  // Classes applied to the div wrapping the input field
   classname: string;
   required: boolean = false;
 
