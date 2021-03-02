@@ -2476,6 +2476,13 @@ function validate(schemaNameOrObject, objectOrValidationOptions, maybeValidatorO
     }
 }
 
+/**
+ * FieldConfig is used to help with the form auto generation functionality.
+ *
+ * This is not meant to be a complete HTML input replacement.
+ * It is simply a vehicle used to help give the form generator
+ * a standard-ish format to work with.
+ */
 class FieldConfig {
     constructor(init) {
         this.type = "text"; // Defaults to text, for now
@@ -2526,8 +2533,11 @@ class FieldConfig {
         if (this.el === "select" || this.el === "dropdown") {
             this.options = [];
         }
-        if (!this.attributes["title"]) {
-            this.attributes["title"] = this.label || this.name;
+        if (this.attributes["title"]) {
+            this.attributes["aria-label"] = this.attributes["title"];
+        }
+        else {
+            this.attributes["aria-label"] = this.label || this.name;
         }
     }
 }
@@ -2557,30 +2567,27 @@ var LinkOnEvent;
     LinkOnEvent[LinkOnEvent["Valid"] = 1] = "Valid";
 })(LinkOnEvent || (LinkOnEvent = {}));
 /**
+ * Formvana Form Class
  * Form is NOT valid, initially.
  *
  * Recommended Use:
- *  - Call new Form()
- *  - Set the model
- *  - optionally attach reference data (attachRefData())
- *  - spread operator Form into writable store (e.g. writeable({...form}); )
+ *  - Initialize new Form(Partial<Form>{})
+ *  - Set the model (if you didn't in the previous step)
+ *  - (optionally) attach reference data
+ *  - spread operator Form into writable store (e.g. writable({...form}); )
  *
  */
 class Form {
     constructor(init) {
         /**
-         * Stringified for quicker comparison
-         * Might be a better way of doing this, but for now, this works.
-         *
          * This is the model's initial state.
          */
         this.initial_state = null;
         /**
-         * Validation options are the exact same used in
-         * class-validator.
-         * Biggest perf increase comes from the "validationError" option,
-         * with "target" being set to false
-         * (so the whole model is not attached to each error message).
+         * Validation options come from class-validator.
+         *
+         * Biggest perf increase comes from setting validationError.target = false
+         * (so the whole model is not attached to each error message)
          */
         this.validation_options = {
             skipMissingProperties: false,
@@ -2622,9 +2629,9 @@ class Form {
         // Order within array determines order to be applied
         this.classes = [];
         /**
-         * Determines the ordering of the fields.
-         * Simply an array of field (or group or stepper) names in the
-         * order to be displayed
+         * Determines the ordering of this.fields.
+         * Simply an array of field names (or group names or stepper names)
+         * in the order to be displayed
          */
         this.layout = [];
         // Reference Data
@@ -2640,7 +2647,7 @@ class Form {
         this.buildFields = () => {
             if (this.model) {
                 // Grab the editableProperties from the @editable decorator
-                let props = Reflect.getMetadata("editableProperties", this.model) || [];
+                let props = Reflect.getMetadata("editableProperties", this.model);
                 // Map the @editable fields to the form.fields array.
                 this.fields = props.map((prop) => {
                     // Get the FieldConfig using metadata reflection
@@ -2810,9 +2817,9 @@ class Form {
             this.clearErrors();
             this.valid.set(false);
             this.changed.set(false);
-            const initial = JSON.parse(this.initial_state);
+            // const initial = JSON.parse(this.initial_state);
             Object.keys(this.model).forEach((key) => {
-                this.model[key] = initial[key];
+                this.model[key] = this.initial_state[key];
             });
             this.linkValues(false);
         };
@@ -2848,8 +2855,18 @@ class Form {
                     : this.fields[i].value.set(this.model[this.fields[i].name]);
             }
         };
+        /**
+         * TODO: This needs a rework. Stringifying is not the most performant.
+         */
         this.hasChanged = () => {
-            if (JSON.stringify(this.model) === this.initial_state &&
+            // if (
+            //   JSON.stringify(this.model) === this.initial_state &&
+            //   this.errors.length === 0
+            // ) {
+            //   this.changed.set(false);
+            //   return;
+            // }
+            if (Object.is(this.model, this.initial_state) &&
                 this.errors.length === 0) {
                 this.changed.set(false);
                 return;
@@ -2890,7 +2907,7 @@ class Form {
                 if (val) {
                     node.addEventListener(key, (ev) => {
                         this.validateField(field);
-                    });
+                    }, false);
                 }
             });
         };
@@ -2910,7 +2927,7 @@ class Form {
             }
         });
         if (this.model) {
-            this.initial_state = JSON.stringify(this.model);
+            this.initial_state = JSON.parse(JSON.stringify(this.model));
             this.buildFields();
         }
         if (this.layout && this.layout.length > 0) {
@@ -2920,9 +2937,15 @@ class Form {
             this.attachRefData();
         }
     }
+    /**
+     * Generate a Svelte Store from the current "this"
+     */
+    storify() {
+        return writable(this);
+    }
     updateInitialState() {
         if (this.model) {
-            this.initial_state = JSON.stringify(this.model);
+            this.initial_state = JSON.parse(JSON.stringify(this.model));
         }
     }
     // #region PRIVATE FUNCTIONS
@@ -4121,7 +4144,7 @@ class Business {
 }
 __decorate([
     editable,
-    Length(10, 90),
+    Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
     IsString(),
     field(new FieldConfig({
         el: "input",
@@ -4135,7 +4158,7 @@ __decorate([
 ], Business.prototype, "name", void 0);
 __decorate([
     editable,
-    IsEmail(),
+    IsEmail({}, { message: "Please enter a valid email address" }),
     field(new FieldConfig({
         el: "input",
         type: "email",
@@ -4254,9 +4277,7 @@ function initStore() {
         refs: get_store_value(refs),
     });
     // And add it to the store...
-    const { subscribe, update } = writable({
-        ...form,
-    });
+    const { subscribe, update } = form.storify();
     return {
         subscribe,
         updateState: (updates) => update((s) => updateState(s, updates)),
@@ -4271,13 +4292,14 @@ const setLoading = (state, loading) => {
     state.loading = loading;
     return state;
 };
+/**
+ ** External functionlaity below
+ *    || || || ||
+ *    \/ \/ \/ \/
+ */
 const formState = initStore();
 const init$2 = () => {
     formState.setLoading(true);
-    // const layout = ["description", "status", "email", "name"];
-    // const newState = sget(formState).buildStoredLayout(formState, layout);
-    // console.log(newState);
-    // formState.updateState({ ...newState });
     setTimeout(() => {
         formState.setLoading(false);
     }, 1000);

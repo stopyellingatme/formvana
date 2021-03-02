@@ -30,7 +30,7 @@ export class Business {
   id: string;
 
   @editable
-  @Length(10, 90)
+  @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
   @IsString()
   @field(
     new FieldConfig({
@@ -45,7 +45,7 @@ export class Business {
   name: string = "";
 
   @editable
-  @IsEmail()
+  @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",

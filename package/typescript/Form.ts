@@ -30,13 +30,14 @@ export enum LinkOnEvent {
 }
 
 /**
+ * Formvana Form Class
  * Form is NOT valid, initially.
  *
  * Recommended Use:
- *  - Call new Form()
- *  - Set the model
- *  - optionally attach reference data (attachRefData())
- *  - spread operator Form into writable store (e.g. writeable({...form}); )
+ *  - Initialize new Form(Partial<Form>{})
+ *  - Set the model (if you didn't in the previous step)
+ *  - (optionally) attach reference data
+ *  - spread operator Form into writable store (e.g. writable({...form}); )
  *
  */
 export class Form {
@@ -47,7 +48,7 @@ export class Form {
       }
     });
     if (this.model) {
-      this.initial_state = JSON.stringify(this.model);
+      this.initial_state = JSON.parse(JSON.stringify(this.model));
       this.buildFields();
     }
     if (this.layout && this.layout.length > 0) {
@@ -59,19 +60,15 @@ export class Form {
   }
 
   /**
-   * Stringified for quicker comparison
-   * Might be a better way of doing this, but for now, this works.
-   *
    * This is the model's initial state.
    */
   private initial_state: any = null;
 
   /**
-   * Validation options are the exact same used in
-   * class-validator.
-   * Biggest perf increase comes from the "validationError" option,
-   * with "target" being set to false
-   * (so the whole model is not attached to each error message).
+   * Validation options come from class-validator. 
+   * 
+   * Biggest perf increase comes from setting validationError.target = false
+   * (so the whole model is not attached to each error message)
    */
   validation_options: ValidatorOptions = {
     skipMissingProperties: false,
@@ -121,9 +118,9 @@ export class Form {
   classes: string[] = [];
 
   /**
-   * Determines the ordering of the fields.
-   * Simply an array of field (or group or stepper) names in the
-   * order to be displayed
+   * Determines the ordering of this.fields.
+   * Simply an array of field names (or group names or stepper names) 
+   * in the order to be displayed
    */
   layout: string[] = [];
 
@@ -142,7 +139,7 @@ export class Form {
   buildFields = (): void => {
     if (this.model) {
       // Grab the editableProperties from the @editable decorator
-      let props = Reflect.getMetadata("editableProperties", this.model) || [];
+      let props = Reflect.getMetadata("editableProperties", this.model);
       // Map the @editable fields to the form.fields array.
       this.fields = props.map((prop) => {
         // Get the FieldConfig using metadata reflection
@@ -321,6 +318,13 @@ export class Form {
     // }
   };
 
+  /**
+   * Generate a Svelte Store from the current "this"
+   */
+  storify(): Writable<Form> {
+    return writable(this);
+  }
+
   clearErrors = (): void => {
     this.errors = [];
     this.fields.forEach((field) => {
@@ -342,9 +346,9 @@ export class Form {
     this.valid.set(false);
     this.changed.set(false);
 
-    const initial = JSON.parse(this.initial_state);
+    // const initial = JSON.parse(this.initial_state);
     Object.keys(this.model).forEach((key) => {
-      this.model[key] = initial[key];
+      this.model[key] = this.initial_state[key];
     });
     this.linkValues(false);
   };
@@ -375,7 +379,7 @@ export class Form {
 
   updateInitialState() {
     if (this.model) {
-      this.initial_state = JSON.stringify(this.model);
+      this.initial_state = JSON.parse(JSON.stringify(this.model));
     }
   }
   // #region PRIVATE FUNCTIONS
@@ -419,9 +423,19 @@ export class Form {
     }
   };
 
+  /**
+   * TODO: This needs a rework. Stringifying is not the most performant.
+   */
   private hasChanged = (): void => {
+    // if (
+    //   JSON.stringify(this.model) === this.initial_state &&
+    //   this.errors.length === 0
+    // ) {
+    //   this.changed.set(false);
+    //   return;
+    // }
     if (
-      JSON.stringify(this.model) === this.initial_state &&
+      Object.is(this.model, this.initial_state) && 
       this.errors.length === 0
     ) {
       this.changed.set(false);
@@ -469,7 +483,7 @@ export class Form {
       if (val) {
         node.addEventListener(key, (ev) => {
           this.validateField(field);
-        });
+        }, false);
       }
     });
   };

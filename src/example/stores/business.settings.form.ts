@@ -18,9 +18,7 @@ function initStore() {
   });
 
   // And add it to the store...
-  const { subscribe, update } = writable({
-    ...form,
-  });
+  const { subscribe, update } = form.storify();
 
   return {
     subscribe,
@@ -38,14 +36,16 @@ const setLoading = (state, loading) => {
   return state;
 };
 
+/**
+ ** External functionlaity below
+ *    || || || ||
+ *    \/ \/ \/ \/
+ */
+
 export const formState = initStore();
 
 export const init = () => {
   formState.setLoading(true);
-  // const layout = ["description", "status", "email", "name"];
-  // const newState = sget(formState).buildStoredLayout(formState, layout);
-  // console.log(newState);
-  // formState.updateState({ ...newState });
 
   setTimeout(() => {
     formState.setLoading(false);
