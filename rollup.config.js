@@ -19,8 +19,8 @@ export default {
       name: "app",
       file: "public/build/bundle.js",
     },
-    { file: pkg.module, format: "es" },
-    { file: pkg.main, format: "umd", name: "Formvana" },
+    { file: pkg.module, format: "es", sourcemap: true },
+    { file: pkg.main, format: "umd", name: "Formvana", sourcemap: true },
   ],
   plugins: [
     postcss({

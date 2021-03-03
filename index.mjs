@@ -8657,3 +8657,4 @@ const app = new App({
 });
 
 export default app;
+//# sourceMappingURL=index.mjs.map

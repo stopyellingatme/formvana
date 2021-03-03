@@ -2,7 +2,6 @@ import { get, writable } from "svelte/store";
 import { Business } from "./Business";
 import { Form, OnEvents } from "../../package/typescript";
 import { refs } from "./ref.data.store";
-//@ts-ignore
 import SettingsTemplate from "./SettingsTemplate.svelte";
 
 function initStore() {
