@@ -17,7 +17,7 @@ export interface FieldStep {
  * FieldConfig is used to help with the form auto generation functionality.
  *
  * This is not meant to be a complete HTML input replacement.
- * It is simply a vehicle used to help give the form generator
+ * It is simply a vehicle to help give the form generator
  * a standard-ish format to work with.
  */
 export class FieldConfig {

@@ -1,32 +1,26 @@
 import {
-  validate,
-  validateOrReject,
   Contains,
   IsInt,
   Length,
   IsEmail,
   IsFQDN,
   IsDate,
+  IsEnum,
   Min,
   Max,
   IsString,
 } from "class-validator";
-import { editable, field } from "../../../package/typescript";
-import { FieldConfig } from "../../../package/typescript";
+import { editable, field } from "../../package/typescript";
+import { FieldConfig } from "../../package/typescript";
 
-export type BusinessStatus = "ACTIVE" | "PENDING" | "SUSPENDED" | "ARCHIVED";
+export enum BusinessStatus {
+  ACTIVE,
+  PENDING,
+  SUSPENDED,
+  ARCHIVED,
+}
 
 export class Business {
-  constructor(init?: Partial<Business>) {
-    if (init) {
-      Object.keys(this).forEach((key) => {
-        if (init[key]) {
-          this[key] = init[key];
-        }
-      });
-    }
-  }
-
   id: string;
 
   @editable
@@ -95,7 +89,7 @@ export class Business {
   zip: string = "";
 
   @editable
-  @IsString()
+  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
   @field(
     new FieldConfig({
       el: "select",
@@ -107,4 +101,14 @@ export class Business {
     })
   )
   status;
+
+  constructor(init?: Partial<Business>) {
+    if (init) {
+      Object.keys(this).forEach((key) => {
+        if (init[key]) {
+          this[key] = init[key];
+        }
+      });
+    }
+  }
 }

@@ -149,13 +149,13 @@
           aria-activedescendant="listbox-item-3"
           class="py-1 overflow-auto text-base rounded-md max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
         >
-          {#each options as { key, value }, i}
+          {#each options as { label, value }, i}
             <DropdownOption
-              on:click={(e) => handleChange(e, key)}
+              on:click={(e) => handleChange(e, label)}
               id="listbox-option-{i}"
-              {key}
+              {label}
               {value}
-              selected={$valueStore === key}
+              selected={$valueStore === label}
             />
           {/each}
         </ul>

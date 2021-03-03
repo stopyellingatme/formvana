@@ -29,6 +29,13 @@ export enum LinkOnEvent {
   Valid,
 }
 
+export interface RefData {}
+
+export interface RefDataItem {
+  label: string;
+  value: any;
+}
+
 /**
  * Formvana Form Class
  * Form is NOT valid, initially.
@@ -51,8 +58,8 @@ export class Form {
       this.initial_state = JSON.parse(JSON.stringify(this.model));
       this.buildFields();
     }
-    if (this.layout && this.layout.length > 0) {
-      this.setLayout(this.layout);
+    if (this.field_order && this.field_order.length > 0) {
+      this.setOrder(this.field_order);
     }
     if (this.refs) {
       this.attachRefData();
@@ -65,8 +72,8 @@ export class Form {
   private initial_state: any = null;
 
   /**
-   * Validation options come from class-validator. 
-   * 
+   * Validation options come from class-validator ValidatorOptions.
+   *
    * Biggest perf increase comes from setting validationError.target = false
    * (so the whole model is not attached to each error message)
    */
@@ -96,6 +103,27 @@ export class Form {
    */
   fields: FieldConfig[] = [];
 
+  // Reference Data
+  refs: any = null;
+
+  // Order within array determines order to be applied
+  classes: string[] = [];
+
+  /**
+   * Determines the ordering of this.fields.
+   * Simply an array of field names (or group names or stepper names)
+   * in the order to be displayed
+   */
+  field_order: string[] = [];
+
+  /**
+   * Form Template Layout
+   * 
+   * Render the form into a custom svelte template!
+   * You're not going to be held back by a simplistic classname structure!
+   */
+  template: any = null;
+
   /**
    * this.valid is a "store" so we can change the state of the variable
    * inside of the class and it (the change) be reflected outside
@@ -113,19 +141,6 @@ export class Form {
 
   // When should we link the field values to the model values?
   link_fields_to_model: LinkOnEvent = LinkOnEvent.Always;
-
-  // Order within array determines order to be applied
-  classes: string[] = [];
-
-  /**
-   * Determines the ordering of this.fields.
-   * Simply an array of field names (or group names or stepper names) 
-   * in the order to be displayed
-   */
-  layout: string[] = [];
-
-  // Reference Data
-  refs: any = null;
 
   /**
    * * Here be Functions. Beware.
@@ -170,19 +185,19 @@ export class Form {
    * names in the order to be displayed.
    * Leftover fields are appended to bottom of form.
    */
-  setLayout = (layout: string[]): void => {
-    this.layout = layout;
-    this.buildLayout();
+  setOrder = (order: string[]): void => {
+    this.field_order = order;
+    this.createOrder();
   };
 
-  buildLayout = (): void => {
+  createOrder = (): void => {
     let fields = [];
     let leftovers = [];
-    // Loop over the layout...
-    this.layout.forEach((item) => {
+    // Loop over the order...
+    this.field_order.forEach((item) => {
       // and the fields...
       this.fields.forEach((field) => {
-        // If the field.name and the layout name match...
+        // If the field.name and the order name match...
         if (
           field.name === item ||
           (field.group && field.group.name === item) ||
@@ -192,9 +207,9 @@ export class Form {
           fields.push(field);
         } else if (
           leftovers.indexOf(field) === -1 &&
-          this.layout.indexOf(field.name) === -1
+          this.field_order.indexOf(field.name) === -1
         ) {
-          // Field is not in the layout, so push it to bottom of layout.
+          // Field is not in the order, so push it to bottom of order.
           leftovers.push(field);
         }
       });
@@ -211,15 +226,15 @@ export class Form {
    */
   buildStoredLayout = (
     formState: Writable<any>,
-    layout: string[]
+    order: string[]
   ): Writable<any> => {
     let fields = [];
     let leftovers = [];
-    // Update the layout
-    formState.update((state) => state.layout = layout);
+    // Update the order
+    formState.update((state) => (state.field_order = order));
     // Get the Form state
     const state = get(formState);
-    state.layout.forEach((item) => {
+    state.field_order.forEach((item) => {
       state.fields.forEach((field) => {
         if (
           field.name === item ||
@@ -229,7 +244,7 @@ export class Form {
           fields.push(field);
         } else if (
           leftovers.indexOf(field) === -1 &&
-          state.layout.indexOf(field.name) === -1
+          state.field_order.indexOf(field.name) === -1
         ) {
           leftovers.push(field);
         }
@@ -241,8 +256,10 @@ export class Form {
 
   /**
    * This is for Svelte's "use:FUNCTION" feature.
-   * The "use" directive passes the HTML Node as
-   * a parameter to the given function (e.g. use:useField(node: HTMLNode)).
+   * The "use" directive passes the HTML Node as a parameter
+   * to the given function (e.g. use:useField(node: HTMLNode)).
+   *
+   * This hooks up the event listeners!
    */
   useField = (node: HTMLElement): void => {
     // Attach HTML Node to field so we can remove event listeners later
@@ -293,9 +310,9 @@ export class Form {
    *    { label: "Option 1", value: 0 },
    *    { label: "Option 2", value: 1 },
    *   ],
-   *  [field.other_name]: [
-   *    { label: "Other Option 1", value: 0 },
-   *    { label: "Other Option 2", value: 1 },
+   *  [field.next_name]: [
+   *    { label: "Next Option 1", value: 0 },
+   *    { label: "Next Option 2", value: 1 },
    *   ],
    * }
    */
@@ -434,10 +451,7 @@ export class Form {
     //   this.changed.set(false);
     //   return;
     // }
-    if (
-      Object.is(this.model, this.initial_state) && 
-      this.errors.length === 0
-    ) {
+    if (Object.is(this.model, this.initial_state) && this.errors.length === 0) {
       this.changed.set(false);
       return;
     }
@@ -481,9 +495,13 @@ export class Form {
     Object.entries(this.validate_on_events).forEach(([key, val]) => {
       // If the OnEvent is true, then add the event listener
       if (val) {
-        node.addEventListener(key, (ev) => {
-          this.validateField(field);
-        }, false);
+        node.addEventListener(
+          key,
+          (ev) => {
+            this.validateField(field);
+          },
+          false
+        );
       }
     });
   };

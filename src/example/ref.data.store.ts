@@ -11,30 +11,30 @@ import { writable } from "svelte/store";
 export const data = {
   user_statuses: [
     {
-      key: "ACTIVE",
+      label: "ACTIVE",
       value: "ACTIVE",
     },
     {
-      key: "DISABLED",
+      label: "DISABLED",
       value: "DISABLED",
     },
   ],
   business_statuses: [
     {
-      key: "ACTIVE",
-      value: "ACTIVE",
+      label: "ACTIVE",
+      value: 0,
     },
     {
-      key: "PENDING",
-      value: "PENDING",
+      label: "PENDING",
+      value: 1,
     },
     {
-      key: "SUSPENDED",
-      value: "SUSPENDED",
+      label: "SUSPENDED",
+      value: 2,
     },
     {
-      key: "ARCHIVED",
-      value: "ARCHIVED",
+      label: "ARCHIVED",
+      value: 3,
     },
   ],
 };

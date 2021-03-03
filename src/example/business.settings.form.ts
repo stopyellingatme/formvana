@@ -1,20 +1,18 @@
-import { get as sget, writable } from "svelte/store";
-import { Business } from "../types/Business";
-import { Form, OnEvents } from "../../../package/typescript";
+import { get, writable } from "svelte/store";
+import { Business } from "./Business";
+import { Form, OnEvents } from "../../package/typescript";
 import { refs } from "./ref.data.store";
+//@ts-ignore
+import SettingsTemplate from "./SettingsTemplate.svelte";
 
 function initStore() {
   // Just gonna set up the form real quick...
   let form = new Form({
     model: new Business(),
-    layout: ["description", "status", "email", "name"],
-    classes: [
-      "shadow sm:rounded-md",
-      "px-4 py-6 bg-white sm:p-6",
-      "grid grid-cols-4 gap-6 mt-6",
-    ],
+    field_order: ["description", "status", "email", "name"],
+    template: SettingsTemplate,
     validate_on_events: new OnEvents(true, { focus: false }),
-    refs: sget(refs),
+    refs: get(refs),
   });
 
   // And add it to the store...
@@ -65,7 +63,7 @@ export const init = () => {
 
 export const onSubmit = (ev) => {
   console.log("SUBMIT: ", ev);
-  console.log(sget(formState));
+  console.log(get(formState));
 
   // formState.setLoading(true);
   // const model = sget(formState).model;
