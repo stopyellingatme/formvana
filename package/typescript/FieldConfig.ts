@@ -84,7 +84,7 @@ export class FieldConfig {
   step?: FieldStep;
 
   /**
-   * * String array of things like:
+   * * JSON of things like:
    * -- type="text || email || password || whatever"
    * -- class='input class'
    * -- disabled

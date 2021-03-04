@@ -8,7 +8,7 @@ import {
   IsEnum,
   Min,
   Max,
-  IsString,
+  IsString
 } from "class-validator";
 import { editable, field } from "../../package/typescript";
 import { FieldConfig } from "../../package/typescript";
@@ -18,6 +18,11 @@ export enum BusinessStatus {
   PENDING,
   SUSPENDED,
   ARCHIVED,
+}
+
+export enum UserStatus {
+  ACTIVE,
+  DISABLED,
 }
 
 export class Business {
@@ -101,6 +106,20 @@ export class Business {
     })
   )
   status;
+
+  @editable
+  @IsEnum(UserStatus, { message: "Please choose a User Status" })
+  @field(
+    new FieldConfig({
+      el: "select",
+      type: "select",
+      label: "User Status",
+      required: false,
+      classname: "col-span-4 sm:col-span-2",
+      ref_key: "user_statuses",
+    })
+  )
+  user_status;
 
   constructor(init?: Partial<Business>) {
     if (init) {

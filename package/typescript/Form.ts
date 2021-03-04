@@ -9,7 +9,7 @@ import { FieldConfig } from "./";
 export class OnEvents {
   constructor(eventsOn: boolean = true, init?: Partial<OnEvents>) {
     Object.assign(this, init);
-    // If eventsOn if false, turn off all event listeners
+    // If eventsOn is false, turn off all event listeners
     if (!eventsOn) {
       Object.keys(this).forEach((key) => {
         this[key] = false;
@@ -29,8 +29,6 @@ export enum LinkOnEvent {
   Valid,
 }
 
-export interface RefData {}
-
 export interface RefDataItem {
   label: string;
   value: any;
@@ -41,10 +39,11 @@ export interface RefDataItem {
  * Form is NOT valid, initially.
  *
  * Recommended Use:
- *  - Initialize new Form(Partial<Form>{})
+ *  - Initialize new Form({model: ..., refs: ..., template: ..., etc.})
  *  - Set the model (if you didn't in the previous step)
  *  - (optionally) attach reference data
- *  - spread operator Form into writable store (e.g. writable({...form}); )
+ *  - call form.storify() -  const { subscribe, update } = form.storify();
+ *  - Now you're ready to use the form!
  *
  */
 export class Form {
@@ -55,6 +54,10 @@ export class Form {
       }
     });
     if (this.model) {
+      /**
+       * This is the best method for reliable deep-ish cloning that i've found.
+       * If you know a BETTER way, be my guest.
+       */
       this.initial_state = JSON.parse(JSON.stringify(this.model));
       this.buildFields();
     }
@@ -92,7 +95,9 @@ export class Form {
   };
 
   /**
-   * Underlying TS Model.
+   * This is your form Model/Schema.
+   *
+   * (If you did not set the model in constructor)
    * When model is set, call buildFields() to build the fields.
    */
   model: any = null;
@@ -103,8 +108,16 @@ export class Form {
    */
   fields: FieldConfig[] = [];
 
-  // Reference Data
-  refs: any = null;
+  /**
+   * refs holds any reference data you'll be using in the form
+   * e.g. seclet dropdowns, radio buttons, etc.
+   *
+   * (If you did not set the model in constructor)
+   * Call attachRefData() to link the data to the respective field
+   *
+   * * Fields and reference data are linked via field.ref_key *
+   */
+  refs: Record<string, RefDataItem[]> = null;
 
   // Order within array determines order to be applied
   classes: string[] = [];
@@ -118,9 +131,13 @@ export class Form {
 
   /**
    * Form Template Layout
-   * 
+   *
    * Render the form into a custom svelte template!
-   * You're not going to be held back by a simplistic classname structure!
+   * Use a svelte component.
+   * * The component/template must accept {form} prop
+   *
+   * Note: add ` types": ["svelte"] ` to tsconfig compilerOptions
+   * to remove TS import error of .svelte files (for your template)
    */
   template: any = null;
 
@@ -132,21 +149,25 @@ export class Form {
   valid: Writable<boolean> = writable(false);
   errors: ValidationError[] = [];
 
-  loading: boolean = false;
+  loading: Writable<boolean> = writable(false);
   changed: Writable<boolean> = writable(false);
-  touched: boolean = false;
+  touched: Writable<boolean> = writable(false);
 
   validate_on_events: OnEvents = new OnEvents();
   clear_errors_on_events: OnEvents = new OnEvents(false);
 
-  // When should we link the field values to the model values?
+  // When to link field.values to model.values
   link_fields_to_model: LinkOnEvent = LinkOnEvent.Always;
+
+  private required_fields: string[] = [];
 
   /**
    * * Here be Functions. Beware.
    * * Here be Functions. Beware.
    * * Here be Functions. Beware.
    */
+
+  //#region FUNCTIONS
 
   /**
    * Build the field configs from the given model using metadata-reflection.
@@ -170,6 +191,10 @@ export class Form {
         // 0, "", [], etc. are set in the constructor based on type.
         if (this.model[prop]) {
           config.value.set(this.model[prop]);
+        }
+
+        if (config.required) {
+          this.required_fields.push(config.name);
         }
 
         console.log("FIELD CONFIG: ", config);
@@ -276,6 +301,7 @@ export class Form {
 
   /**
    * Validate the field!
+   * This should be attached to the field via the useField method.
    */
   validateField = (field: FieldConfig): Promise<void> => {
     // Link the input from the field to the model.
@@ -300,23 +326,19 @@ export class Form {
     );
   };
 
+  loadData = (data: any): Form => {
+    this.model = data;
+    this.updateInitialState();
+    this.buildFields();
+    return this;
+  };
+
   /**
-   * Just pass in the reference data and let the field
-   * configs do the rest.
+   * Just pass in the reference data and let the field configs do the rest.
    *
-   ** Ref data must be in format:
-   * {
-   *  [field.name]: [
-   *    { label: "Option 1", value: 0 },
-   *    { label: "Option 2", value: 1 },
-   *   ],
-   *  [field.next_name]: [
-   *    { label: "Next Option 1", value: 0 },
-   *    { label: "Next Option 2", value: 1 },
-   *   ],
-   * }
+   * * Ref data must be in format: Record<string, RefDataItem[]>
    */
-  attachRefData = (refs?: object): void => {
+  attachRefData = (refs?: Record<string, RefDataItem[]>): void => {
     const fields_with_ref_keys = this.fields.filter((f) => f.ref_key);
     if (refs) {
       fields_with_ref_keys.forEach((field) => {
@@ -327,20 +349,20 @@ export class Form {
         field.options = this.refs[field.ref_key];
       });
     }
-    // else {
-    //   const fields_with_ref_keys = this.fields.filter((f) => f.ref_key);
-    //   fields_with_ref_keys.forEach((field) => {
-    //     field.options = refs[field.ref_key];
-    //   });
-    // }
   };
 
   /**
    * Generate a Svelte Store from the current "this"
    */
-  storify(): Writable<Form> {
+  storify = (): Writable<Form> => {
     return writable(this);
-  }
+  };
+
+  updateInitialState = (): void => {
+    if (this.model) {
+      this.initial_state = JSON.parse(JSON.stringify(this.model));
+    }
+  };
 
   clearErrors = (): void => {
     this.errors = [];
@@ -349,21 +371,14 @@ export class Form {
     });
   };
 
-  clearValues = (): void => {
-    if (this.fields && this.fields.length > 0) {
-      this.fields.forEach((field) => {
-        field.value.set(null);
-      });
-    }
-  };
-
   // Resets to the inital state of the form.
   reset = (): void => {
     this.clearErrors();
     this.valid.set(false);
     this.changed.set(false);
+    this.touched.set(false);
+    this.loading.set(false);
 
-    // const initial = JSON.parse(this.initial_state);
     Object.keys(this.model).forEach((key) => {
       this.model[key] = this.initial_state[key];
     });
@@ -374,8 +389,8 @@ export class Form {
    *! Make sure to call this when the component is unloaded/destroyed
    */
   destroy = (): void => {
-    // Remove the event listeners
     if (this.fields && this.fields.length > 0) {
+      // For each field...
       this.fields.forEach((f) => {
         // Remove all the event listeners!
         Object.keys(this.validate_on_events).forEach((key) => {
@@ -394,20 +409,29 @@ export class Form {
     this.reset();
   };
 
-  updateInitialState() {
-    if (this.model) {
-      this.initial_state = JSON.parse(JSON.stringify(this.model));
-    }
-  }
   // #region PRIVATE FUNCTIONS
 
-  private handleValidation(
+  // TODO: Speed this bad boy up. There are optimizations to be had.
+  private requiredFieldsValid = (errors: ValidationError[]): boolean => {
+    const errs = errors.map(e => e.property);
+    let i = 0, len = this.required_fields.length;
+    for(; len > i; ++i) {
+      if (errs.includes(this.required_fields[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private handleValidation = (
     isField: boolean = true,
     errors: ValidationError[],
     field?: FieldConfig
-  ) {
+  ) => {
+    const arfv = this.requiredFieldsValid(errors);
+    
     // There are errors!
-    if (errors.length > 0) {
+    if (errors.length > 0 && !arfv) {
       this.valid.set(false); // Form is not valid
       this.errors = errors;
       // console.log("ERRORS: ", errors);
@@ -415,6 +439,7 @@ export class Form {
         // Link errors to field (to show validation errors)
         this.linkFieldErrors(errors, field);
       } else {
+        this.valid.set(false); // Form is not valid
         // This is validatino for the whole form!
         this.linkErrors(errors);
       }
@@ -427,9 +452,9 @@ export class Form {
     }
     // Check for changes
     this.hasChanged();
-  }
+  };
 
-  // Link values FROM FIELDS toMODEL or MODEL to FIELDS
+  // Link values from FIELDS toMODEL or MODEL to FIELDS
   private linkValues = (toModel: boolean): void => {
     let i = 0,
       len = this.fields.length;
@@ -441,16 +466,10 @@ export class Form {
   };
 
   /**
-   * TODO: This needs a rework. Stringifying is not the most performant.
+   * TODO: There may be a better way to do comparison than Object.is().
+   * TODO: Be my guest to fix it if you know how.
    */
   private hasChanged = (): void => {
-    // if (
-    //   JSON.stringify(this.model) === this.initial_state &&
-    //   this.errors.length === 0
-    // ) {
-    //   this.changed.set(false);
-    //   return;
-    // }
     if (Object.is(this.model, this.initial_state) && this.errors.length === 0) {
       this.changed.set(false);
       return;
@@ -516,5 +535,6 @@ export class Form {
       }
     });
   };
+  //#endregion
   //#endregion
 }

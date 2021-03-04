@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import LoadingIndicator from "../../package/svelte/LoadingIndicator.svelte";
-  import Field from "../../package/svelte/inputs/Field.svelte";
+  import Field from "../../package/svelte/tailwind/Field.svelte";
   import { createEventDispatcher } from "svelte";
   const dispatch = createEventDispatcher();
 
@@ -12,13 +12,7 @@
     dispatch("submit", e);
   };
 
-  onMount(() => {
-    // setTimeout(() ``=> {
-    // $form.fields.forEach((field) => {
-    //   console.log("VAL: ", get(field.value));
-    // });
-    // }, 5000);
-  });
+  onMount(() => {});
 
   onDestroy(() => {
     // dispatch("destroy", true);
@@ -38,6 +32,7 @@
 
   $: valid = $form.valid;
   $: changed = $form.changed;
+  $: loading = $form.loading;
 
   let fw;
   let fh;
@@ -49,7 +44,7 @@
   bind:clientWidth={fw}
 >
   <div class="shadow sm:rounded-md">
-    <LoadingIndicator visible={$form.loading} w={fw} h={fh} />
+    <LoadingIndicator visible={$loading} w={fw} h={fh} />
     <div class="px-4 py-6 bg-white sm:p-6">
       <!-- Header Area -->
       <div>
@@ -63,6 +58,7 @@
 
       <!-- Form Wrapper Div (col num, col gaps, etc.) -->
       <div class="grid grid-cols-4 gap-6 mt-6">
+        <!-- This is where the Form Generator Magic happens! -->
         {#each $form.fields as field, i}
           <Field {field} {form} />
         {/each}

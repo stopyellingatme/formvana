@@ -20,7 +20,6 @@ function initStore() {
   return {
     subscribe,
     updateState: (updates) => update((s) => updateState(s, updates)),
-    setLoading: (loading) => update((s) => setLoading(s, loading)),
   };
 }
 const updateState = (state, updates) => {
@@ -28,35 +27,26 @@ const updateState = (state, updates) => {
   return state;
 };
 
-const setLoading = (state, loading) => {
-  state.loading = loading;
-  return state;
-};
-
 /**
- ** External functionlaity below
- *    || || || ||
- *    \/ \/ \/ \/
+ * * External functionlaity below
+ *    || || || || || || || ||
+ *    \/ \/ \/ \/ \/ \/ \/ \/
  */
 
 export const formState = initStore();
 
 export const init = () => {
-  formState.setLoading(true);
+  get(formState).loading.set(true);
 
   setTimeout(() => {
-    formState.setLoading(false);
+    get(formState).loading.set(false);
   }, 1000);
 
   // Update form with data fetched from DB
   // getBusiness(SOME_STATE.BUSINESS_ID).then((data) => {
   //   Get current form state
-  //     const form = sget(formState);
-  //     form.model = new Business(data);
-  //     form.updateInitialState();
-  //     form.buildFields();
-
-  //     formState.updateState({ form: form });
+  //   const form = get(formState).loadData(new Business(data));
+  //   formState.updateState({ form: form });
   // });
 };
 

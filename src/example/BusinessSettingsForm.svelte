@@ -10,4 +10,4 @@
   });
 </script>
 
-<DynamicForm form={formState} on:submit={onSubmit} />
+<DynamicForm form={formState} on:submit={() => console.log("MADE IT HERE")}/>

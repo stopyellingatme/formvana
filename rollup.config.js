@@ -4,7 +4,6 @@ import commonjs from "@rollup/plugin-commonjs";
 import livereload from "rollup-plugin-livereload";
 import postcss from "rollup-plugin-postcss";
 import typescript from "@rollup/plugin-typescript";
-// import json from "@rollup/plugin-json";
 import { terser } from "rollup-plugin-terser";
 import pkg from "./package.json";
 
@@ -43,7 +42,6 @@ export default {
     !production && livereload("public"),
     production && terser(),
     typescript(),
-    // json(),
   ],
   watch: {
     clearScreen: false,
