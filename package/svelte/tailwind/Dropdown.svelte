@@ -37,6 +37,7 @@
         const item = options[i].value;
         if ($valueStore === item) {
           active_index = i;
+          $valueStore = options[active_index].label;
         }
       }
     }
@@ -49,7 +50,7 @@
         menu_open = true;
         e.preventDefault();
         if (options[active_index + 1] && options[active_index + 1].value) {
-          $valueStore = options[active_index + 1].value;
+          $valueStore = options[active_index + 1].label;
           active_index = active_index + 1;
           node.dispatchEvent(new Event("change"));
         }
@@ -57,8 +58,12 @@
       case "ArrowUp":
         menu_open = true;
         e.preventDefault();
-        if (options[active_index - 1] && options[active_index - 1].value) {
-          $valueStore = options[active_index - 1].value;
+        if (
+          options[active_index - 1] &&
+          (options[active_index - 1].value ||
+            options[active_index - 1].value === 0)
+        ) {
+          $valueStore = options[active_index - 1].label;
           active_index = active_index - 1;
           node.dispatchEvent(new Event("change"));
         }

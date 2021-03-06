@@ -1,5 +1,5 @@
 import { ValidationError, ValidatorOptions } from "class-validator/types";
-import { validate } from "class-validator";
+import { validate, validateOrReject } from "class-validator";
 import { get, writable, Writable } from "svelte/store";
 import { FieldConfig } from "./";
 
@@ -316,14 +316,27 @@ export class Form {
   };
 
   // Validate the form!
-  validate = (): Promise<void> => {
+  validate = (): Promise<ValidationError[]> => {
     this.clearErrors();
     this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
     return validate(this.model, this.validation_options).then(
       (errors: ValidationError[]) => {
         this.handleValidation(false, errors);
+        return errors;
       }
     );
+  };
+
+  validateAsync = async (): Promise<any> => {
+    this.clearErrors();
+    this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
+    try {
+      return await validateOrReject(this.model, this.validation_options);
+    } catch (errors) {
+      this.handleValidation(false, errors);
+      console.log("Errors: ", errors);
+      return errors;
+    }
   };
 
   loadData = (data: any): Form => {
@@ -412,16 +425,22 @@ export class Form {
   // #region PRIVATE FUNCTIONS
 
   // TODO: Speed this bad boy up. There are optimizations to be had.
+  // Check if there are any required fields in the errors
   private requiredFieldsValid = (errors: ValidationError[]): boolean => {
-    const errs = errors.map(e => e.property);
-    let i = 0, len = this.required_fields.length;
-    for(; len > i; ++i) {
+    const errs = errors.map((e) => e.property);
+    // Go ahead and return if there are no errors
+    if (errors.length === 0) return true;
+    let i = 0,
+      len = this.required_fields.length;
+    // If there are no required fields, just go ahead and return
+    if (len === 0) return true;
+    for (; len > i; ++i) {
       if (errs.includes(this.required_fields[i])) {
         return false;
       }
     }
     return true;
-  }
+  };
 
   private handleValidation = (
     isField: boolean = true,
@@ -429,7 +448,7 @@ export class Form {
     field?: FieldConfig
   ) => {
     const arfv = this.requiredFieldsValid(errors);
-    
+
     // There are errors!
     if (errors.length > 0 && !arfv) {
       this.valid.set(false); // Form is not valid

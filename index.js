@@ -2409,6 +2409,17 @@
             return getFromContainer(Validator).validate(schemaNameOrObject, objectOrValidationOptions);
         }
     }
+    /**
+     * Validates given object by object's decorators or given validation schema and reject on error.
+     */
+    function validateOrReject(schemaNameOrObject, objectOrValidationOptions, maybeValidatorOptions) {
+        if (typeof schemaNameOrObject === 'string') {
+            return getFromContainer(Validator).validateOrReject(schemaNameOrObject, objectOrValidationOptions, maybeValidatorOptions);
+        }
+        else {
+            return getFromContainer(Validator).validateOrReject(schemaNameOrObject, objectOrValidationOptions);
+        }
+    }
 
     /**
      * FieldConfig is used to help with the form auto generation functionality.
@@ -2726,7 +2737,20 @@
                 this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
                 return validate(this.model, this.validation_options).then((errors) => {
                     this.handleValidation(false, errors);
+                    return errors;
                 });
+            };
+            this.validateAsync = async () => {
+                this.clearErrors();
+                this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
+                try {
+                    return await validateOrReject(this.model, this.validation_options);
+                }
+                catch (errors) {
+                    this.handleValidation(false, errors);
+                    console.log("Errors: ", errors);
+                    return errors;
+                }
             };
             this.loadData = (data) => {
                 this.model = data;
@@ -2806,9 +2830,16 @@
             };
             // #region PRIVATE FUNCTIONS
             // TODO: Speed this bad boy up. There are optimizations to be had.
+            // Check if there are any required fields in the errors
             this.requiredFieldsValid = (errors) => {
-                const errs = errors.map(e => e.property);
+                const errs = errors.map((e) => e.property);
+                // Go ahead and return if there are no errors
+                if (errors.length === 0)
+                    return true;
                 let i = 0, len = this.required_fields.length;
+                // If there are no required fields, just go ahead and return
+                if (len === 0)
+                    return true;
                 for (; len > i; ++i) {
                     if (errs.includes(this.required_fields[i])) {
                         return false;
@@ -4103,6 +4134,7 @@
             this.city = "";
             this.state = "";
             this.zip = "";
+            this.status = 1;
             if (init) {
                 Object.keys(this).forEach((key) => {
                     if (init[key]) {
@@ -4834,7 +4866,7 @@
     			attr(svg, "fill", "currentColor");
     			attr(svg, "aria-hidden", "true");
 
-    			attr(span, "class", span_class_value = "absolute inset-y-0 right-0 flex items-center pr-4 " + (/*highlighted*/ ctx[4]
+    			attr(span, "class", span_class_value = "absolute inset-y-0 right-0 flex items-center pr-4 " + (/*highlighted*/ ctx[4] || /*selected*/ ctx[3]
     			? "text-white"
     			: "text-indigo-600"));
     		},
@@ -4844,7 +4876,7 @@
     			append(svg, path);
     		},
     		p(ctx, dirty) {
-    			if (dirty & /*highlighted*/ 16 && span_class_value !== (span_class_value = "absolute inset-y-0 right-0 flex items-center pr-4 " + (/*highlighted*/ ctx[4]
+    			if (dirty & /*highlighted, selected*/ 24 && span_class_value !== (span_class_value = "absolute inset-y-0 right-0 flex items-center pr-4 " + (/*highlighted*/ ctx[4] || /*selected*/ ctx[3]
     			? "text-white"
     			: "text-indigo-600"))) {
     				attr(span, "class", span_class_value);
@@ -4995,7 +5027,7 @@
     	return child_ctx;
     }
 
-    // (139:4) {#if menu_open}
+    // (144:4) {#if menu_open}
     function create_if_block_2$1(ctx) {
     	let div;
     	let ul;
@@ -5101,7 +5133,7 @@
     	};
     }
 
-    // (152:10) {#each options as { label, value }
+    // (157:10) {#each options as { label, value }
     function create_each_block$1(ctx) {
     	let dropdownoption;
     	let current;
@@ -5152,7 +5184,7 @@
     	};
     }
 
-    // (164:4) {#if errors}
+    // (169:4) {#if errors}
     function create_if_block_1$3(ctx) {
     	let div;
 
@@ -5174,7 +5206,7 @@
     	};
     }
 
-    // (186:2) {#if errors}
+    // (191:2) {#if errors}
     function create_if_block$4(ctx) {
     	let inputerrors;
     	let current;
@@ -5457,6 +5489,7 @@
 
     				if ($valueStore === item) {
     					active_index = i;
+    					set_store_value(valueStore, $valueStore = options[active_index].label, $valueStore);
     				}
     			}
     		}
@@ -5470,7 +5503,7 @@
     				$$invalidate(6, menu_open = true);
     				e.preventDefault();
     				if (options[active_index + 1] && options[active_index + 1].value) {
-    					set_store_value(valueStore, $valueStore = options[active_index + 1].value, $valueStore);
+    					set_store_value(valueStore, $valueStore = options[active_index + 1].label, $valueStore);
     					active_index = active_index + 1;
     					node.dispatchEvent(new Event("change"));
     				}
@@ -5478,8 +5511,8 @@
     			case "ArrowUp":
     				$$invalidate(6, menu_open = true);
     				e.preventDefault();
-    				if (options[active_index - 1] && options[active_index - 1].value) {
-    					set_store_value(valueStore, $valueStore = options[active_index - 1].value, $valueStore);
+    				if (options[active_index - 1] && (options[active_index - 1].value || options[active_index - 1].value === 0)) {
+    					set_store_value(valueStore, $valueStore = options[active_index - 1].label, $valueStore);
     					active_index = active_index - 1;
     					node.dispatchEvent(new Event("change"));
     				}

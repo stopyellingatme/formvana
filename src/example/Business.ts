@@ -105,7 +105,7 @@ export class Business {
       ref_key: "business_statuses",
     })
   )
-  status;
+  status = 1;
 
   @editable
   @IsEnum(UserStatus, { message: "Please choose a User Status" })

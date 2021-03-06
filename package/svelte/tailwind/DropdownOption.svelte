@@ -29,7 +29,7 @@
   </span>
   {#if selected}
     <span
-      class="absolute inset-y-0 right-0 flex items-center pr-4 {highlighted
+      class="absolute inset-y-0 right-0 flex items-center pr-4 {highlighted || selected
         ? 'text-white'
         : 'text-indigo-600'}"
     >
