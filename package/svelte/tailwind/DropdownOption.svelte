@@ -19,17 +19,18 @@
   on:click={dispatch("click", value)}
   on:mouseenter={toggleHighlight}
   on:mouseleave={toggleHighlight}
-  class="relative z-40 py-2 pl-3  {highlighted
+  class="relative z-40 py-2 pl-3  {highlighted || selected
     ? 'text-white bg-indigo-600'
     : 'text-gray-900'} cursor-pointer select-none pr-9"
 >
-  <span class="sr-only">{value}</span>
+  <span class="sr-only">{label}</span>
   <span class="block truncate {selected ? 'font-semibold' : 'font-normal'}">
     {label}
   </span>
   {#if selected}
     <span
-      class="absolute inset-y-0 right-0 flex items-center pr-4 {highlighted || selected
+      class="absolute inset-y-0 right-0 flex items-center pr-4 {highlighted ||
+      selected
         ? 'text-white'
         : 'text-indigo-600'}"
     >

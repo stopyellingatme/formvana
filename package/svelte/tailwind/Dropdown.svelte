@@ -4,13 +4,12 @@
   import DropdownOption from "./DropdownOption.svelte";
   import InputErrors from "./InputErrors.svelte";
 
-  let active_index = 0;
   let is_focused = false;
   let menu_open = false;
   const toggle = () => (menu_open = !menu_open);
 
   export let useInput;
-  export let valueStore;
+  export let valueStore; // Used as active_index
   export let errorsStore;
 
   export let options;
@@ -28,20 +27,7 @@
   $: cls =
     $errorsStore && $errorsStore.constraints ? error_class : default_class;
 
-  onMount(() => {
-    // Check if an item is selected on mount
-    if (options && options.length > 0) {
-      let i = 0,
-        len = options.length;
-      for (; len > i; ++i) {
-        const item = options[i].value;
-        if ($valueStore === item) {
-          active_index = i;
-          $valueStore = options[active_index].label;
-        }
-      }
-    }
-  });
+  onMount(() => {});
 
   function handleKeyDown(e) {
     if (!is_focused) return;
@@ -49,9 +35,8 @@
       case "ArrowDown":
         menu_open = true;
         e.preventDefault();
-        if (options[active_index + 1] && options[active_index + 1].value) {
-          $valueStore = options[active_index + 1].label;
-          active_index = active_index + 1;
+        if (options[$valueStore + 1] && options[$valueStore + 1].value) {
+          $valueStore = $valueStore + 1;
           node.dispatchEvent(new Event("change"));
         }
         break;
@@ -59,12 +44,11 @@
         menu_open = true;
         e.preventDefault();
         if (
-          options[active_index - 1] &&
-          (options[active_index - 1].value ||
-            options[active_index - 1].value === 0)
+          options[$valueStore - 1] &&
+          (options[$valueStore - 1].value ||
+            options[$valueStore - 1].value === 0)
         ) {
-          $valueStore = options[active_index - 1].label;
-          active_index = active_index - 1;
+          $valueStore = $valueStore - 1;
           node.dispatchEvent(new Event("change"));
         }
         break;
@@ -74,6 +58,9 @@
         break;
     }
   }
+
+  $: selectedLabel =
+    options && options[$valueStore] && options[$valueStore].label;
 
   /**
    * Capture the element with useInput.
@@ -111,7 +98,7 @@
       on:click={toggle}
       on:focus={handleFocus}
       on:blur={handleBlur}
-      value={$valueStore}
+      value={selectedLabel}
       type="button"
       aria-haspopup="listbox"
       aria-expanded="true"
@@ -120,7 +107,7 @@
       use:useInput
     >
       <span class="block truncate">
-        {$valueStore ? $valueStore : "Select"}
+        {selectedLabel ? selectedLabel : "Select"}
       </span>
       <span
         class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none"
@@ -156,11 +143,11 @@
         >
           {#each options as { label, value }, i}
             <DropdownOption
-              on:click={(e) => handleChange(e, label)}
+              on:click={(e) => handleChange(e, value)}
               id="listbox-option-{i}"
               {label}
               {value}
-              selected={$valueStore === label}
+              selected={selectedLabel === label}
             />
           {/each}
         </ul>

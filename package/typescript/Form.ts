@@ -1,5 +1,5 @@
-import { ValidationError, ValidatorOptions } from "class-validator/types";
-import { validate, validateOrReject } from "class-validator";
+import { ValidatorOptions } from "class-validator/types";
+import { ValidationError, validate, validateOrReject } from "class-validator";
 import { get, writable, Writable } from "svelte/store";
 import { FieldConfig } from "./";
 
@@ -22,6 +22,7 @@ export class OnEvents {
   blur: boolean = true;
   focus: boolean = true;
   mount: boolean = false;
+  submit: boolean = true;
 }
 
 export enum LinkOnEvent {
@@ -35,7 +36,7 @@ export interface RefDataItem {
 }
 
 /**
- * Formvana Form Class
+ * Formvana - Form Class
  * Form is NOT valid, initially.
  *
  * Recommended Use:
@@ -59,6 +60,7 @@ export class Form {
        * If you know a BETTER way, be my guest.
        */
       this.initial_state = JSON.parse(JSON.stringify(this.model));
+      this.initial_errors = JSON.stringify(this.errors);
       this.buildFields();
     }
     if (this.field_order && this.field_order.length > 0) {
@@ -73,6 +75,9 @@ export class Form {
    * This is the model's initial state.
    */
   private initial_state: any = null;
+  private initial_errors: any = null;
+
+  private required_fields: string[] = [];
 
   /**
    * Validation options come from class-validator ValidatorOptions.
@@ -109,13 +114,13 @@ export class Form {
   fields: FieldConfig[] = [];
 
   /**
-   * refs holds any reference data you'll be using in the form
+   * refs hold any reference data you'll be using in the form
    * e.g. seclet dropdowns, radio buttons, etc.
    *
    * (If you did not set the model in constructor)
    * Call attachRefData() to link the data to the respective field
    *
-   * * Fields and reference data are linked via field.ref_key *
+   * * Fields & reference data are linked via field.ref_key
    */
   refs: Record<string, RefDataItem[]> = null;
 
@@ -158,8 +163,6 @@ export class Form {
 
   // When to link field.values to model.values
   link_fields_to_model: LinkOnEvent = LinkOnEvent.Always;
-
-  private required_fields: string[] = [];
 
   /**
    * * Here be Functions. Beware.
@@ -318,6 +321,7 @@ export class Form {
   // Validate the form!
   validate = (): Promise<ValidationError[]> => {
     this.clearErrors();
+    // Link the input from the field to the model.
     this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
     return validate(this.model, this.validation_options).then(
       (errors: ValidationError[]) => {
@@ -372,9 +376,9 @@ export class Form {
   };
 
   updateInitialState = (): void => {
-    if (this.model) {
-      this.initial_state = JSON.parse(JSON.stringify(this.model));
-    }
+    this.initial_state = JSON.parse(JSON.stringify(this.model));
+    this.initial_errors = JSON.stringify(this.errors);
+    this.changed.set(false);
   };
 
   clearErrors = (): void => {
@@ -386,7 +390,6 @@ export class Form {
 
   // Resets to the inital state of the form.
   reset = (): void => {
-    this.clearErrors();
     this.valid.set(false);
     this.changed.set(false);
     this.touched.set(false);
@@ -396,6 +399,18 @@ export class Form {
       this.model[key] = this.initial_state[key];
     });
     this.linkValues(false);
+
+    const errs = JSON.parse(this.initial_errors);
+    if (errs && errs.length === 0) {
+      this.clearErrors();
+    } else {
+      errs.forEach((e) => {
+        const val_err = new ValidationError();
+        Object.assign(val_err, e);
+        this.errors.push(val_err);
+      });
+      this.linkErrors(this.errors);
+    }
   };
 
   /**
@@ -425,11 +440,14 @@ export class Form {
   // #region PRIVATE FUNCTIONS
 
   // TODO: Speed this bad boy up. There are optimizations to be had.
-  // Check if there are any required fields in the errors
+  /**
+   * Check if there are any required fields in the errors.
+   * If there are no required fields in the errors, the form is valid
+   */
   private requiredFieldsValid = (errors: ValidationError[]): boolean => {
+    if (errors.length === 0) return true;
     const errs = errors.map((e) => e.property);
     // Go ahead and return if there are no errors
-    if (errors.length === 0) return true;
     let i = 0,
       len = this.required_fields.length;
     // If there are no required fields, just go ahead and return
@@ -447,18 +465,20 @@ export class Form {
     errors: ValidationError[],
     field?: FieldConfig
   ) => {
+    // All required fields valid (arfv)
     const arfv = this.requiredFieldsValid(errors);
 
     // There are errors!
-    if (errors.length > 0 && !arfv) {
-      this.valid.set(false); // Form is not valid
+    if (errors.length > 0 || !arfv) {
+      this.valid.set(false);
       this.errors = errors;
       // console.log("ERRORS: ", errors);
+
+      // Are we validating the whole form or just the fields?
       if (isField) {
         // Link errors to field (to show validation errors)
         this.linkFieldErrors(errors, field);
       } else {
-        this.valid.set(false); // Form is not valid
         // This is validatino for the whole form!
         this.linkErrors(errors);
       }
@@ -478,9 +498,15 @@ export class Form {
     let i = 0,
       len = this.fields.length;
     for (; len > i; ++i) {
-      toModel
-        ? (this.model[this.fields[i].name] = get(this.fields[i].value))
-        : this.fields[i].value.set(this.model[this.fields[i].name]);
+      const name = this.fields[i].name,
+        val = this.fields[i].value;
+      if (toModel) {
+        // Link field values to the model
+        this.model[name] = get(val);
+      } else {
+        // Link model values to the fields
+        val.set(this.model[name]);
+      }
     }
   };
 
@@ -489,7 +515,10 @@ export class Form {
    * TODO: Be my guest to fix it if you know how.
    */
   private hasChanged = (): void => {
-    if (Object.is(this.model, this.initial_state) && this.errors.length === 0) {
+    if (
+      Object.is(this.model, this.initial_state) &&
+      JSON.stringify(this.errors) === this.initial_errors
+    ) {
       this.changed.set(false);
       return;
     }
@@ -532,14 +561,32 @@ export class Form {
     const field = this.fields.filter((f) => f.name === node.name)[0];
     Object.entries(this.validate_on_events).forEach(([key, val]) => {
       // If the OnEvent is true, then add the event listener
-      if (val) {
-        node.addEventListener(
-          key,
-          (ev) => {
-            this.validateField(field);
-          },
-          false
-        );
+      // If the field has options, we can assume it will use the change event listener
+      if (field.options) {
+        // so don't add the input event listener
+        if (val && val !== "input") {
+          node.addEventListener(
+            key,
+            (ev) => {
+              this.validateField(field);
+            },
+            false
+          );
+        }
+      }
+      // Else, we can assume it will use the input event listener
+      // * This may be changed in the future
+      else {
+        // and don't add the change event listener
+        if (val && val !== "change") {
+          node.addEventListener(
+            key,
+            (ev) => {
+              this.validateField(field);
+            },
+            false
+          );
+        }
       }
     });
   };
@@ -553,6 +600,17 @@ export class Form {
         });
       }
     });
+  };
+
+  private arraysEqual = (a1, a2) => {
+    if (a1.length !== a2.length) return false;
+    let i = 0,
+      len = a1.length;
+    for (; len > i; ++i) {
+      if (a1[i] !== a2[i]) return false;
+    }
+
+    return true;
   };
   //#endregion
   //#endregion

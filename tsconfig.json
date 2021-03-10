@@ -30,6 +30,7 @@
     "include": [
         "src/**/*",
         "package/**/*",
+        "./"
     ],
     "exclude": [
         "node_modules"

@@ -2472,10 +2472,16 @@
             if (this.type === "decimal") {
                 this.value.set(0.0);
             }
-            if (this.type === "boolean" || this.type === "choice") {
+            if (this.type === "boolean" ||
+                this.type === "choice" ||
+                this.type === "radio") {
                 this.value.set(false);
+                this.options = [];
             }
-            if (this.el === "select" || this.el === "dropdown") {
+            if (this.el === "select" ||
+                this.type === "select" ||
+                this.el === "dropdown" ||
+                this.type === "radio") {
                 this.options = [];
             }
             if (this.attributes["title"]) {
@@ -2497,6 +2503,7 @@
             this.blur = true;
             this.focus = true;
             this.mount = false;
+            this.submit = true;
             Object.assign(this, init);
             // If eventsOn is false, turn off all event listeners
             if (!eventsOn) {
@@ -2512,7 +2519,7 @@
         LinkOnEvent[LinkOnEvent["Valid"] = 1] = "Valid";
     })(LinkOnEvent || (LinkOnEvent = {}));
     /**
-     * Formvana Form Class
+     * Formvana - Form Class
      * Form is NOT valid, initially.
      *
      * Recommended Use:
@@ -2529,6 +2536,8 @@
              * This is the model's initial state.
              */
             this.initial_state = null;
+            this.initial_errors = null;
+            this.required_fields = [];
             /**
              * Validation options come from class-validator ValidatorOptions.
              *
@@ -2561,13 +2570,13 @@
              */
             this.fields = [];
             /**
-             * refs holds any reference data you'll be using in the form
+             * refs hold any reference data you'll be using in the form
              * e.g. seclet dropdowns, radio buttons, etc.
              *
              * (If you did not set the model in constructor)
              * Call attachRefData() to link the data to the respective field
              *
-             * * Fields and reference data are linked via field.ref_key *
+             * * Fields & reference data are linked via field.ref_key
              */
             this.refs = null;
             // Order within array determines order to be applied
@@ -2603,7 +2612,6 @@
             this.clear_errors_on_events = new OnEvents(false);
             // When to link field.values to model.values
             this.link_fields_to_model = LinkOnEvent.Always;
-            this.required_fields = [];
             /**
              * * Here be Functions. Beware.
              * * Here be Functions. Beware.
@@ -2734,6 +2742,7 @@
             // Validate the form!
             this.validate = () => {
                 this.clearErrors();
+                // Link the input from the field to the model.
                 this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
                 return validate(this.model, this.validation_options).then((errors) => {
                     this.handleValidation(false, errors);
@@ -2783,9 +2792,9 @@
                 return writable(this);
             };
             this.updateInitialState = () => {
-                if (this.model) {
-                    this.initial_state = JSON.parse(JSON.stringify(this.model));
-                }
+                this.initial_state = JSON.parse(JSON.stringify(this.model));
+                this.initial_errors = JSON.stringify(this.errors);
+                this.changed.set(false);
             };
             this.clearErrors = () => {
                 this.errors = [];
@@ -2795,7 +2804,6 @@
             };
             // Resets to the inital state of the form.
             this.reset = () => {
-                this.clearErrors();
                 this.valid.set(false);
                 this.changed.set(false);
                 this.touched.set(false);
@@ -2804,6 +2812,18 @@
                     this.model[key] = this.initial_state[key];
                 });
                 this.linkValues(false);
+                const errs = JSON.parse(this.initial_errors);
+                if (errs && errs.length === 0) {
+                    this.clearErrors();
+                }
+                else {
+                    errs.forEach((e) => {
+                        const val_err = new ValidationError();
+                        Object.assign(val_err, e);
+                        this.errors.push(val_err);
+                    });
+                    this.linkErrors(this.errors);
+                }
             };
             /**
              *! Make sure to call this when the component is unloaded/destroyed
@@ -2830,12 +2850,15 @@
             };
             // #region PRIVATE FUNCTIONS
             // TODO: Speed this bad boy up. There are optimizations to be had.
-            // Check if there are any required fields in the errors
+            /**
+             * Check if there are any required fields in the errors.
+             * If there are no required fields in the errors, the form is valid
+             */
             this.requiredFieldsValid = (errors) => {
-                const errs = errors.map((e) => e.property);
-                // Go ahead and return if there are no errors
                 if (errors.length === 0)
                     return true;
+                const errs = errors.map((e) => e.property);
+                // Go ahead and return if there are no errors
                 let i = 0, len = this.required_fields.length;
                 // If there are no required fields, just go ahead and return
                 if (len === 0)
@@ -2848,18 +2871,19 @@
                 return true;
             };
             this.handleValidation = (isField = true, errors, field) => {
+                // All required fields valid (arfv)
                 const arfv = this.requiredFieldsValid(errors);
                 // There are errors!
-                if (errors.length > 0 && !arfv) {
-                    this.valid.set(false); // Form is not valid
+                if (errors.length > 0 || !arfv) {
+                    this.valid.set(false);
                     this.errors = errors;
                     // console.log("ERRORS: ", errors);
+                    // Are we validating the whole form or just the fields?
                     if (isField) {
                         // Link errors to field (to show validation errors)
                         this.linkFieldErrors(errors, field);
                     }
                     else {
-                        this.valid.set(false); // Form is not valid
                         // This is validatino for the whole form!
                         this.linkErrors(errors);
                     }
@@ -2878,9 +2902,15 @@
             this.linkValues = (toModel) => {
                 let i = 0, len = this.fields.length;
                 for (; len > i; ++i) {
-                    toModel
-                        ? (this.model[this.fields[i].name] = get_store_value(this.fields[i].value))
-                        : this.fields[i].value.set(this.model[this.fields[i].name]);
+                    const name = this.fields[i].name, val = this.fields[i].value;
+                    if (toModel) {
+                        // Link field values to the model
+                        this.model[name] = get_store_value(val);
+                    }
+                    else {
+                        // Link model values to the fields
+                        val.set(this.model[name]);
+                    }
                 }
             };
             /**
@@ -2888,7 +2918,8 @@
              * TODO: Be my guest to fix it if you know how.
              */
             this.hasChanged = () => {
-                if (Object.is(this.model, this.initial_state) && this.errors.length === 0) {
+                if (Object.is(this.model, this.initial_state) &&
+                    JSON.stringify(this.errors) === this.initial_errors) {
                     this.changed.set(false);
                     return;
                 }
@@ -2925,10 +2956,24 @@
                 const field = this.fields.filter((f) => f.name === node.name)[0];
                 Object.entries(this.validate_on_events).forEach(([key, val]) => {
                     // If the OnEvent is true, then add the event listener
-                    if (val) {
-                        node.addEventListener(key, (ev) => {
-                            this.validateField(field);
-                        }, false);
+                    // If the field has options, we can assume it will use the change event listener
+                    if (field.options) {
+                        // so don't add the input event listener
+                        if (val && val !== "input") {
+                            node.addEventListener(key, (ev) => {
+                                this.validateField(field);
+                            }, false);
+                        }
+                    }
+                    // Else, we can assume it will use the input event listener
+                    // * This may be changed in the future
+                    else {
+                        // and don't add the change event listener
+                        if (val && val !== "change") {
+                            node.addEventListener(key, (ev) => {
+                                this.validateField(field);
+                            }, false);
+                        }
                     }
                 });
             };
@@ -2942,6 +2987,16 @@
                     }
                 });
             };
+            this.arraysEqual = (a1, a2) => {
+                if (a1.length !== a2.length)
+                    return false;
+                let i = 0, len = a1.length;
+                for (; len > i; ++i) {
+                    if (a1[i] !== a2[i])
+                        return false;
+                }
+                return true;
+            };
             Object.keys(this).forEach((key) => {
                 if (init[key]) {
                     this[key] = init[key];
@@ -2953,6 +3008,7 @@
                  * If you know a BETTER way, be my guest.
                  */
                 this.initial_state = JSON.parse(JSON.stringify(this.model));
+                this.initial_errors = JSON.stringify(this.errors);
                 this.buildFields();
             }
             if (this.field_order && this.field_order.length > 0) {
@@ -4238,11 +4294,11 @@
         user_statuses: [
             {
                 label: "ACTIVE",
-                value: "ACTIVE",
+                value: 0,
             },
             {
                 label: "DISABLED",
-                value: "DISABLED",
+                value: 1,
             },
         ],
         business_statuses: [
@@ -4906,7 +4962,7 @@
     		c() {
     			li = element("li");
     			span0 = element("span");
-    			t0 = text(/*value*/ ctx[2]);
+    			t0 = text(/*label*/ ctx[1]);
     			t1 = space();
     			span1 = element("span");
     			t2 = text(/*label*/ ctx[1]);
@@ -4918,7 +4974,7 @@
     			attr(li, "role", "option");
     			li.value = /*value*/ ctx[2];
 
-    			attr(li, "class", li_class_value = "relative z-40 py-2 pl-3  " + (/*highlighted*/ ctx[4]
+    			attr(li, "class", li_class_value = "relative z-40 py-2 pl-3  " + (/*highlighted*/ ctx[4] || /*selected*/ ctx[3]
     			? "text-white bg-indigo-600"
     			: "text-gray-900") + " cursor-pointer select-none pr-9");
     		},
@@ -4946,7 +5002,7 @@
     		},
     		p(new_ctx, [dirty]) {
     			ctx = new_ctx;
-    			if (dirty & /*value*/ 4) set_data(t0, /*value*/ ctx[2]);
+    			if (dirty & /*label*/ 2) set_data(t0, /*label*/ ctx[1]);
     			if (dirty & /*label*/ 2) set_data(t2, /*label*/ ctx[1]);
 
     			if (dirty & /*selected*/ 8 && span1_class_value !== (span1_class_value = "block truncate " + (/*selected*/ ctx[3] ? "font-semibold" : "font-normal"))) {
@@ -4974,7 +5030,7 @@
     				li.value = /*value*/ ctx[2];
     			}
 
-    			if (dirty & /*highlighted*/ 16 && li_class_value !== (li_class_value = "relative z-40 py-2 pl-3  " + (/*highlighted*/ ctx[4]
+    			if (dirty & /*highlighted, selected*/ 24 && li_class_value !== (li_class_value = "relative z-40 py-2 pl-3  " + (/*highlighted*/ ctx[4] || /*selected*/ ctx[3]
     			? "text-white bg-indigo-600"
     			: "text-gray-900") + " cursor-pointer select-none pr-9")) {
     				attr(li, "class", li_class_value);
@@ -5027,7 +5083,7 @@
     	return child_ctx;
     }
 
-    // (144:4) {#if menu_open}
+    // (131:4) {#if menu_open}
     function create_if_block_2$1(ctx) {
     	let div;
     	let ul;
@@ -5072,7 +5128,7 @@
     			current = true;
     		},
     		p(ctx, dirty) {
-    			if (dirty & /*options, $valueStore, handleChange*/ 18440) {
+    			if (dirty & /*options, selectedLabel, handleChange*/ 18440) {
     				each_value = /*options*/ ctx[3];
     				let i;
 
@@ -5133,13 +5189,13 @@
     	};
     }
 
-    // (157:10) {#each options as { label, value }
+    // (144:10) {#each options as { label, value }
     function create_each_block$1(ctx) {
     	let dropdownoption;
     	let current;
 
     	function click_handler(...args) {
-    		return /*click_handler*/ ctx[20](/*label*/ ctx[5], ...args);
+    		return /*click_handler*/ ctx[21](/*value*/ ctx[23], ...args);
     	}
 
     	dropdownoption = new DropdownOption({
@@ -5147,7 +5203,7 @@
     				id: "listbox-option-" + /*i*/ ctx[25],
     				label: /*label*/ ctx[5],
     				value: /*value*/ ctx[23],
-    				selected: /*$valueStore*/ ctx[11] === /*label*/ ctx[5]
+    				selected: /*selectedLabel*/ ctx[11] === /*label*/ ctx[5]
     			}
     		});
 
@@ -5166,7 +5222,7 @@
     			const dropdownoption_changes = {};
     			if (dirty & /*options*/ 8) dropdownoption_changes.label = /*label*/ ctx[5];
     			if (dirty & /*options*/ 8) dropdownoption_changes.value = /*value*/ ctx[23];
-    			if (dirty & /*$valueStore, options*/ 2056) dropdownoption_changes.selected = /*$valueStore*/ ctx[11] === /*label*/ ctx[5];
+    			if (dirty & /*selectedLabel, options*/ 2056) dropdownoption_changes.selected = /*selectedLabel*/ ctx[11] === /*label*/ ctx[5];
     			dropdownoption.$set(dropdownoption_changes);
     		},
     		i(local) {
@@ -5184,7 +5240,7 @@
     	};
     }
 
-    // (169:4) {#if errors}
+    // (156:4) {#if errors}
     function create_if_block_1$3(ctx) {
     	let div;
 
@@ -5206,7 +5262,7 @@
     	};
     }
 
-    // (191:2) {#if errors}
+    // (178:2) {#if errors}
     function create_if_block$4(ctx) {
     	let inputerrors;
     	let current;
@@ -5252,8 +5308,8 @@
     	let button;
     	let span0;
 
-    	let t2_value = (/*$valueStore*/ ctx[11]
-    	? /*$valueStore*/ ctx[11]
+    	let t2_value = (/*selectedLabel*/ ctx[11]
+    	? /*selectedLabel*/ ctx[11]
     	: "Select") + "";
 
     	let t2;
@@ -5269,7 +5325,7 @@
     	let button_levels = [
     		{ name: /*name*/ ctx[4] },
     		/*input_attributes*/ ctx[8],
-    		{ value: /*$valueStore*/ ctx[11] },
+    		{ value: /*selectedLabel*/ ctx[11] },
     		{ type: "button" },
     		{ "aria-haspopup": "listbox" },
     		{ "aria-expanded": "true" },
@@ -5324,7 +5380,7 @@
     			append(span0, t2);
     			append(button, t3);
     			append(button, span1);
-    			/*button_binding*/ ctx[19](button);
+    			/*button_binding*/ ctx[20](button);
     			append(div0, t4);
     			if (if_block0) if_block0.m(div0, null);
     			append(div0, t5);
@@ -5352,14 +5408,14 @@
     				attr(label_1, "for", /*name*/ ctx[4]);
     			}
 
-    			if ((!current || dirty & /*$valueStore*/ 2048) && t2_value !== (t2_value = (/*$valueStore*/ ctx[11]
-    			? /*$valueStore*/ ctx[11]
+    			if ((!current || dirty & /*selectedLabel*/ 2048) && t2_value !== (t2_value = (/*selectedLabel*/ ctx[11]
+    			? /*selectedLabel*/ ctx[11]
     			: "Select") + "")) set_data(t2, t2_value);
 
     			set_attributes(button, button_data = get_spread_update(button_levels, [
     				(!current || dirty & /*name*/ 16) && { name: /*name*/ ctx[4] },
     				dirty & /*input_attributes*/ 256 && /*input_attributes*/ ctx[8],
-    				(!current || dirty & /*$valueStore*/ 2048) && { value: /*$valueStore*/ ctx[11] },
+    				(!current || dirty & /*selectedLabel*/ 2048) && { value: /*selectedLabel*/ ctx[11] },
     				{ type: "button" },
     				{ "aria-haspopup": "listbox" },
     				{ "aria-expanded": "true" },
@@ -5437,7 +5493,7 @@
     		},
     		d(detaching) {
     			if (detaching) detach(div1);
-    			/*button_binding*/ ctx[19](null);
+    			/*button_binding*/ ctx[20](null);
     			if (if_block0) if_block0.d();
     			if (if_block1) if_block1.d();
     			if (if_block2) if_block2.d();
@@ -5454,6 +5510,7 @@
     	let input_attributes;
     	let errors;
     	let cls;
+    	let selectedLabel;
 
     	let $errorsStore,
     		$$unsubscribe_errorsStore = noop,
@@ -5461,16 +5518,15 @@
 
     	let $valueStore,
     		$$unsubscribe_valueStore = noop,
-    		$$subscribe_valueStore = () => ($$unsubscribe_valueStore(), $$unsubscribe_valueStore = subscribe(valueStore, $$value => $$invalidate(11, $valueStore = $$value)), valueStore);
+    		$$subscribe_valueStore = () => ($$unsubscribe_valueStore(), $$unsubscribe_valueStore = subscribe(valueStore, $$value => $$invalidate(19, $valueStore = $$value)), valueStore);
 
     	$$self.$$.on_destroy.push(() => $$unsubscribe_errorsStore());
     	$$self.$$.on_destroy.push(() => $$unsubscribe_valueStore());
-    	let active_index = 0;
     	let is_focused = false;
     	let menu_open = false;
     	const toggle = () => $$invalidate(6, menu_open = !menu_open);
     	let { useInput } = $$props;
-    	let { valueStore } = $$props;
+    	let { valueStore } = $$props; // Used as active_index
     	$$subscribe_valueStore();
     	let { errorsStore } = $$props;
     	$$subscribe_errorsStore();
@@ -5480,19 +5536,7 @@
     	let { attrs = {} } = $$props;
 
     	onMount(() => {
-    		// Check if an item is selected on mount
-    		if (options && options.length > 0) {
-    			let i = 0, len = options.length;
-
-    			for (; len > i; ++i) {
-    				const item = options[i].value;
-
-    				if ($valueStore === item) {
-    					active_index = i;
-    					set_store_value(valueStore, $valueStore = options[active_index].label, $valueStore);
-    				}
-    			}
-    		}
+    		
     	});
 
     	function handleKeyDown(e) {
@@ -5502,18 +5546,16 @@
     			case "ArrowDown":
     				$$invalidate(6, menu_open = true);
     				e.preventDefault();
-    				if (options[active_index + 1] && options[active_index + 1].value) {
-    					set_store_value(valueStore, $valueStore = options[active_index + 1].label, $valueStore);
-    					active_index = active_index + 1;
+    				if (options[$valueStore + 1] && options[$valueStore + 1].value) {
+    					set_store_value(valueStore, $valueStore = $valueStore + 1, $valueStore);
     					node.dispatchEvent(new Event("change"));
     				}
     				break;
     			case "ArrowUp":
     				$$invalidate(6, menu_open = true);
     				e.preventDefault();
-    				if (options[active_index - 1] && (options[active_index - 1].value || options[active_index - 1].value === 0)) {
-    					set_store_value(valueStore, $valueStore = options[active_index - 1].label, $valueStore);
-    					active_index = active_index - 1;
+    				if (options[$valueStore - 1] && (options[$valueStore - 1].value || options[$valueStore - 1].value === 0)) {
+    					set_store_value(valueStore, $valueStore = $valueStore - 1, $valueStore);
     					node.dispatchEvent(new Event("change"));
     				}
     				break;
@@ -5554,7 +5596,7 @@
     		});
     	}
 
-    	const click_handler = (label, e) => handleChange(e, label);
+    	const click_handler = (value, e) => handleChange(e, value);
 
     	$$self.$$set = $$props => {
     		if ("useInput" in $$props) $$invalidate(0, useInput = $$props.useInput);
@@ -5580,6 +5622,10 @@
     			? error_class$1
     			: default_class$1);
     		}
+
+    		if ($$self.$$.dirty & /*options, $valueStore*/ 524296) {
+    			$$invalidate(11, selectedLabel = options && options[$valueStore] && options[$valueStore].label);
+    		}
     	};
 
     	return [
@@ -5594,7 +5640,7 @@
     		input_attributes,
     		errors,
     		cls,
-    		$valueStore,
+    		selectedLabel,
     		toggle,
     		handleKeyDown,
     		handleChange,
@@ -5602,6 +5648,7 @@
     		handleBlur,
     		attrs,
     		$errorsStore,
+    		$valueStore,
     		button_binding,
     		click_handler
     	];
@@ -6673,7 +6720,11 @@
         get_store_value(formState).loading.set(true);
         setTimeout(() => {
             get_store_value(formState).loading.set(false);
+            get_store_value(formState).validate();
         }, 1000);
+        // setTimeout(() => {
+        //   get(formState).updateInitialState();
+        // }, 3000);
         // Update form with data fetched from DB
         // getBusiness(SOME_STATE.BUSINESS_ID).then((data) => {
         //   Get current form state

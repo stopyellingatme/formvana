@@ -1,6 +1,6 @@
 # Formvana
 
-## _**Searching for Form Nirvana with the help of Typescript and (currently) Svelte.**_
+## _**Searching for Form Nirvana with the help of Typescript and Svelte.**_
 
 **What I Want!**
 
@@ -11,6 +11,15 @@
 - Field Groups/Field Layout is nice too
 
 ---
+
+**To Do:**
+
+1. Better DynamicForm functionality
+   1. Template event passing
+   2. Validate on submit (submission function passing)
+2. Default input templates
+3. Write script to generate 100's of inputs and test perf
+
 
 ## VERY EARLY PRE-ALPHA LIBRARY
 
@@ -36,7 +45,7 @@ The field setup and parsing is handled by the Form.ts class.
 It takes the model (containing the special decorators) and builds an array of fields based on the given FieldConfigs of the model.
 Using this pattern, along with class-validator, allows a beautiful Form handling experience.
 
-The Form.fields array makes it easy to itterate over and generate form fields dymanically. There are form options which specify when to validate input or clear errors (on input, change, focus, blur, etc.).
+The Form.fields array makes it easy to loop over and generate form fields dymanically. There are form options which specify when to validate input or clear errors (on input, change, focus, blur, etc.).
 It's also very easy to get data out of the Form by calling Form.model.
 
 ---

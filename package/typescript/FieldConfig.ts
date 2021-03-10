@@ -42,11 +42,21 @@ export class FieldConfig {
       this.value.set(0.0);
     }
 
-    if (this.type === "boolean" || this.type === "choice") {
+    if (
+      this.type === "boolean" ||
+      this.type === "choice" ||
+      this.type === "radio"
+    ) {
       this.value.set(false);
+      this.options = [];
     }
 
-    if (this.el === "select" || this.el === "dropdown") {
+    if (
+      this.el === "select" ||
+      this.type === "select" ||
+      this.el === "dropdown" ||
+      this.type === "radio"
+    ) {
       this.options = [];
     }
 

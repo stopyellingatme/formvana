@@ -40,7 +40,12 @@ export const init = () => {
 
   setTimeout(() => {
     get(formState).loading.set(false);
+    get(formState).validate();
   }, 1000);
+
+  // setTimeout(() => {
+  //   get(formState).updateInitialState();
+  // }, 3000);
 
   // Update form with data fetched from DB
   // getBusiness(SOME_STATE.BUSINESS_ID).then((data) => {

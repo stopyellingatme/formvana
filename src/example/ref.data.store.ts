@@ -12,11 +12,11 @@ export const data = {
   user_statuses: [
     {
       label: "ACTIVE",
-      value: "ACTIVE",
+      value: 0,
     },
     {
       label: "DISABLED",
-      value: "DISABLED",
+      value: 1,
     },
   ],
   business_statuses: [
