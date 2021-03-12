@@ -45,6 +45,9 @@ export interface RefDataItem {
  *  - (optionally) attach reference data
  *  - call form.storify() -  const { subscribe, update } = form.storify();
  *  - Now you're ready to use the form!
+ * 
+ * Performance is blazing with < 500 fields
+ *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
  */
 export class Form {
@@ -61,6 +64,7 @@ export class Form {
        */
       this.initial_state = JSON.parse(JSON.stringify(this.model));
       this.initial_errors = JSON.stringify(this.errors);
+      // this.initial_errors = Array.from(this.errors);
       this.buildFields();
     }
     if (this.field_order && this.field_order.length > 0) {
@@ -77,7 +81,7 @@ export class Form {
   private initial_state: any = null;
   private initial_errors: any = null;
 
-  private required_fields: string[] = [];
+  private non_required_fields: string[] = [];
 
   /**
    * Validation options come from class-validator ValidatorOptions.
@@ -196,11 +200,11 @@ export class Form {
           config.value.set(this.model[prop]);
         }
 
-        if (config.required) {
-          this.required_fields.push(config.name);
+        if (!config.required) {
+          this.non_required_fields.push(config.name);
         }
 
-        console.log("FIELD CONFIG: ", config);
+        // console.log("FIELD CONFIG: ", config);
         // Return the enriched field config
         return config;
       });
@@ -308,7 +312,10 @@ export class Form {
    */
   validateField = (field: FieldConfig): Promise<void> => {
     // Link the input from the field to the model.
+    // this.link_fields_to_model === LinkOnEvent.Always &&
+    //   this.linkFieldValue(field);
     this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
+
     // Return class-validator validate function.
     // Validate the model with given validation config.
     return validate(this.model, this.validation_options).then(
@@ -378,6 +385,7 @@ export class Form {
   updateInitialState = (): void => {
     this.initial_state = JSON.parse(JSON.stringify(this.model));
     this.initial_errors = JSON.stringify(this.errors);
+    // this.initial_errors = Array.from(this.errors);
     this.changed.set(false);
   };
 
@@ -400,10 +408,10 @@ export class Form {
     });
     this.linkValues(false);
 
+    // If the initial state has errors, add them to
+    this.clearErrors();
     const errs = JSON.parse(this.initial_errors);
-    if (errs && errs.length === 0) {
-      this.clearErrors();
-    } else {
+    if (errs && errs.length > 0) {
       errs.forEach((e) => {
         const val_err = new ValidationError();
         Object.assign(val_err, e);
@@ -411,6 +419,12 @@ export class Form {
       });
       this.linkErrors(this.errors);
     }
+
+    // if (this.initial_errors && this.initial_errors.length > 0) {
+    //   this.errors = Array.from(this.initial_errors);
+    // }else {
+    //   this.clearErrors();
+    // }
   };
 
   /**
@@ -439,21 +453,22 @@ export class Form {
 
   // #region PRIVATE FUNCTIONS
 
-  // TODO: Speed this bad boy up. There are optimizations to be had.
   /**
+   * TODO: Speed this bad boy up. There are optimizations to be had.
+   * ... but it's already pretty speedy.
    * Check if there are any required fields in the errors.
    * If there are no required fields in the errors, the form is valid
    */
-  private requiredFieldsValid = (errors: ValidationError[]): boolean => {
+  private nonRequiredFieldsValid = (errors: ValidationError[]): boolean => {
     if (errors.length === 0) return true;
-    const errs = errors.map((e) => e.property);
     // Go ahead and return if there are no errors
     let i = 0,
-      len = this.required_fields.length;
+      len = this.non_required_fields.length;
     // If there are no required fields, just go ahead and return
     if (len === 0) return true;
+    const errs = errors.map((e) => e.property);
     for (; len > i; ++i) {
-      if (errs.includes(this.required_fields[i])) {
+      if (errs.includes(this.non_required_fields[i])) {
         return false;
       }
     }
@@ -465,11 +480,11 @@ export class Form {
     errors: ValidationError[],
     field?: FieldConfig
   ) => {
-    // All required fields valid (arfv)
-    const arfv = this.requiredFieldsValid(errors);
+    // Non required fields valid (nrfv)
+    const nrfv = this.nonRequiredFieldsValid(errors);
 
     // There are errors!
-    if (errors.length > 0 || !arfv) {
+    if (errors.length > 0 || !nrfv) {
       this.valid.set(false);
       this.errors = errors;
       // console.log("ERRORS: ", errors);
@@ -510,9 +525,15 @@ export class Form {
     }
   };
 
+  // Here in case we need better performance.
+  private linkFieldValue = (field: FieldConfig): void => {
+    this.model[field.name] = get(field.value);
+  };
+
   /**
-   * TODO: There may be a better way to do comparison than Object.is().
+   * TODO: Might better way to do comparison than Object.is() and JSON.stringify()
    * TODO: Be my guest to fix it if you know how.
+   * But... I've tested it with 1000 fields with minimal input lag.
    */
   private hasChanged = (): void => {
     if (
@@ -530,6 +551,7 @@ export class Form {
     field: FieldConfig
   ): void => {
     const error = errors.filter((e) => e.property === field.name);
+    // Check if there's an error for the field
     if (error && error.length > 0) {
       field.errors.set(error[0]);
     } else {
@@ -600,17 +622,6 @@ export class Form {
         });
       }
     });
-  };
-
-  private arraysEqual = (a1, a2) => {
-    if (a1.length !== a2.length) return false;
-    let i = 0,
-      len = a1.length;
-    for (; len > i; ++i) {
-      if (a1[i] !== a2[i]) return false;
-    }
-
-    return true;
   };
   //#endregion
   //#endregion

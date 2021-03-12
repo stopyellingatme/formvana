@@ -5,11 +5,8 @@
         "module": "esNext",
         "moduleResolution": "node",
         "sourceMap": true,
-        "allowJs": false,
-        "declaration": true,
-        "declarationMap": true,
-        "declarationDir": "./package/declarations",
-        "emitDeclarationOnly": true,
+        "allowJs": true,
+        "emitDeclarationOnly": false,
         "noLib": false,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
@@ -18,7 +15,6 @@
         "esModuleInterop": true,
         "importHelpers": false,
         "noEmitHelpers": true,
-        "outDir": "./package/declarations",
         "lib": [
             "es2018",
             "dom"
@@ -28,12 +24,14 @@
         ]
     },
     "include": [
-        "src/**/*",
-        "package/**/*",
-        "./"
+        "./src/**/*",
+        "../package/typescript/*",
+        "../package/svelte/*",
+        "../package/svelte/defaults/*",
+        "../package/svelte/tailwind/*",
     ],
     "exclude": [
-        "node_modules"
+        "./node_modules"
     ],
     "compileOnSave": false
 }

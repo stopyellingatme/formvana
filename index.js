@@ -2529,6 +2529,9 @@
      *  - call form.storify() -  const { subscribe, update } = form.storify();
      *  - Now you're ready to use the form!
      *
+     * Performance is blazing with < 500 fields
+     *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
+     *
      */
     class Form {
         constructor(init) {
@@ -2537,7 +2540,7 @@
              */
             this.initial_state = null;
             this.initial_errors = null;
-            this.required_fields = [];
+            this.non_required_fields = [];
             /**
              * Validation options come from class-validator ValidatorOptions.
              *
@@ -2636,10 +2639,10 @@
                         if (this.model[prop]) {
                             config.value.set(this.model[prop]);
                         }
-                        if (config.required) {
-                            this.required_fields.push(config.name);
+                        if (!config.required) {
+                            this.non_required_fields.push(config.name);
                         }
-                        console.log("FIELD CONFIG: ", config);
+                        // console.log("FIELD CONFIG: ", config);
                         // Return the enriched field config
                         return config;
                     });
@@ -2732,6 +2735,8 @@
              */
             this.validateField = (field) => {
                 // Link the input from the field to the model.
+                // this.link_fields_to_model === LinkOnEvent.Always &&
+                //   this.linkFieldValue(field);
                 this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
                 // Return class-validator validate function.
                 // Validate the model with given validation config.
@@ -2794,6 +2799,7 @@
             this.updateInitialState = () => {
                 this.initial_state = JSON.parse(JSON.stringify(this.model));
                 this.initial_errors = JSON.stringify(this.errors);
+                // this.initial_errors = Array.from(this.errors);
                 this.changed.set(false);
             };
             this.clearErrors = () => {
@@ -2812,11 +2818,10 @@
                     this.model[key] = this.initial_state[key];
                 });
                 this.linkValues(false);
+                // If the initial state has errors, add them to
+                this.clearErrors();
                 const errs = JSON.parse(this.initial_errors);
-                if (errs && errs.length === 0) {
-                    this.clearErrors();
-                }
-                else {
+                if (errs && errs.length > 0) {
                     errs.forEach((e) => {
                         const val_err = new ValidationError();
                         Object.assign(val_err, e);
@@ -2824,6 +2829,11 @@
                     });
                     this.linkErrors(this.errors);
                 }
+                // if (this.initial_errors && this.initial_errors.length > 0) {
+                //   this.errors = Array.from(this.initial_errors);
+                // }else {
+                //   this.clearErrors();
+                // }
             };
             /**
              *! Make sure to call this when the component is unloaded/destroyed
@@ -2849,32 +2859,33 @@
                 this.reset();
             };
             // #region PRIVATE FUNCTIONS
-            // TODO: Speed this bad boy up. There are optimizations to be had.
             /**
+             * TODO: Speed this bad boy up. There are optimizations to be had.
+             * ... but it's already pretty speedy.
              * Check if there are any required fields in the errors.
              * If there are no required fields in the errors, the form is valid
              */
-            this.requiredFieldsValid = (errors) => {
+            this.nonRequiredFieldsValid = (errors) => {
                 if (errors.length === 0)
                     return true;
-                const errs = errors.map((e) => e.property);
                 // Go ahead and return if there are no errors
-                let i = 0, len = this.required_fields.length;
+                let i = 0, len = this.non_required_fields.length;
                 // If there are no required fields, just go ahead and return
                 if (len === 0)
                     return true;
+                const errs = errors.map((e) => e.property);
                 for (; len > i; ++i) {
-                    if (errs.includes(this.required_fields[i])) {
+                    if (errs.includes(this.non_required_fields[i])) {
                         return false;
                     }
                 }
                 return true;
             };
             this.handleValidation = (isField = true, errors, field) => {
-                // All required fields valid (arfv)
-                const arfv = this.requiredFieldsValid(errors);
+                // Non required fields valid (nrfv)
+                const nrfv = this.nonRequiredFieldsValid(errors);
                 // There are errors!
-                if (errors.length > 0 || !arfv) {
+                if (errors.length > 0 || !nrfv) {
                     this.valid.set(false);
                     this.errors = errors;
                     // console.log("ERRORS: ", errors);
@@ -2913,9 +2924,14 @@
                     }
                 }
             };
+            // Here in case we need better performance.
+            this.linkFieldValue = (field) => {
+                this.model[field.name] = get_store_value(field.value);
+            };
             /**
-             * TODO: There may be a better way to do comparison than Object.is().
+             * TODO: Might better way to do comparison than Object.is() and JSON.stringify()
              * TODO: Be my guest to fix it if you know how.
+             * But... I've tested it with 1000 fields with minimal input lag.
              */
             this.hasChanged = () => {
                 if (Object.is(this.model, this.initial_state) &&
@@ -2927,6 +2943,7 @@
             };
             this.linkFieldErrors = (errors, field) => {
                 const error = errors.filter((e) => e.property === field.name);
+                // Check if there's an error for the field
                 if (error && error.length > 0) {
                     field.errors.set(error[0]);
                 }
@@ -2987,16 +3004,6 @@
                     }
                 });
             };
-            this.arraysEqual = (a1, a2) => {
-                if (a1.length !== a2.length)
-                    return false;
-                let i = 0, len = a1.length;
-                for (; len > i; ++i) {
-                    if (a1[i] !== a2[i])
-                        return false;
-                }
-                return true;
-            };
             Object.keys(this).forEach((key) => {
                 if (init[key]) {
                     this[key] = init[key];
@@ -3009,6 +3016,7 @@
                  */
                 this.initial_state = JSON.parse(JSON.stringify(this.model));
                 this.initial_errors = JSON.stringify(this.errors);
+                // this.initial_errors = Array.from(this.errors);
                 this.buildFields();
             }
             if (this.field_order && this.field_order.length > 0) {
@@ -4180,17 +4188,6 @@
     })(UserStatus || (UserStatus = {}));
     class Business {
         constructor(init) {
-            this.name = "";
-            this.email = "";
-            this.description = "";
-            this.avatar_url = "";
-            // Address
-            this.address_1 = "";
-            this.address_2 = "";
-            this.city = "";
-            this.state = "";
-            this.zip = "";
-            this.status = 1;
             if (init) {
                 Object.keys(this).forEach((key) => {
                     if (init[key]) {
@@ -4202,85 +4199,1338 @@
     }
     __decorate([
         editable,
-        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
-        IsString(),
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
         field(new FieldConfig({
-            el: "input",
-            type: "text",
-            label: "Business Name",
+            el: "select",
+            type: "select",
+            label: "User Status 1",
             required: true,
             classname: "col-span-4 sm:col-span-2",
-            attributes: { placeholder: "Business Name" },
+            attributes: { placeholder: "User Status 1" }, ref_key: "business_statuses",
         })),
-        __metadata("design:type", String)
-    ], Business.prototype, "name", void 0);
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_1", void 0);
     __decorate([
         editable,
         IsEmail({}, { message: "Please enter a valid email address" }),
         field(new FieldConfig({
             el: "input",
             type: "email",
-            label: "Email Address",
+            label: "Email 2",
             required: true,
             classname: "col-span-4 sm:col-span-2",
-            attributes: { placeholder: "Email Address" },
+            attributes: { placeholder: "Email 2" },
         })),
-        __metadata("design:type", String)
-    ], Business.prototype, "email", void 0);
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_2", void 0);
     __decorate([
         editable,
         Length(10, 350),
+        IsString(),
         field(new FieldConfig({
             el: "textarea",
             type: "text",
-            label: "Description",
-            required: true,
+            label: "Description 3",
+            required: false, hint: "This is a hint!",
             classname: "col-span-4 sm:col-span-2",
-            hint: "This will be seen publicly",
-            attributes: { placeholder: "Description" },
+            attributes: { placeholder: "Description 3" },
         })),
-        __metadata("design:type", String)
-    ], Business.prototype, "description", void 0);
+        __metadata("design:type", Object)
+    ], Business.prototype, "description_3", void 0);
     __decorate([
         editable,
-        Length(5, 200),
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 4",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 4" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_4", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
         field(new FieldConfig({
             el: "input",
             type: "text",
-            label: "Address Line 1",
+            label: "Name 5",
             required: true,
             classname: "col-span-4 sm:col-span-2",
-            attributes: { placeholder: "Address 1" },
-            group: { name: "address", label: "Business Location" },
+            attributes: { placeholder: "Name 5" },
         })),
-        __metadata("design:type", String)
-    ], Business.prototype, "address_1", void 0);
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_5", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 6",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 6" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_6", void 0);
     __decorate([
         editable,
         IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
         field(new FieldConfig({
             el: "select",
             type: "select",
-            label: "Business Status",
+            label: "User Status 7",
             required: true,
             classname: "col-span-4 sm:col-span-2",
-            ref_key: "business_statuses",
+            attributes: { placeholder: "User Status 7" }, ref_key: "business_statuses",
         })),
         __metadata("design:type", Object)
-    ], Business.prototype, "status", void 0);
+    ], Business.prototype, "user_status_7", void 0);
     __decorate([
         editable,
-        IsEnum(UserStatus, { message: "Please choose a User Status" }),
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 8",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 8" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_8", void 0);
+    __decorate([
+        editable,
+        Length(10, 350),
+        IsString(),
+        field(new FieldConfig({
+            el: "textarea",
+            type: "text",
+            label: "Description 9",
+            required: false, hint: "This is a hint!",
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Description 9" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "description_9", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 10",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 10" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_10", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
         field(new FieldConfig({
             el: "select",
             type: "select",
-            label: "User Status",
-            required: false,
+            label: "User Status 11",
+            required: true,
             classname: "col-span-4 sm:col-span-2",
-            ref_key: "user_statuses",
+            attributes: { placeholder: "User Status 11" }, ref_key: "business_statuses",
         })),
         __metadata("design:type", Object)
-    ], Business.prototype, "user_status", void 0);
+    ], Business.prototype, "user_status_11", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 12",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 12" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_12", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 13",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 13" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_13", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 14",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 14" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_14", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 15",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 15" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_15", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 16",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 16" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_16", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 17",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 17" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_17", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 18",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 18" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_18", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 19",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 19" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_19", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 20",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 20" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_20", void 0);
+    __decorate([
+        editable,
+        Length(10, 350),
+        IsString(),
+        field(new FieldConfig({
+            el: "textarea",
+            type: "text",
+            label: "Description 21",
+            required: false, hint: "This is a hint!",
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Description 21" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "description_21", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 22",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 22" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_22", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 23",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 23" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_23", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 24",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 24" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_24", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 25",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 25" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_25", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 26",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 26" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_26", void 0);
+    __decorate([
+        editable,
+        Length(10, 350),
+        IsString(),
+        field(new FieldConfig({
+            el: "textarea",
+            type: "text",
+            label: "Description 27",
+            required: false, hint: "This is a hint!",
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Description 27" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "description_27", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 28",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 28" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_28", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 29",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 29" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_29", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 30",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 30" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_30", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 31",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 31" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_31", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 32",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 32" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_32", void 0);
+    __decorate([
+        editable,
+        Length(10, 350),
+        IsString(),
+        field(new FieldConfig({
+            el: "textarea",
+            type: "text",
+            label: "Description 33",
+            required: false, hint: "This is a hint!",
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Description 33" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "description_33", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 34",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 34" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_34", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 35",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 35" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_35", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 36",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 36" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_36", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 37",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 37" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_37", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 38",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 38" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_38", void 0);
+    __decorate([
+        editable,
+        Length(10, 350),
+        IsString(),
+        field(new FieldConfig({
+            el: "textarea",
+            type: "text",
+            label: "Description 39",
+            required: false, hint: "This is a hint!",
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Description 39" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "description_39", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 40",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 40" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_40", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 41",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 41" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_41", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 42",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 42" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_42", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 43",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 43" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_43", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 44",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 44" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_44", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 45",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 45" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_45", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 46",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 46" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_46", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 47",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 47" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_47", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 48",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 48" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_48", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 49",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 49" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_49", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 50",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 50" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_50", void 0);
+    __decorate([
+        editable,
+        Length(10, 350),
+        IsString(),
+        field(new FieldConfig({
+            el: "textarea",
+            type: "text",
+            label: "Description 51",
+            required: false, hint: "This is a hint!",
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Description 51" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "description_51", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 52",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 52" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_52", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 53",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 53" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_53", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 54",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 54" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_54", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 55",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 55" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_55", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 56",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 56" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_56", void 0);
+    __decorate([
+        editable,
+        Length(10, 350),
+        IsString(),
+        field(new FieldConfig({
+            el: "textarea",
+            type: "text",
+            label: "Description 57",
+            required: false, hint: "This is a hint!",
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Description 57" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "description_57", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 58",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 58" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_58", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 59",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 59" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_59", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 60",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 60" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_60", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 61",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 61" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_61", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 62",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 62" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_62", void 0);
+    __decorate([
+        editable,
+        Length(10, 350),
+        IsString(),
+        field(new FieldConfig({
+            el: "textarea",
+            type: "text",
+            label: "Description 63",
+            required: false, hint: "This is a hint!",
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Description 63" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "description_63", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 64",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 64" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_64", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 65",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 65" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_65", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 66",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 66" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_66", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 67",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 67" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_67", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 68",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 68" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_68", void 0);
+    __decorate([
+        editable,
+        Length(10, 350),
+        IsString(),
+        field(new FieldConfig({
+            el: "textarea",
+            type: "text",
+            label: "Description 69",
+            required: false, hint: "This is a hint!",
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Description 69" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "description_69", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 70",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 70" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_70", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 71",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 71" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_71", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 72",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 72" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_72", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 73",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 73" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_73", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 74",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 74" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_74", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 75",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 75" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_75", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 76",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 76" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_76", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 77",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 77" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_77", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 78",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 78" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_78", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 79",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 79" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_79", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 80",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 80" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_80", void 0);
+    __decorate([
+        editable,
+        Length(10, 350),
+        IsString(),
+        field(new FieldConfig({
+            el: "textarea",
+            type: "text",
+            label: "Description 81",
+            required: false, hint: "This is a hint!",
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Description 81" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "description_81", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 82",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 82" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_82", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 83",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 83" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_83", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 84",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 84" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_84", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 85",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 85" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_85", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 86",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 86" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_86", void 0);
+    __decorate([
+        editable,
+        Length(10, 350),
+        IsString(),
+        field(new FieldConfig({
+            el: "textarea",
+            type: "text",
+            label: "Description 87",
+            required: false, hint: "This is a hint!",
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Description 87" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "description_87", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 88",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 88" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_88", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 89",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 89" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_89", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 90",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 90" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_90", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 91",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 91" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_91", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 92",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 92" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_92", void 0);
+    __decorate([
+        editable,
+        Length(10, 350),
+        IsString(),
+        field(new FieldConfig({
+            el: "textarea",
+            type: "text",
+            label: "Description 93",
+            required: false, hint: "This is a hint!",
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Description 93" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "description_93", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 94",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 94" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_94", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 95",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 95" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_95", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 96",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 96" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_96", void 0);
+    __decorate([
+        editable,
+        IsEnum(BusinessStatus, { message: "Please choose a Business Status" }),
+        field(new FieldConfig({
+            el: "select",
+            type: "select",
+            label: "User Status 97",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "User Status 97" }, ref_key: "business_statuses",
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "user_status_97", void 0);
+    __decorate([
+        editable,
+        IsEmail({}, { message: "Please enter a valid email address" }),
+        field(new FieldConfig({
+            el: "input",
+            type: "email",
+            label: "Email 98",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Email 98" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "email_98", void 0);
+    __decorate([
+        editable,
+        Length(10, 350),
+        IsString(),
+        field(new FieldConfig({
+            el: "textarea",
+            type: "text",
+            label: "Description 99",
+            required: false, hint: "This is a hint!",
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Description 99" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "description_99", void 0);
+    __decorate([
+        editable,
+        Length(10, 90, { message: "Name must be between 10 and 90 characters" }),
+        IsString(),
+        field(new FieldConfig({
+            el: "input",
+            type: "text",
+            label: "Name 100",
+            required: true,
+            classname: "col-span-4 sm:col-span-2",
+            attributes: { placeholder: "Name 100" },
+        })),
+        __metadata("design:type", Object)
+    ], Business.prototype, "name_100", void 0);
 
     /**
      * Reference data can be accessed by (example):
@@ -5128,7 +6378,7 @@
     			current = true;
     		},
     		p(ctx, dirty) {
-    			if (dirty & /*options, selectedLabel, handleChange*/ 18440) {
+    			if (dirty & /*options, selectedLabel, handleChange*/ 16648) {
     				each_value = /*options*/ ctx[3];
     				let i;
 
@@ -5203,7 +6453,7 @@
     				id: "listbox-option-" + /*i*/ ctx[25],
     				label: /*label*/ ctx[5],
     				value: /*value*/ ctx[23],
-    				selected: /*selectedLabel*/ ctx[11] === /*label*/ ctx[5]
+    				selected: /*selectedLabel*/ ctx[8] === /*label*/ ctx[5]
     			}
     		});
 
@@ -5222,7 +6472,7 @@
     			const dropdownoption_changes = {};
     			if (dirty & /*options*/ 8) dropdownoption_changes.label = /*label*/ ctx[5];
     			if (dirty & /*options*/ 8) dropdownoption_changes.value = /*value*/ ctx[23];
-    			if (dirty & /*selectedLabel, options*/ 2056) dropdownoption_changes.selected = /*selectedLabel*/ ctx[11] === /*label*/ ctx[5];
+    			if (dirty & /*selectedLabel, options*/ 264) dropdownoption_changes.selected = /*selectedLabel*/ ctx[8] === /*label*/ ctx[5];
     			dropdownoption.$set(dropdownoption_changes);
     		},
     		i(local) {
@@ -5268,7 +6518,7 @@
     	let current;
 
     	inputerrors = new InputErrors({
-    			props: { errorsStore: /*errors*/ ctx[9] }
+    			props: { errorsStore: /*errors*/ ctx[10] }
     		});
 
     	return {
@@ -5281,7 +6531,7 @@
     		},
     		p(ctx, dirty) {
     			const inputerrors_changes = {};
-    			if (dirty & /*errors*/ 512) inputerrors_changes.errorsStore = /*errors*/ ctx[9];
+    			if (dirty & /*errors*/ 1024) inputerrors_changes.errorsStore = /*errors*/ ctx[10];
     			inputerrors.$set(inputerrors_changes);
     		},
     		i(local) {
@@ -5308,8 +6558,8 @@
     	let button;
     	let span0;
 
-    	let t2_value = (/*selectedLabel*/ ctx[11]
-    	? /*selectedLabel*/ ctx[11]
+    	let t2_value = (/*selectedLabel*/ ctx[8]
+    	? /*selectedLabel*/ ctx[8]
     	: "Select") + "";
 
     	let t2;
@@ -5324,13 +6574,13 @@
 
     	let button_levels = [
     		{ name: /*name*/ ctx[4] },
-    		/*input_attributes*/ ctx[8],
-    		{ value: /*selectedLabel*/ ctx[11] },
+    		/*input_attributes*/ ctx[9],
+    		{ value: /*selectedLabel*/ ctx[8] },
     		{ type: "button" },
     		{ "aria-haspopup": "listbox" },
     		{ "aria-expanded": "true" },
     		{ "aria-labelledby": "listbox-label" },
-    		{ class: /*cls*/ ctx[10] }
+    		{ class: /*cls*/ ctx[11] }
     	];
 
     	let button_data = {};
@@ -5340,8 +6590,8 @@
     	}
 
     	let if_block0 = /*menu_open*/ ctx[6] && create_if_block_2$1(ctx);
-    	let if_block1 = /*errors*/ ctx[9] && create_if_block_1$3();
-    	let if_block2 = /*errors*/ ctx[9] && create_if_block$4(ctx);
+    	let if_block1 = /*errors*/ ctx[10] && create_if_block_1$3();
+    	let if_block2 = /*errors*/ ctx[10] && create_if_block$4(ctx);
 
     	return {
     		c() {
@@ -5408,19 +6658,19 @@
     				attr(label_1, "for", /*name*/ ctx[4]);
     			}
 
-    			if ((!current || dirty & /*selectedLabel*/ 2048) && t2_value !== (t2_value = (/*selectedLabel*/ ctx[11]
-    			? /*selectedLabel*/ ctx[11]
+    			if ((!current || dirty & /*selectedLabel*/ 256) && t2_value !== (t2_value = (/*selectedLabel*/ ctx[8]
+    			? /*selectedLabel*/ ctx[8]
     			: "Select") + "")) set_data(t2, t2_value);
 
     			set_attributes(button, button_data = get_spread_update(button_levels, [
     				(!current || dirty & /*name*/ 16) && { name: /*name*/ ctx[4] },
-    				dirty & /*input_attributes*/ 256 && /*input_attributes*/ ctx[8],
-    				(!current || dirty & /*selectedLabel*/ 2048) && { value: /*selectedLabel*/ ctx[11] },
+    				dirty & /*input_attributes*/ 512 && /*input_attributes*/ ctx[9],
+    				(!current || dirty & /*selectedLabel*/ 256) && { value: /*selectedLabel*/ ctx[8] },
     				{ type: "button" },
     				{ "aria-haspopup": "listbox" },
     				{ "aria-expanded": "true" },
     				{ "aria-labelledby": "listbox-label" },
-    				(!current || dirty & /*cls*/ 1024) && { class: /*cls*/ ctx[10] }
+    				(!current || dirty & /*cls*/ 2048) && { class: /*cls*/ ctx[11] }
     			]));
 
     			if (/*menu_open*/ ctx[6]) {
@@ -5446,7 +6696,7 @@
     				check_outros();
     			}
 
-    			if (/*errors*/ ctx[9]) {
+    			if (/*errors*/ ctx[10]) {
     				if (if_block1) ; else {
     					if_block1 = create_if_block_1$3();
     					if_block1.c();
@@ -5457,11 +6707,11 @@
     				if_block1 = null;
     			}
 
-    			if (/*errors*/ ctx[9]) {
+    			if (/*errors*/ ctx[10]) {
     				if (if_block2) {
     					if_block2.p(ctx, dirty);
 
-    					if (dirty & /*errors*/ 512) {
+    					if (dirty & /*errors*/ 1024) {
     						transition_in(if_block2, 1);
     					}
     				} else {
@@ -5507,21 +6757,21 @@
     let error_class$1 = "bg-white relative w-full text-red-900 border border-red-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 sm:text-sm";
 
     function instance$5($$self, $$props, $$invalidate) {
+    	let selectedLabel;
     	let input_attributes;
     	let errors;
     	let cls;
-    	let selectedLabel;
-
-    	let $errorsStore,
-    		$$unsubscribe_errorsStore = noop,
-    		$$subscribe_errorsStore = () => ($$unsubscribe_errorsStore(), $$unsubscribe_errorsStore = subscribe(errorsStore, $$value => $$invalidate(18, $errorsStore = $$value)), errorsStore);
 
     	let $valueStore,
     		$$unsubscribe_valueStore = noop,
-    		$$subscribe_valueStore = () => ($$unsubscribe_valueStore(), $$unsubscribe_valueStore = subscribe(valueStore, $$value => $$invalidate(19, $valueStore = $$value)), valueStore);
+    		$$subscribe_valueStore = () => ($$unsubscribe_valueStore(), $$unsubscribe_valueStore = subscribe(valueStore, $$value => $$invalidate(18, $valueStore = $$value)), valueStore);
 
-    	$$self.$$.on_destroy.push(() => $$unsubscribe_errorsStore());
+    	let $errorsStore,
+    		$$unsubscribe_errorsStore = noop,
+    		$$subscribe_errorsStore = () => ($$unsubscribe_errorsStore(), $$unsubscribe_errorsStore = subscribe(errorsStore, $$value => $$invalidate(19, $errorsStore = $$value)), errorsStore);
+
     	$$self.$$.on_destroy.push(() => $$unsubscribe_valueStore());
+    	$$self.$$.on_destroy.push(() => $$unsubscribe_errorsStore());
     	let is_focused = false;
     	let menu_open = false;
     	const toggle = () => $$invalidate(6, menu_open = !menu_open);
@@ -5609,22 +6859,22 @@
     	};
 
     	$$self.$$.update = () => {
+    		if ($$self.$$.dirty & /*options, $valueStore*/ 262152) {
+    			$$invalidate(8, selectedLabel = options && options[$valueStore] && options[$valueStore].label);
+    		}
+
     		if ($$self.$$.dirty & /*attrs*/ 131072) {
-    			$$invalidate(8, input_attributes = Object.assign({}, attrs));
+    			$$invalidate(9, input_attributes = Object.assign({}, attrs));
     		}
 
-    		if ($$self.$$.dirty & /*$errorsStore*/ 262144) {
-    			$$invalidate(9, errors = $errorsStore && $errorsStore.constraints);
+    		if ($$self.$$.dirty & /*$errorsStore*/ 524288) {
+    			$$invalidate(10, errors = $errorsStore && $errorsStore.constraints);
     		}
 
-    		if ($$self.$$.dirty & /*$errorsStore*/ 262144) {
-    			$$invalidate(10, cls = $errorsStore && $errorsStore.constraints
+    		if ($$self.$$.dirty & /*$errorsStore*/ 524288) {
+    			$$invalidate(11, cls = $errorsStore && $errorsStore.constraints
     			? error_class$1
     			: default_class$1);
-    		}
-
-    		if ($$self.$$.dirty & /*options, $valueStore*/ 524296) {
-    			$$invalidate(11, selectedLabel = options && options[$valueStore] && options[$valueStore].label);
     		}
     	};
 
@@ -5637,18 +6887,18 @@
     		label,
     		menu_open,
     		node,
+    		selectedLabel,
     		input_attributes,
     		errors,
     		cls,
-    		selectedLabel,
     		toggle,
     		handleKeyDown,
     		handleChange,
     		handleFocus,
     		handleBlur,
     		attrs,
-    		$errorsStore,
     		$valueStore,
+    		$errorsStore,
     		button_binding,
     		click_handler
     	];
@@ -6253,7 +7503,7 @@
     	return child_ctx;
     }
 
-    // (62:8) {#each $form.fields as field, i}
+    // (64:8) {#each $form.fields as field, i}
     function create_each_block(ctx) {
     	let field;
     	let current;
@@ -6294,7 +7544,7 @@
     	};
     }
 
-    // (76:6) {:else}
+    // (78:6) {:else}
     function create_else_block_1(ctx) {
     	let button;
 
@@ -6315,7 +7565,7 @@
     	};
     }
 
-    // (69:6) {#if $changed}
+    // (71:6) {#if $changed}
     function create_if_block_1(ctx) {
     	let button;
     	let mounted;
@@ -6349,7 +7599,7 @@
     	};
     }
 
-    // (91:6) {:else}
+    // (93:6) {:else}
     function create_else_block$1(ctx) {
     	let button;
 
@@ -6369,7 +7619,7 @@
     	};
     }
 
-    // (84:6) {#if $valid}
+    // (86:6) {#if $valid}
     function create_if_block$1(ctx) {
     	let button;
 
@@ -6617,7 +7867,8 @@
     	$$subscribe_form();
 
     	const handleSubmit = e => {
-    		dispatch("submit", e);
+    		console.log(e);
+    		dispatch("event", e);
     	};
 
     	onMount(() => {
@@ -6720,7 +7971,8 @@
         get_store_value(formState).loading.set(true);
         setTimeout(() => {
             get_store_value(formState).loading.set(false);
-            get_store_value(formState).validate();
+            // get(formState).valid.set(true);
+            // get(formState).validate();
         }, 1000);
         // setTimeout(() => {
         //   get(formState).updateInitialState();
@@ -6737,11 +7989,11 @@
     const get_default_slot_changes = dirty => ({ form: dirty & /*form*/ 1 });
     const get_default_slot_context = ctx => ({ form: /*form*/ ctx[0] });
 
-    // (33:0) {:else}
+    // (37:0) {:else}
     function create_else_block(ctx) {
     	let current;
-    	const default_slot_template = /*#slots*/ ctx[3].default;
-    	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[2], get_default_slot_context);
+    	const default_slot_template = /*#slots*/ ctx[4].default;
+    	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[3], get_default_slot_context);
 
     	return {
     		c() {
@@ -6756,8 +8008,8 @@
     		},
     		p(ctx, dirty) {
     			if (default_slot) {
-    				if (default_slot.p && dirty & /*$$scope, form*/ 5) {
-    					update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[2], dirty, get_default_slot_changes, get_default_slot_context);
+    				if (default_slot.p && dirty & /*$$scope, form*/ 9) {
+    					update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[3], dirty, get_default_slot_changes, get_default_slot_context);
     				}
     			}
     		},
@@ -6789,6 +8041,7 @@
 
     	if (switch_value) {
     		switch_instance = new switch_value(switch_props(ctx));
+    		switch_instance.$on("event", /*event_handler*/ ctx[5]);
     	}
 
     	return {
@@ -6822,6 +8075,7 @@
 
     				if (switch_value) {
     					switch_instance = new switch_value(switch_props(ctx));
+    					switch_instance.$on("event", /*event_handler*/ ctx[5]);
     					create_component(switch_instance.$$.fragment);
     					transition_in(switch_instance.$$.fragment, 1);
     					mount_component(switch_instance, switch_instance_anchor.parentNode, switch_instance_anchor);
@@ -6937,12 +8191,14 @@
     		$form.destroy();
     	});
 
+    	const event_handler = e => dispatch(e.detail.type, e);
+
     	$$self.$$set = $$props => {
     		if ("form" in $$props) $$subscribe_form($$invalidate(0, form = $$props.form));
-    		if ("$$scope" in $$props) $$invalidate(2, $$scope = $$props.$$scope);
+    		if ("$$scope" in $$props) $$invalidate(3, $$scope = $$props.$$scope);
     	};
 
-    	return [form, $form, $$scope, slots];
+    	return [form, $form, dispatch, $$scope, slots, event_handler];
     }
 
     class DynamicForm extends SvelteComponent {
@@ -6994,7 +8250,7 @@
     		);
     	});
 
-    	const submit_handler = () => console.log("MADE IT HERE");
+    	const submit_handler = e => console.log("MADE IT HERE -- ", e);
     	return [submit_handler];
     }
 

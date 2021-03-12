@@ -1,7 +1,7 @@
-import { get, writable } from "svelte/store";
+import { get } from "svelte/store";
 // import { Business } from "./Business";
 import { Business } from "./TestClass";
-import { Form, OnEvents } from "../../package/typescript";
+import { Form, OnEvents } from "../../package";
 import { refs } from "./ref.data.store";
 //@ts-ignore
 import SettingsTemplate from "./SettingsTemplate.svelte";

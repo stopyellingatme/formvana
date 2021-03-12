@@ -29,7 +29,11 @@
 
 {#if $form.template}
   <!-- Use a Template -->
-  <svelte:component this={$form.template} {form} />
+  <svelte:component
+    this={$form.template}
+    {form}
+    on:event={(e) => dispatch(e.detail.type, e)}
+  />
 {:else}
   <!-- Or pass in a custom form as a child - takes {form} prop -->
   <!-- But it's easier to just pass in a template, honestly -->

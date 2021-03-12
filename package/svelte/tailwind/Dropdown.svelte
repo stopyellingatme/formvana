@@ -22,6 +22,9 @@
   let error_class =
     "bg-white relative w-full text-red-900 border border-red-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 sm:text-sm";
 
+  $: selectedLabel =
+    options && options[$valueStore] && options[$valueStore].label;
+    
   $: input_attributes = Object.assign({}, attrs);
   $: errors = $errorsStore && $errorsStore.constraints;
   $: cls =
@@ -58,9 +61,6 @@
         break;
     }
   }
-
-  $: selectedLabel =
-    options && options[$valueStore] && options[$valueStore].label;
 
   /**
    * Capture the element with useInput.
