@@ -11,8 +11,8 @@ import {
   Max,
   IsString
 } from "class-validator";
-import { editable, field } from "../../package/typescript";
-import { FieldConfig } from "../../package/typescript";
+import { editable, field } from "../../package/lib/typescript";
+import { FieldConfig } from "../../package/lib/typescript";
 
 export enum BusinessStatus {
   ACTIVE,

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import LoadingIndicator from "../../package/svelte/LoadingIndicator.svelte";
-  import Field from "../../package/svelte/tailwind/Field.svelte";
+  import LoadingIndicator from "@formvana/svelte/LoadingIndicator.svelte";
+  import Field from "@formvana/svelte/tailwind/Field.svelte";
   import { createEventDispatcher } from "svelte";
   const dispatch = createEventDispatcher();
 
@@ -9,7 +9,7 @@
   export let form;
 
   const handleSubmit = (e) => {
-    console.log(e);
+    // console.log(e);
 
     dispatch("event", e);
   };

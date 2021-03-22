@@ -5,11 +5,11 @@
         "module": "esNext",
         "moduleResolution": "node",
         "sourceMap": true,
-        "allowJs": false,
+        "allowJs": true,
         "declaration": true,
         "declarationMap": true,
-        "declarationDir": "./package/declarations",
-        "emitDeclarationOnly": true,
+        "declarationDir": "package/lib/typescript",
+        "emitDeclarationOnly": false,
         "noLib": false,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
@@ -18,7 +18,7 @@
         "esModuleInterop": true,
         "importHelpers": false,
         "noEmitHelpers": true,
-        "outDir": "./package/declarations",
+        "outDir": "package/lib/typescript",
         "lib": [
             "es2018",
             "dom"
@@ -30,7 +30,6 @@
     "include": [
         "src/**/*",
         "package/**/*",
-        "./"
     ],
     "exclude": [
         "node_modules"

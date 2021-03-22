@@ -1,7 +1,7 @@
 <script lang="ts">
   import "tailwindcss/dist/tailwind.css";
   import "tailwindcss/dist/components.css";
-  import BusinessSettingsForm from "./BusinessSettingsForm.svelte";
+  import BusinessSettingsForm from "./components/BusinessSettingsForm.svelte";
 </script>
 
 <main

@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+        "target": "esNext",
+        "moduleResolution": "node",
+        "isolatedModules": true,
+        "strict": false,
+        "esModuleInterop": true,
+        "declaration": true,
+        "declarationMap": true,
+        "declarationDir": "./lib",
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "outDir": "./lib",
+        "types": [
+            "svelte"
+        ]
+    },
+    "include": [
+        "lib"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

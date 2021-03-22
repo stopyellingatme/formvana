@@ -6,6 +6,9 @@
         "moduleResolution": "node",
         "sourceMap": true,
         "allowJs": true,
+        "declaration": true,
+        "declarationMap": true,
+        "declarationDir": "../package/typescript",
         "emitDeclarationOnly": false,
         "noLib": false,
         "experimentalDecorators": true,
@@ -24,14 +27,10 @@
         ]
     },
     "include": [
-        "./src/**/*",
-        "../package/typescript/*",
-        "../package/svelte/*",
-        "../package/svelte/defaults/*",
-        "../package/svelte/tailwind/*",
+        "src/**/*",
+        "../package/**/*"
     ],
     "exclude": [
-        "./node_modules"
-    ],
-    "compileOnSave": false
+        "node_modules"
+    ]
 }
