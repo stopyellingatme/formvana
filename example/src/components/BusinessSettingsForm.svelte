@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { onSubmit, init, formState } from "./business.settings.form";
-  import DynamicForm from "@formvana/svelte/DynamicForm.svelte";
+  import DynamicForm from "@formvana/lib/svelte/DynamicForm.svelte";
 
   onMount(() => {
     setTimeout(() => {

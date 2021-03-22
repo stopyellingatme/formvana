@@ -6,9 +6,6 @@
         "moduleResolution": "node",
         "sourceMap": true,
         "allowJs": true,
-        "declaration": true,
-        "declarationMap": true,
-        "declarationDir": "../package/typescript",
         "emitDeclarationOnly": false,
         "noLib": false,
         "experimentalDecorators": true,
@@ -27,8 +24,7 @@
         ]
     },
     "include": [
-        "src/**/*",
-        "../package/**/*"
+        "src/**/*"
     ],
     "exclude": [
         "node_modules"
