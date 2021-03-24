@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { onSubmit, init, formState } from "./business.settings.form";
+  import { onSubmit, init, formState } from "./example.form";
   import DynamicForm from "@formvana/lib/svelte/DynamicForm.svelte";
 
   onMount(() => {

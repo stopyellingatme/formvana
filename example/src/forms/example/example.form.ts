@@ -1,19 +1,38 @@
 import { get } from "svelte/store";
-// import { Business } from "./Business";
-import { Business } from "./TestClass";
+import { ExampleModel } from "../../models/TestClass";
 import { Form, OnEvents } from "@formvana";
-import { refs } from "./ref.data.store";
 //@ts-ignore
-import SettingsTemplate from "./SettingsTemplate.svelte";
+import ExampleTemplate from "../../templates/ExampleTemplate.svelte";
+
+const ref_data = {
+  statuses: [
+    {
+      label: "ACTIVE",
+      value: 0,
+    },
+    {
+      label: "PENDING",
+      value: 1,
+    },
+    {
+      label: "SUSPENDED",
+      value: 2,
+    },
+    {
+      label: "ARCHIVED",
+      value: 3,
+    },
+  ],
+};
 
 function initStore() {
   // Just gonna set up the form real quick...
   let form = new Form({
-    model: new Business(),
+    model: new ExampleModel(),
     field_order: ["description", "status", "email", "name"],
-    template: SettingsTemplate,
+    template: ExampleTemplate,
     validate_on_events: new OnEvents(true, { focus: false }),
-    refs: get(refs),
+    refs: ref_data,
   });
 
   // And add it to the store...

@@ -17,20 +17,8 @@
   onMount(() => {});
 
   onDestroy(() => {
-    // dispatch("destroy", true);
     $form.destroy();
   });
-
-  /**
-   * Well, it looks like we're gonna have to
-   * make this thing handle the FormGroup and
-   * FormStepper stuff.
-   *
-   * $: fields are_of_type {
-   *      type: "default | group | stepper",
-   *      item: FieldConfig | FieldGroup | FieldStepper
-   *    }
-   */
 
   $: valid = $form.valid;
   $: changed = $form.changed;
@@ -51,7 +39,7 @@
       <!-- Header Area -->
       <div>
         <h2 class="text-lg font-medium leading-6 text-gray-900">
-          Business Settings
+          Example Form
         </h2>
         <p class="mt-1 text-sm text-gray-500">
           This is a test. This is only a test. Bleep bloop.

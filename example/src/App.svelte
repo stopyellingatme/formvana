@@ -1,7 +1,7 @@
 <script lang="ts">
   import "tailwindcss/dist/tailwind.css";
   import "tailwindcss/dist/components.css";
-  import BusinessSettingsForm from "./components/BusinessSettingsForm.svelte";
+  import ExampleForm from "./forms/example/ExampleForm.svelte";
 </script>
 
 <main
@@ -10,7 +10,7 @@
   <div class="flex items-start justify-center">
     <div class="w-full space-y-6">
       <section>
-        <BusinessSettingsForm />
+        <ExampleForm />
       </section>
     </div>
   </div>

@@ -14,33 +14,27 @@ import {
 import { editable, field } from "@formvana";
 import { FieldConfig } from "@formvana";
 
-export enum BusinessStatus {
+export enum Status {
   ACTIVE,
   PENDING,
   SUSPENDED,
   ARCHIVED,
 }
-
-export enum UserStatus {
-  ACTIVE,
-  DISABLED,
-}
-
-export class Business {
+export class ExampleModel {
   
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 1",
+      label: "Status 1",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 1" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 1" },ref_key: "statuses",
     })
   )
-  user_status_1;
+  status_1;
 
 
 	@editable
@@ -121,18 +115,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 7",
+      label: "Status 7",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 7" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 7" },ref_key: "statuses",
     })
   )
-  user_status_7;
+  status_7;
 
 
 	@editable
@@ -183,18 +177,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 11",
+      label: "Status 11",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 11" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 11" },ref_key: "statuses",
     })
   )
-  user_status_11;
+  status_11;
 
 
 	@editable
@@ -213,18 +207,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 13",
+      label: "Status 13",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 13" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 13" },ref_key: "statuses",
     })
   )
-  user_status_13;
+  status_13;
 
 
 	@editable
@@ -274,18 +268,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 17",
+      label: "Status 17",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 17" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 17" },ref_key: "statuses",
     })
   )
-  user_status_17;
+  status_17;
 
 
 	@editable
@@ -304,18 +298,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 19",
+      label: "Status 19",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 19" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 19" },ref_key: "statuses",
     })
   )
-  user_status_19;
+  status_19;
 
 
 	@editable
@@ -366,18 +360,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 23",
+      label: "Status 23",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 23" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 23" },ref_key: "statuses",
     })
   )
-  user_status_23;
+  status_23;
 
 
 	@editable
@@ -458,18 +452,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 29",
+      label: "Status 29",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 29" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 29" },ref_key: "statuses",
     })
   )
-  user_status_29;
+  status_29;
 
 
 	@editable
@@ -489,18 +483,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 31",
+      label: "Status 31",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 31" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 31" },ref_key: "statuses",
     })
   )
-  user_status_31;
+  status_31;
 
 
 	@editable
@@ -581,18 +575,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 37",
+      label: "Status 37",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 37" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 37" },ref_key: "statuses",
     })
   )
-  user_status_37;
+  status_37;
 
 
 	@editable
@@ -643,18 +637,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 41",
+      label: "Status 41",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 41" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 41" },ref_key: "statuses",
     })
   )
-  user_status_41;
+  status_41;
 
 
 	@editable
@@ -673,18 +667,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 43",
+      label: "Status 43",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 43" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 43" },ref_key: "statuses",
     })
   )
-  user_status_43;
+  status_43;
 
 
 	@editable
@@ -734,18 +728,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 47",
+      label: "Status 47",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 47" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 47" },ref_key: "statuses",
     })
   )
-  user_status_47;
+  status_47;
 
 
 	@editable
@@ -764,18 +758,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 49",
+      label: "Status 49",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 49" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 49" },ref_key: "statuses",
     })
   )
-  user_status_49;
+  status_49;
 
 
 	@editable
@@ -826,18 +820,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 53",
+      label: "Status 53",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 53" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 53" },ref_key: "statuses",
     })
   )
-  user_status_53;
+  status_53;
 
 
 	@editable
@@ -918,18 +912,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 59",
+      label: "Status 59",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 59" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 59" },ref_key: "statuses",
     })
   )
-  user_status_59;
+  status_59;
 
 
 	@editable
@@ -949,18 +943,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 61",
+      label: "Status 61",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 61" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 61" },ref_key: "statuses",
     })
   )
-  user_status_61;
+  status_61;
 
 
 	@editable
@@ -1041,18 +1035,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 67",
+      label: "Status 67",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 67" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 67" },ref_key: "statuses",
     })
   )
-  user_status_67;
+  status_67;
 
 
 	@editable
@@ -1103,18 +1097,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 71",
+      label: "Status 71",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 71" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 71" },ref_key: "statuses",
     })
   )
-  user_status_71;
+  status_71;
 
 
 	@editable
@@ -1133,18 +1127,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 73",
+      label: "Status 73",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 73" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 73" },ref_key: "statuses",
     })
   )
-  user_status_73;
+  status_73;
 
 
 	@editable
@@ -1194,18 +1188,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 77",
+      label: "Status 77",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 77" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 77" },ref_key: "statuses",
     })
   )
-  user_status_77;
+  status_77;
 
 
 	@editable
@@ -1224,18 +1218,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 79",
+      label: "Status 79",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 79" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 79" },ref_key: "statuses",
     })
   )
-  user_status_79;
+  status_79;
 
 
 	@editable
@@ -1286,18 +1280,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 83",
+      label: "Status 83",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 83" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 83" },ref_key: "statuses",
     })
   )
-  user_status_83;
+  status_83;
 
 
 	@editable
@@ -1378,18 +1372,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 89",
+      label: "Status 89",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 89" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 89" },ref_key: "statuses",
     })
   )
-  user_status_89;
+  status_89;
 
 
 	@editable
@@ -1409,18 +1403,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 91",
+      label: "Status 91",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 91" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 91" },ref_key: "statuses",
     })
   )
-  user_status_91;
+  status_91;
 
 
 	@editable
@@ -1501,18 +1495,18 @@ export class Business {
 
 
 	@editable
-  @IsEnum(BusinessStatus, { message: "Please choose a Business Status" })
+  @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
-      label: "User Status 97",
+      label: "Status 97",
       required: true,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "User Status 97" },ref_key: "business_statuses",
+      attributes: { placeholder: "Status 97" },ref_key: "statuses",
     })
   )
-  user_status_97;
+  status_97;
 
 
 	@editable
@@ -1562,7 +1556,7 @@ export class Business {
   name_100;
 
 
-  constructor(init?: Partial<Business>) {
+  constructor(init?: Partial<ExampleModel>) {
     if (init) {
       Object.keys(this).forEach((key) => {
         if (init[key]) {

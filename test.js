@@ -14,25 +14,19 @@ import {
   Max,
   IsString
 } from "class-validator";
-import { editable, field } from "../../package/typescript";
-import { FieldConfig } from "../../package/typescript";
+import { editable, field } from "@formvana";
+import { FieldConfig } from "@formvana";
 
-export enum BusinessStatus {
+export enum Status {
   ACTIVE,
   PENDING,
   SUSPENDED,
   ARCHIVED,
 }
-
-export enum UserStatus {
-  ACTIVE,
-  DISABLED,
-}
-
-export class Business {
+export class ExampleModel {
   ${fields.join("\n")}
 
-  constructor(init?: Partial<Business>) {
+  constructor(init?: Partial<ExampleModel>) {
     if (init) {
       Object.keys(this).forEach((key) => {
         if (init[key]) {
@@ -102,7 +96,7 @@ function generateFields() {
 
   const model = test_class_string(fields);
 
-  fs.writeFile(`./src/example/TestClass.ts`, model, null, fwcb);
+  fs.writeFile(`./example/src/models/TestClass.ts`, model, null, fwcb);
 }
 
 function psudoRandomGetField(i) {
@@ -155,16 +149,16 @@ function psudoRandomGetField(i) {
   } else {
     f = field(
       "select",
-      "user_status_" + i,
-      "User Status " + i,
+      "status_" + i,
+      "Status " + i,
       true,
       "select",
       null,
       [
-        `@IsEnum(BusinessStatus, { message: "Please choose a Business Status" })`,
+        `@IsEnum(Status, { message: "Please choose a Status" })`,
       ],
       null,
-      "business_statuses",
+      "statuses",
       null,
       null
     );
