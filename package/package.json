@@ -19,6 +19,9 @@
     "build": "rollup -c",
     "dev": "rollup -cw"
   },
+  "devDependencies": {
+    "rollup-plugin-postcss": "^4.0.0"
+  },
   "peerDependencies": {
     "svelte": "^3.35.0"
   },

@@ -22,45 +22,42 @@ export interface FieldStep {
  */
 export class FieldConfig {
   constructor(init?: Partial<FieldConfig>) {
+    // I know, Object.assign... lots of freedom there.
     Object.assign(this, init);
     this.attributes["type"] = this.type;
 
-    if (
-      this.type === "text" ||
-      this.type === "email" ||
-      this.type === "password" ||
-      this.type === "string"
-    ) {
-      this.value.set("");
+    /**
+     * Just trying to set some sane defaults when initializing field.
+     * These can be over-written easily by simply adding a value to your 
+     * class field.
+     * E.g. class YourClass{ description: string = "This is a descriptor." }
+     * The text "This is a descriptor." will be linked to the FieldConfig
+     * when the fields are built from the model (in Form.buildFields();)
+     */
+    switch (this.type) {
+      case "text" || "email" || "password" || "string":
+        this.value.set("");
+        break;
+      case "decimal" || "double":
+        this.value.set(0.0);
+        break;
+      case "number" || "int" || "integer":
+        this.value.set(0);
+        break;
+      case "boolean" || "choice" || "radio" || "checkbox":
+        this.value.set(false);
+        this.options = [];
+        break;
+      case "select" || "dropdown":
+        this.options = [];
+        break;
+
+      default:
+        this.value.set("");
+        break;
     }
 
-    if (this.type === "number") {
-      this.value.set(0);
-    }
-
-    if (this.type === "decimal") {
-      this.value.set(0.0);
-    }
-
-    if (
-      this.type === "boolean" ||
-      this.type === "choice" ||
-      this.type === "radio"
-    ) {
-      this.value.set(false);
-      this.options = [];
-    }
-
-    if (
-      this.el === "select" ||
-      this.type === "select" ||
-      this.el === "dropdown" ||
-      this.type === "radio"
-    ) {
-      this.options = [];
-    }
-
-    if (this.attributes["title"]) {
+    if (!this.attributes["aria-label"] && this.attributes["title"]) {
       this.attributes["aria-label"] = this.attributes["title"];
     } else {
       this.attributes["aria-label"] = this.label || this.name;
@@ -77,7 +74,9 @@ export class FieldConfig {
    * el can be either String or Svelte Component.
    * This allows us a more flexible dynamic render.
    */
-  el: string | any;
+  el: string;
+  // Svelte template for custom field redering
+  el_template?: any;
   type: string = "text"; // Defaults to text, for now
   label: string;
 

@@ -6,7 +6,7 @@ import typescript from "@wessberg/rollup-plugin-ts";
 import { terser } from "rollup-plugin-terser";
 import pkg from "./package.json";
 
-const prod = !process.env.NODE_ENV === 'production';
+// const prod = !process.env.NODE_ENV === "production";
 
 const name = `@${pkg.name}`;
 
@@ -29,6 +29,6 @@ export default {
     commonjs(),
     typescript(),
     svelte(),
-    prod && terser(),
+    terser(),
   ],
 };

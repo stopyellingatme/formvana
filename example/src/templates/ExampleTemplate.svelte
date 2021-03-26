@@ -24,8 +24,7 @@
   $: changed = $form.changed;
   $: loading = $form.loading;
 
-  let fw;
-  let fh;
+  let fw, fh;
 </script>
 
 <form

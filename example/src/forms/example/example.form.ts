@@ -1,6 +1,6 @@
 import { get } from "svelte/store";
-import { ExampleModel } from "../../models/TestClass";
 import { Form, OnEvents } from "@formvana";
+import { ExampleModel } from "../../models/TestClass";
 //@ts-ignore
 import ExampleTemplate from "../../templates/ExampleTemplate.svelte";
 
@@ -43,6 +43,7 @@ function initStore() {
     updateState: (updates) => update((s) => updateState(s, updates)),
   };
 }
+
 const updateState = (state, updates) => {
   Object.assign(state, updates);
   return state;

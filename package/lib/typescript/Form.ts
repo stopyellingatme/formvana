@@ -5,6 +5,10 @@ import { FieldConfig } from ".";
 
 /**
  * Determines which events to validate/clear validation, on.
+ * And, you can bring your own event listeners just by adding one on
+ * the init.
+ * Good ole Object.assign. It's brazen, but you're a smart kid.
+ * Use it wisely.
  */
 export class OnEvents {
   constructor(eventsOn: boolean = true, init?: Partial<OnEvents>) {
@@ -25,11 +29,19 @@ export class OnEvents {
   submit: boolean = true;
 }
 
+/**
+ * Should we link the values always?
+ * Or only if the form is valid?
+ */
 export enum LinkOnEvent {
   Always,
   Valid,
 }
 
+/**
+ * Data format for the reference data items
+ * Form.refs are of type Record<string, RefDataItem[]>
+ */
 export interface RefDataItem {
   label: string;
   value: any;
@@ -40,14 +52,16 @@ export interface RefDataItem {
  * Form is NOT valid, initially.
  *
  * Recommended Use:
- *  - Initialize new Form({model: ..., refs: ..., template: ..., etc.})
- *  - Set the model (if you didn't in the previous step)
- *  - (optionally) attach reference data
+ *  - Initialize new Form({model: MODEL, refs: REFS, template: TEMPLATE, etc.})
+ *  - Set the model (if you didn't in the first step)
+ *  - Attach reference data (if you didn't in the first step)
  *  - call form.storify() -  const { subscribe, update } = form.storify();
  *  - Now you're ready to use the form!
+ *  - Pass it into the DynamicForm component. That's what I'd do.
  *
- * Performance is blazing with < 500 fields. 
- * Can render up to 2000 inputs in one class.
+ * Performance is blazing with < 500 fields.
+ * Can render up to 2000 inputs in one class, but don't do that.
+ * Just break it up into 100 or so fields per form (max-ish).
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
  */
@@ -58,31 +72,34 @@ export class Form {
         this[key] = init[key];
       }
     });
+    // If there's a model, set the inital state's and build the fields
     if (this.model) {
       /**
        * This is the best method for reliable deep-ish cloning that i've found.
-       * If you know a BETTER way, be my guest.
+       * If you know a BETTER way, be my guest. No extra dependencies please.
        */
       this.initial_state = JSON.parse(JSON.stringify(this.model));
       this.initial_errors = JSON.stringify(this.errors);
-      // this.initial_errors = Array.from(this.errors);
       this.buildFields();
     }
+    // If they passed in a field order, set the order.
     if (this.field_order && this.field_order.length > 0) {
       this.setOrder(this.field_order);
     }
+    // Well well, reference data. Better attach that to the fields.
     if (this.refs) {
       this.attachRefData();
     }
   }
 
   /**
-   * This is the model's initial state.
+   * This is the model's initial state & errors.
    */
   private initial_state: any = null;
   private initial_errors: any = null;
 
-  private non_required_fields: string[] = [];
+  // Keep track of the fields so we can validate faster.
+  private required_fields: string[] = [];
 
   /**
    * Validation options come from class-validator ValidatorOptions.
@@ -107,7 +124,7 @@ export class Form {
   /**
    * This is your form Model/Schema.
    *
-   * (If you did not set the model in constructor)
+   * (If you didn't set the model in the constructor)
    * When model is set, call buildFields() to build the fields.
    */
   model: any = null;
@@ -178,7 +195,7 @@ export class Form {
   //#region FUNCTIONS
 
   /**
-   * Build the field configs from the given model using metadata-reflection.
+   * Build the field configs from this.model using metadata-reflection.
    */
   buildFields = (): void => {
     if (this.model) {
@@ -201,8 +218,8 @@ export class Form {
           config.value.set(this.model[prop]);
         }
 
-        if (!config.required) {
-          this.non_required_fields.push(config.name);
+        if (config.required) {
+          this.required_fields.push(config.name);
         }
 
         // console.log("FIELD CONFIG: ", config);
@@ -223,7 +240,7 @@ export class Form {
     this.createOrder();
   };
 
-  createOrder = (): void => {
+  private createOrder = (): void => {
     let fields = [];
     let leftovers = [];
     // Loop over the order...
@@ -460,16 +477,18 @@ export class Form {
    * Check if there are any required fields in the errors.
    * If there are no required fields in the errors, the form is valid
    */
-  private nonRequiredFieldsValid = (errors: ValidationError[]): boolean => {
+  private requiredFieldsValid = (errors: ValidationError[]): boolean => {
     if (errors.length === 0) return true;
     // Go ahead and return if there are no errors
     let i = 0,
-      len = this.non_required_fields.length;
+      len = this.required_fields.length;
     // If there are no required fields, just go ahead and return
     if (len === 0) return true;
+    // Otherwise we have to map the names of the errors so we can
+    // check if they're for a required field
     const errs = errors.map((e) => e.property);
     for (; len > i; ++i) {
-      if (errs.includes(this.non_required_fields[i])) {
+      if (errs.includes(this.required_fields[i])) {
         return false;
       }
     }
@@ -481,12 +500,8 @@ export class Form {
     errors: ValidationError[],
     field?: FieldConfig
   ) => {
-    // Non required fields valid (nrfv)
-    const nrfv = this.nonRequiredFieldsValid(errors);
-
     // There are errors!
-    if (errors.length > 0 || !nrfv) {
-      this.valid.set(false);
+    if (errors.length > 0) {
       this.errors = errors;
       // console.log("ERRORS: ", errors);
 
@@ -498,10 +513,22 @@ export class Form {
         // This is validatino for the whole form!
         this.linkErrors(errors);
       }
+      // TODO: Clean up this arfv implementation. Seems too clunky.
+      // All required fields valid (arfv)
+      const arfv = this.requiredFieldsValid(errors);
+
+      if (arfv) {
+        this.valid.set(true);
+      } else {
+        this.valid.set(false);
+      }
     } else {
+      // We can't get here unless the errors we see are for non-required fields
+
       // If the config tells us to link the values only when the form
       // is valid, then link them here.
       this.link_fields_to_model === LinkOnEvent.Valid && this.linkValues(true);
+
       this.valid.set(true); // Form is valid!
       this.clearErrors(); // Clear form errors
     }
@@ -511,9 +538,11 @@ export class Form {
 
   // Link values from FIELDS toMODEL or MODEL to FIELDS
   private linkValues = (toModel: boolean): void => {
+    // Still the fastest way i've seen to loop in JS.
     let i = 0,
       len = this.fields.length;
     for (; len > i; ++i) {
+      // Get name and value of the field
       const name = this.fields[i].name,
         val = this.fields[i].value;
       if (toModel) {
@@ -534,7 +563,7 @@ export class Form {
   /**
    * TODO: Might better way to do comparison than Object.is() and JSON.stringify()
    * TODO: Be my guest to fix it if you know how.
-   * But... I've tested it with 1000 fields with minimal input lag.
+   * But... I've tested it with 1000 fields in a single class with minimal input lag.
    */
   private hasChanged = (): void => {
     if (
@@ -582,14 +611,14 @@ export class Form {
     // Get the field, for passing to the validateField func
     //@ts-ignore
     const field = this.fields.filter((f) => f.name === node.name)[0];
-    Object.entries(this.validate_on_events).forEach(([key, val]) => {
+    Object.entries(this.validate_on_events).forEach(([eventName, shouldListen]) => {
       // If the OnEvent is true, then add the event listener
       // If the field has options, we can assume it will use the change event listener
       if (field.options) {
         // so don't add the input event listener
-        if (val && val !== "input") {
+        if (shouldListen && eventName !== "input") {
           node.addEventListener(
-            key,
+            eventName,
             (ev) => {
               this.validateField(field);
             },
@@ -601,9 +630,9 @@ export class Form {
       // * This may be changed in the future
       else {
         // and don't add the change event listener
-        if (val && val !== "change") {
+        if (shouldListen && eventName !== "change") {
           node.addEventListener(
-            key,
+            eventName,
             (ev) => {
               this.validateField(field);
             },
