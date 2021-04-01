@@ -1,6 +1,6 @@
 <script lang="ts">
-  export let errorsStore = null;
-  $: errors = Object.entries(errorsStore).map(([key, val]) => {
+  export let errors = null;
+  $: errs = Object.entries(errors).map(([key, val]) => {
     return {
       key,
       val,
@@ -8,8 +8,8 @@
   });
 </script>
 
-{#if errorsStore}
-  {#each errors as error, i}
+{#if errors}
+  {#each errs as error, i}
     <p>{error.val}</p>
   {/each}
 {/if}

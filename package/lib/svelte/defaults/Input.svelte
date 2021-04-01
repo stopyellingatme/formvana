@@ -10,14 +10,14 @@
   export let attrs = {};
 
   // Gotta figure out what to do about styling!
-	// Gotta figure out what to do about styling!
-	// Gotta figure out what to do about styling!
-	// Gotta figure out what to do about styling!
-	// Gotta figure out what to do about styling!
+  // Gotta figure out what to do about styling!
+  // Gotta figure out what to do about styling!
+  // Gotta figure out what to do about styling!
+  // Gotta figure out what to do about styling!
 
   $: errors = $errorsStore && $errorsStore.constraints;
 
-  $: input_attributes = Object.assign(
+  $: attributes = Object.assign(
     {
       autocomplete: "off",
       autocorrect: "off",
@@ -25,9 +25,6 @@
     },
     attrs
   );
-
-  // $: cls =
-  //   $errorsStore && $errorsStore.constraints ? error_class : default_class;
 </script>
 
 <div>
@@ -35,9 +32,9 @@
     {label}
   </label>
   <div>
-    <input {name} {...input_attributes} bind:value={$valueStore} use:useInput />
+    <input {name} {...attributes} bind:value={$valueStore} use:useInput />
   </div>
   {#if errors}
-    <Errors errorsStore={errors} />
+    <Errors {errors} />
   {/if}
 </div>

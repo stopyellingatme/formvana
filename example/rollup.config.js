@@ -23,12 +23,7 @@ export default {
     postcss({
       extract: true,
     }),
-    svelte({
-      dev: !production,
-      css: (css) => {
-        css.write("./public/build/bundle.css");
-      },
-    }),
+    svelte(),
     resolve({
       browser: true,
       module: true,

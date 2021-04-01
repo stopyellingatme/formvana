@@ -16,9 +16,9 @@ export interface FieldStep {
 /**
  * FieldConfig is used to help with the form auto generation functionality.
  *
- * This is not meant to be a complete HTML input replacement.
+ * This is not meant to be a complete HTML Input/Select/etc replacement.
  * It is simply a vehicle to help give the form generator
- * a standard-ish format to work with.
+ * an easy-to-use format to work with.
  */
 export class FieldConfig {
   constructor(init?: Partial<FieldConfig>) {
@@ -28,10 +28,10 @@ export class FieldConfig {
 
     /**
      * Just trying to set some sane defaults when initializing field.
-     * These can be over-written easily by simply adding a value to your 
+     * These can be over-written easily by simply adding a value to your
      * class field.
      * E.g. class YourClass{ description: string = "This is a descriptor." }
-     * The text "This is a descriptor." will be linked to the FieldConfig
+     * The text "This is a descriptor." will be linked to the FieldConfig.value
      * when the fields are built from the model (in Form.buildFields();)
      */
     switch (this.type) {
@@ -75,8 +75,7 @@ export class FieldConfig {
    * This allows us a more flexible dynamic render.
    */
   el: string;
-  // Svelte template for custom field redering
-  el_template?: any;
+
   type: string = "text"; // Defaults to text, for now
   label: string;
 

@@ -1,3 +1,4 @@
+declare module "*.svelte";
 export * from "./DynamicForm.svelte";
 export * from "./LoadingIndicator.svelte";
 export * from "./Field.svelte";

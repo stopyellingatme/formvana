@@ -6,7 +6,7 @@
   "description": "Searching for Form Nirvana with Typescript and Svelte.",
   "scripts": {
     "build": "bolt ws run build",
-    "dev": "cd example && rollup -c -w",
+    "dev": "cd example && rollup -cw",
     "gen:test": "node test.js",
     "package": "cd package && npm run build && cd .. && node output.js && npm run dev"
   },

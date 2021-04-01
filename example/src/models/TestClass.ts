@@ -1,4 +1,3 @@
-
 import {
   Contains,
   IsInt,
@@ -9,7 +8,7 @@ import {
   IsEnum,
   Min,
   Max,
-  IsString
+  IsString,
 } from "class-validator";
 import { editable, field } from "@formvana";
 import { FieldConfig } from "@formvana";
@@ -21,1540 +20,1479 @@ export enum Status {
   ARCHIVED,
 }
 export class ExampleModel {
-  
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 1",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 1" },ref_key: "statuses",
+      attributes: { placeholder: "Status 1" },
+      ref_key: "statuses",
     })
   )
   status_1;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 2",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 2" },
     })
   )
   email_2;
 
-
-	@editable
+  @editable
   @Length(10, 350)
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "textarea",
       type: "text",
       label: "Description 3",
-      required: false,hint: "This is a hint!",
+      required: false,
+      hint: "This is a hint!",
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 3" },
     })
   )
   description_3;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 4",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 4" },
     })
   )
   email_4;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 5",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 5" },
     })
   )
   name_5;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 6",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 6" },
     })
   )
   email_6;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 7",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 7" },ref_key: "statuses",
+      attributes: { placeholder: "Status 7" },
+      ref_key: "statuses",
     })
   )
   status_7;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 8",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 8" },
     })
   )
   email_8;
 
-
-	@editable
+  @editable
   @Length(10, 350)
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "textarea",
       type: "text",
       label: "Description 9",
-      required: false,hint: "This is a hint!",
+      required: false,
+      hint: "This is a hint!",
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 9" },
     })
   )
   description_9;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 10",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 10" },
     })
   )
   name_10;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 11",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 11" },ref_key: "statuses",
+      attributes: { placeholder: "Status 11" },
+      ref_key: "statuses",
     })
   )
   status_11;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 12",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 12" },
     })
   )
   email_12;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 13",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 13" },ref_key: "statuses",
+      attributes: { placeholder: "Status 13" },
+      ref_key: "statuses",
     })
   )
   status_13;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 14",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 14" },
     })
   )
   email_14;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 15",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 15" },
     })
   )
   name_15;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 16",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 16" },
     })
   )
   email_16;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 17",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 17" },ref_key: "statuses",
+      attributes: { placeholder: "Status 17" },
+      ref_key: "statuses",
     })
   )
   status_17;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 18",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 18" },
     })
   )
   email_18;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 19",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 19" },ref_key: "statuses",
+      attributes: { placeholder: "Status 19" },
+      ref_key: "statuses",
     })
   )
   status_19;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 20",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 20" },
     })
   )
   name_20;
 
-
-	@editable
+  @editable
   @Length(10, 350)
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "textarea",
       type: "text",
       label: "Description 21",
-      required: false,hint: "This is a hint!",
+      required: false,
+      hint: "This is a hint!",
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 21" },
     })
   )
   description_21;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 22",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 22" },
     })
   )
   email_22;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 23",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 23" },ref_key: "statuses",
+      attributes: { placeholder: "Status 23" },
+      ref_key: "statuses",
     })
   )
   status_23;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 24",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 24" },
     })
   )
   email_24;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 25",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 25" },
     })
   )
   name_25;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 26",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 26" },
     })
   )
   email_26;
 
-
-	@editable
+  @editable
   @Length(10, 350)
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "textarea",
       type: "text",
       label: "Description 27",
-      required: false,hint: "This is a hint!",
+      required: false,
+      hint: "This is a hint!",
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 27" },
     })
   )
   description_27;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 28",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 28" },
     })
   )
   email_28;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 29",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 29" },ref_key: "statuses",
+      attributes: { placeholder: "Status 29" },
+      ref_key: "statuses",
     })
   )
   status_29;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 30",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 30" },
     })
   )
   name_30;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 31",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 31" },ref_key: "statuses",
+      attributes: { placeholder: "Status 31" },
+      ref_key: "statuses",
     })
   )
   status_31;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 32",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 32" },
     })
   )
   email_32;
 
-
-	@editable
+  @editable
   @Length(10, 350)
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "textarea",
       type: "text",
       label: "Description 33",
-      required: false,hint: "This is a hint!",
+      required: false,
+      hint: "This is a hint!",
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 33" },
     })
   )
   description_33;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 34",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 34" },
     })
   )
   email_34;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 35",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 35" },
     })
   )
   name_35;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 36",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 36" },
     })
   )
   email_36;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 37",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 37" },ref_key: "statuses",
+      attributes: { placeholder: "Status 37" },
+      ref_key: "statuses",
     })
   )
   status_37;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 38",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 38" },
     })
   )
   email_38;
 
-
-	@editable
+  @editable
   @Length(10, 350)
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "textarea",
       type: "text",
       label: "Description 39",
-      required: false,hint: "This is a hint!",
+      required: false,
+      hint: "This is a hint!",
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 39" },
     })
   )
   description_39;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 40",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 40" },
     })
   )
   name_40;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 41",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 41" },ref_key: "statuses",
+      attributes: { placeholder: "Status 41" },
+      ref_key: "statuses",
     })
   )
   status_41;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 42",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 42" },
     })
   )
   email_42;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 43",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 43" },ref_key: "statuses",
+      attributes: { placeholder: "Status 43" },
+      ref_key: "statuses",
     })
   )
   status_43;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 44",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 44" },
     })
   )
   email_44;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 45",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 45" },
     })
   )
   name_45;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 46",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 46" },
     })
   )
   email_46;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 47",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 47" },ref_key: "statuses",
+      attributes: { placeholder: "Status 47" },
+      ref_key: "statuses",
     })
   )
   status_47;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 48",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 48" },
     })
   )
   email_48;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 49",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 49" },ref_key: "statuses",
+      attributes: { placeholder: "Status 49" },
+      ref_key: "statuses",
     })
   )
   status_49;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 50",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 50" },
     })
   )
   name_50;
 
-
-	@editable
+  @editable
   @Length(10, 350)
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "textarea",
       type: "text",
       label: "Description 51",
-      required: false,hint: "This is a hint!",
+      required: false,
+      hint: "This is a hint!",
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 51" },
     })
   )
   description_51;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 52",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 52" },
     })
   )
   email_52;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 53",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 53" },ref_key: "statuses",
+      attributes: { placeholder: "Status 53" },
+      ref_key: "statuses",
     })
   )
   status_53;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 54",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 54" },
     })
   )
   email_54;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 55",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 55" },
     })
   )
   name_55;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 56",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 56" },
     })
   )
   email_56;
 
-
-	@editable
+  @editable
   @Length(10, 350)
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "textarea",
       type: "text",
       label: "Description 57",
-      required: false,hint: "This is a hint!",
+      required: false,
+      hint: "This is a hint!",
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 57" },
     })
   )
   description_57;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 58",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 58" },
     })
   )
   email_58;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 59",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 59" },ref_key: "statuses",
+      attributes: { placeholder: "Status 59" },
+      ref_key: "statuses",
     })
   )
   status_59;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 60",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 60" },
     })
   )
   name_60;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 61",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 61" },ref_key: "statuses",
+      attributes: { placeholder: "Status 61" },
+      ref_key: "statuses",
     })
   )
   status_61;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 62",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 62" },
     })
   )
   email_62;
 
-
-	@editable
+  @editable
   @Length(10, 350)
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "textarea",
       type: "text",
       label: "Description 63",
-      required: false,hint: "This is a hint!",
+      required: false,
+      hint: "This is a hint!",
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 63" },
     })
   )
   description_63;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 64",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 64" },
     })
   )
   email_64;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 65",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 65" },
     })
   )
   name_65;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 66",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 66" },
     })
   )
   email_66;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 67",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 67" },ref_key: "statuses",
+      attributes: { placeholder: "Status 67" },
+      ref_key: "statuses",
     })
   )
   status_67;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 68",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 68" },
     })
   )
   email_68;
 
-
-	@editable
+  @editable
   @Length(10, 350)
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "textarea",
       type: "text",
       label: "Description 69",
-      required: false,hint: "This is a hint!",
+      required: false,
+      hint: "This is a hint!",
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 69" },
     })
   )
   description_69;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 70",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 70" },
     })
   )
   name_70;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 71",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 71" },ref_key: "statuses",
+      attributes: { placeholder: "Status 71" },
+      ref_key: "statuses",
     })
   )
   status_71;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 72",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 72" },
     })
   )
   email_72;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 73",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 73" },ref_key: "statuses",
+      attributes: { placeholder: "Status 73" },
+      ref_key: "statuses",
     })
   )
   status_73;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 74",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 74" },
     })
   )
   email_74;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 75",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 75" },
     })
   )
   name_75;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 76",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 76" },
     })
   )
   email_76;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 77",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 77" },ref_key: "statuses",
+      attributes: { placeholder: "Status 77" },
+      ref_key: "statuses",
     })
   )
   status_77;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 78",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 78" },
     })
   )
   email_78;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 79",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 79" },ref_key: "statuses",
+      attributes: { placeholder: "Status 79" },
+      ref_key: "statuses",
     })
   )
   status_79;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 80",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 80" },
     })
   )
   name_80;
 
-
-	@editable
+  @editable
   @Length(10, 350)
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "textarea",
       type: "text",
       label: "Description 81",
-      required: false,hint: "This is a hint!",
+      required: false,
+      hint: "This is a hint!",
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 81" },
     })
   )
   description_81;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 82",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 82" },
     })
   )
   email_82;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 83",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 83" },ref_key: "statuses",
+      attributes: { placeholder: "Status 83" },
+      ref_key: "statuses",
     })
   )
   status_83;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 84",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 84" },
     })
   )
   email_84;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 85",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 85" },
     })
   )
   name_85;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 86",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 86" },
     })
   )
   email_86;
 
-
-	@editable
+  @editable
   @Length(10, 350)
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "textarea",
       type: "text",
       label: "Description 87",
-      required: false,hint: "This is a hint!",
+      required: false,
+      hint: "This is a hint!",
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 87" },
     })
   )
   description_87;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 88",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 88" },
     })
   )
   email_88;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 89",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 89" },ref_key: "statuses",
+      attributes: { placeholder: "Status 89" },
+      ref_key: "statuses",
     })
   )
   status_89;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 90",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 90" },
     })
   )
   name_90;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 91",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 91" },ref_key: "statuses",
+      attributes: { placeholder: "Status 91" },
+      ref_key: "statuses",
     })
   )
   status_91;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 92",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 92" },
     })
   )
   email_92;
 
-
-	@editable
+  @editable
   @Length(10, 350)
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "textarea",
       type: "text",
       label: "Description 93",
-      required: false,hint: "This is a hint!",
+      required: false,
+      hint: "This is a hint!",
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 93" },
     })
   )
   description_93;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 94",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 94" },
     })
   )
   email_94;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 95",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 95" },
     })
   )
   name_95;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 96",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 96" },
     })
   )
   email_96;
 
-
-	@editable
+  @editable
   @IsEnum(Status, { message: "Please choose a Status" })
   @field(
     new FieldConfig({
       el: "select",
       type: "select",
       label: "Status 97",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 97" },ref_key: "statuses",
+      attributes: { placeholder: "Status 97" },
+      ref_key: "statuses",
     })
   )
   status_97;
 
-
-	@editable
+  @editable
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field(
     new FieldConfig({
       el: "input",
       type: "email",
       label: "Email 98",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 98" },
     })
   )
   email_98;
 
-
-	@editable
+  @editable
   @Length(10, 350)
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "textarea",
       type: "text",
       label: "Description 99",
-      required: false,hint: "This is a hint!",
+      required: false,
+      hint: "This is a hint!",
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 99" },
     })
   )
   description_99;
 
-
-	@editable
+  @editable
   @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-@IsString()
+  @IsString()
   @field(
     new FieldConfig({
       el: "input",
       type: "text",
       label: "Name 100",
-      required: true,
+      required: false,
       classname: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 100" },
     })
   )
   name_100;
-
 
   constructor(init?: Partial<ExampleModel>) {
     if (init) {

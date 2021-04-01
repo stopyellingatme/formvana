@@ -66,7 +66,7 @@ export const init = () => {
     // get(formState).validate();
   }, 1000);
 
-  // setTimeout(() => {
+  // setTimeout(() => {    
   //   get(formState).updateInitialState();
   // }, 3000);
 

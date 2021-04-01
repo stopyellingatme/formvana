@@ -74,12 +74,6 @@ export class Form {
     });
     // If there's a model, set the inital state's and build the fields
     if (this.model) {
-      /**
-       * This is the best method for reliable deep-ish cloning that i've found.
-       * If you know a BETTER way, be my guest. No extra dependencies please.
-       */
-      this.initial_state = JSON.parse(JSON.stringify(this.model));
-      this.initial_errors = JSON.stringify(this.errors);
       this.buildFields();
     }
     // If they passed in a field order, set the order.
@@ -90,16 +84,10 @@ export class Form {
     if (this.refs) {
       this.attachRefData();
     }
+
+    // Wait until everything is initalized then set the inital state.
+    this.setInitialState();
   }
-
-  /**
-   * This is the model's initial state & errors.
-   */
-  private initial_state: any = null;
-  private initial_errors: any = null;
-
-  // Keep track of the fields so we can validate faster.
-  private required_fields: string[] = [];
 
   /**
    * Validation options come from class-validator ValidatorOptions.
@@ -146,9 +134,6 @@ export class Form {
    */
   refs: Record<string, RefDataItem[]> = null;
 
-  // Order within array determines order to be applied
-  classes: string[] = [];
-
   /**
    * Determines the ordering of this.fields.
    * Simply an array of field names (or group names or stepper names)
@@ -185,6 +170,26 @@ export class Form {
 
   // When to link field.values to model.values
   link_fields_to_model: LinkOnEvent = LinkOnEvent.Always;
+
+  /**
+   * This is the model's initial state.
+   * Shove the stateful_items into the inital state for a decent snapshot.
+   */
+  private initial_state: any = {};
+  private initial_state_str: string = null;
+  private stateful_items = [
+    "valid",
+    "touched",
+    "changed",
+    "errors",
+    "required_fields",
+    "refs",
+    "field_order",
+    "model",
+  ];
+
+  // Keep track of the fields so we can validate faster.
+  private required_fields: string[] = [];
 
   /**
    * * Here be Functions. Beware.
@@ -397,13 +402,12 @@ export class Form {
    * Generate a Svelte Store from the current "this"
    */
   storify = (): Writable<Form> => {
-    return writable(this);
+    const f = writable(this);
+    return f;
   };
 
   updateInitialState = (): void => {
-    this.initial_state = JSON.parse(JSON.stringify(this.model));
-    this.initial_errors = JSON.stringify(this.errors);
-    // this.initial_errors = Array.from(this.errors);
+    this.setInitialState();
     this.changed.set(false);
   };
 
@@ -416,37 +420,12 @@ export class Form {
 
   // Resets to the inital state of the form.
   reset = (): void => {
-    this.valid.set(false);
-    this.changed.set(false);
-    this.touched.set(false);
-    this.loading.set(false);
-
-    Object.keys(this.model).forEach((key) => {
-      this.model[key] = this.initial_state[key];
-    });
-    this.linkValues(false);
-
-    // If the initial state has errors, add them to
-    this.clearErrors();
-    const errs = JSON.parse(this.initial_errors);
-    if (errs && errs.length > 0) {
-      errs.forEach((e) => {
-        const val_err = new ValidationError();
-        Object.assign(val_err, e);
-        this.errors.push(val_err);
-      });
-      this.linkErrors(this.errors);
-    }
-
-    // if (this.initial_errors && this.initial_errors.length > 0) {
-    //   this.errors = Array.from(this.initial_errors);
-    // }else {
-    //   this.clearErrors();
-    // }
+    this.resetState();
   };
 
   /**
    *! Make sure to call this when the component is unloaded/destroyed
+   * Removes all event listeners and clears the form state.
    */
   destroy = (): void => {
     if (this.fields && this.fields.length > 0) {
@@ -466,10 +445,77 @@ export class Form {
       });
     }
     // Reset everything else.
-    this.reset();
+    this.clearState();
   };
 
   // #region PRIVATE FUNCTIONS
+
+  // Clears everything before being destoryed.
+  private clearState = (): void => {
+    this.model = null;
+    this.initial_state = {};
+    this.required_fields = [];
+    this.refs = null;
+    this.template = null;
+  };
+
+  // Grab a snapshot of several items that generally define the state of the form
+  private setInitialState = (): void => {
+    /**
+     * This is the best method for reliable deep-ish cloning that i've found.
+     * If you know a BETTER way, be my guest. No extra dependencies please.
+     */
+    this.stateful_items.forEach((key) => {
+      if (key === "valid" || key === "touched" || key === "changed") {
+        get(this[key])
+          ? (this.initial_state[key] = writable(true))
+          : (this.initial_state[key] = writable(false));
+      } else {
+        this.initial_state[key] = JSON.parse(JSON.stringify(this[key]));
+      }
+      this.initial_state_str = JSON.stringify(this.initial_state);
+    });
+  };
+
+  private resetState = (): void => {
+    this.stateful_items.forEach((key) => {
+      if (key === "valid" || key === "touched" || key === "changed") {
+        get(this.initial_state[key])
+          ? this[key].set(true)
+          : this[key].set(false);
+      } else if (key === "errors") {
+        this.clearErrors();
+        // Attach errors located in initial_state (to this.errors)
+        this[key] = this.initial_state[key].map((e) => {
+          let err = new ValidationError();
+          Object.assign(err, e);
+          return err;
+        });
+        // If this.errors is not empty then attach the errors to this.fields
+        if (this[key] && this[key].length > 0) {
+          this.linkErrors(this.errors);
+        }
+      } else if (key === "model") {
+        /**
+         * We have to disconnect the initial_state's model so that we don't get
+         * burned by reference links.
+         * We also don't want to overwrite the actual model, because it contains
+         * all the metadata for validation, feilds, etc.
+         * So we just copy the inital_state[model] and shove it's values back into
+         * this.model.
+         * That way when we reset the form, we still get validation errors from the
+         * model's decorators.
+         */
+        const m_state = JSON.parse(JSON.stringify(this.initial_state[key]));
+        Object.keys(this[key]).forEach((mkey) => {
+          this[key][mkey] = m_state[mkey];
+        });
+        this.linkValues(false);
+      } else {
+        this[key] = JSON.parse(JSON.stringify(this.initial_state[key]));
+      }
+    });
+  };
 
   /**
    * TODO: Speed this bad boy up. There are optimizations to be had.
@@ -499,7 +545,7 @@ export class Form {
     isField: boolean = true,
     errors: ValidationError[],
     field?: FieldConfig
-  ) => {
+  ): void => {
     // There are errors!
     if (errors.length > 0) {
       this.errors = errors;
@@ -560,16 +606,26 @@ export class Form {
     this.model[field.name] = get(field.value);
   };
 
+  private getStateSnapshot = (): string => {
+    let i = 0,
+      len = this.stateful_items.length,
+      result = {};
+    for (; len > i; ++i) {
+      const item = this.stateful_items[i];
+      result[item] = this[item];
+    }
+    return JSON.stringify(result);
+  };
+
   /**
    * TODO: Might better way to do comparison than Object.is() and JSON.stringify()
    * TODO: Be my guest to fix it if you know how.
    * But... I've tested it with 1000 fields in a single class with minimal input lag.
    */
   private hasChanged = (): void => {
-    if (
-      Object.is(this.model, this.initial_state) &&
-      JSON.stringify(this.errors) === this.initial_errors
-    ) {
+    const state = this.getStateSnapshot();
+
+    if (state === this.initial_state_str) {
       this.changed.set(false);
       return;
     }
@@ -611,36 +667,38 @@ export class Form {
     // Get the field, for passing to the validateField func
     //@ts-ignore
     const field = this.fields.filter((f) => f.name === node.name)[0];
-    Object.entries(this.validate_on_events).forEach(([eventName, shouldListen]) => {
-      // If the OnEvent is true, then add the event listener
-      // If the field has options, we can assume it will use the change event listener
-      if (field.options) {
-        // so don't add the input event listener
-        if (shouldListen && eventName !== "input") {
-          node.addEventListener(
-            eventName,
-            (ev) => {
-              this.validateField(field);
-            },
-            false
-          );
+    Object.entries(this.validate_on_events).forEach(
+      ([eventName, shouldListen]) => {
+        // If the OnEvent is true, then add the event listener
+        // If the field has options, we can assume it will use the change event listener
+        if (field.options) {
+          // so don't add the input event listener
+          if (shouldListen && eventName !== "input") {
+            node.addEventListener(
+              eventName,
+              (ev) => {
+                this.validateField(field);
+              },
+              false
+            );
+          }
+        }
+        // Else, we can assume it will use the input event listener
+        // * This may be changed in the future
+        else {
+          // and don't add the change event listener
+          if (shouldListen && eventName !== "change") {
+            node.addEventListener(
+              eventName,
+              (ev) => {
+                this.validateField(field);
+              },
+              false
+            );
+          }
         }
       }
-      // Else, we can assume it will use the input event listener
-      // * This may be changed in the future
-      else {
-        // and don't add the change event listener
-        if (shouldListen && eventName !== "change") {
-          node.addEventListener(
-            eventName,
-            (ev) => {
-              this.validateField(field);
-            },
-            false
-          );
-        }
-      }
-    });
+    );
   };
 
   private handleOnClearErrorEvents = (node): void => {

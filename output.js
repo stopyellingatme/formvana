@@ -1,36 +1,43 @@
 // Script to copy the package contents to the example/node_modules
-
 const fs = require("fs-extra");
 
 const src1 = "./package/lib";
 const src2 = "./package/package.json";
 
-
 const dest = "./example/node_modules/@formvana";
 const dest2 = "./example/node_modules/@formvana/lib";
 const dest3 = "./example/node_modules/@formvana/package.json";
 
+// Remove the old package
 fs.remove(dest, (err) => {
-  if (err) return console.error(err);
+  handleError(err);
+  console.log("Removed: ", dest);
 
+  // Ensure the directory is created
   fs.ensureDir(src1, (err) => {
+    handleError(err);
+    // Copy the package's built output to the example's node_modules
     fs.copy(src1, dest2, { overwrite: true }, (err) => {
-      if (err) return console.error(err);
-      console.log("Copied Package to ./example's node_modules.");
+      handleError(err);
+      console.log("Copied from: ", src1, " -- To: ", dest2);
 
+      // Copy the package.json to the example's node_modules
       fs.copy(src2, dest3, { overwrite: true }, (err) => {
-        if (err) return console.error(err);
-        console.log("Made it to the last one!");
+        handleError(err);
+        console.log("Copied from: ", src2, " -- To: ", dest3);
+
+        /**
+         * Done!
+         *
+         * The Example should have newly built package, so
+         * you can test those changes you made ;)
+         *
+         */
       });
     });
   });
 });
 
-// fs.remove(src_node_mods, (err) => {
-//   if (err) return console.error(err);
-//   console.log("Removed Package's node_modules.");
-//   fs.copy(src, dest, { overwrite: true, filter: filterFunc }, (err) => {
-//     if (err) return console.error(err);
-//     console.log("Copied Package to example's node_modules.");
-//   });
-// })
+function handleError(err) {
+  if (err) return console.error("Error: ", err);
+}

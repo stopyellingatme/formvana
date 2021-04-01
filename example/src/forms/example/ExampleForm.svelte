@@ -8,9 +8,15 @@
       init();
     }, 0);
   });
+
+  const handleSubmit = (e) => {
+    console.log("MADE IT HERE -- ", e);
+
+    // $formState.validate();
+  }
 </script>
 
 <DynamicForm
   form={formState}
-  on:submit={(e) => console.log("MADE IT HERE -- ", e)}
+  on:submit={handleSubmit}
 />
