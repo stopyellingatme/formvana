@@ -91,16 +91,20 @@ export class FieldConfig {
   options?: any[];
   ref_key?: string; // Reference data key
 
+  disabled?: boolean;
+  hidden?: boolean;
+
   hint?: string; // Mainly for textarea, for now
   group?: FieldGroup;
   step?: FieldStep;
 
   /**
    * * JSON of things like:
+   * -- disabled
    * -- type="text || email || password || whatever"
    * -- class='input class'
-   * -- disabled
    * -- title='input title'
+   * -- multiple
    * -- etc.
    */
   attributes: object = {};
@@ -112,11 +116,11 @@ export class FieldConfig {
    */
   errors: Writable<ValidationError> = writable(null);
 
-  clearValue = () => {
+  private clearValue = () => {
     this.value.set(null);
   };
 
-  clearErrors = () => {
+  private clearErrors = () => {
     this.errors.set(null);
   };
 

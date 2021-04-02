@@ -1,10 +1,10 @@
 import { get } from "svelte/store";
-import { Form, OnEvents } from "@formvana";
+import { Form, OnEvents, RefDataItem } from "@formvana";
 import { ExampleModel } from "../../models/TestClass";
 //@ts-ignore
 import ExampleTemplate from "../../templates/ExampleTemplate.svelte";
 
-const ref_data = {
+const ref_data: Record<string, RefDataItem[]> = {
   statuses: [
     {
       label: "ACTIVE",
@@ -66,16 +66,23 @@ export const init = () => {
     // get(formState).validate();
   }, 1000);
 
-  // setTimeout(() => {    
+  // setTimeout(() => {
   //   get(formState).updateInitialState();
   // }, 3000);
 
-  // Update form with data fetched from DB
-  // getBusiness(SOME_STATE.BUSINESS_ID).then((data) => {
-  //   Get current form state
-  //   const form = get(formState).loadData(new Business(data));
-  //   formState.updateState({ form: form });
-  // });
+  /**
+   * Update form with backend data
+   * 
+        getDBO(SOME_STATE.ITEM_ID).then((data) => {
+        const form = get(formState).loadData(new ExampleModel(data));
+      
+        OR
+      
+        const form = get(formState).loadData(data, false);
+
+        formState.updateState({ form: form });
+      });
+   */
 };
 
 export const onSubmit = (ev) => {
@@ -83,9 +90,10 @@ export const onSubmit = (ev) => {
   console.log(get(formState));
 
   // formState.setLoading(true);
-  // const model = sget(formState).model;
-  // updateBusniess(model).then((model) => {
-  //     formState.updateState({model: model})
+
+  // updateDBO(get(formState).model).then((model) => {
+  //     get(formState).loadData(model, false);
+  //     formState.updateState({model: new ExampleModel(model)})
   //     formState.setLoading(false);
   // });
 };
