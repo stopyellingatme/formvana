@@ -75,9 +75,6 @@ export interface RefDataItem {
  *
  */
 export class Form {
-  /**
-   * TODO: Add disableIf && hideIf methods!
-   */
   constructor(init?: Partial<Form>) {
     Object.keys(this).forEach((key) => {
       if (init[key]) {
