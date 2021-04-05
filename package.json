@@ -8,6 +8,7 @@
     "build": "bolt ws run build",
     "dev": "cd example && rollup -cw",
     "gen:test": "node test.js",
+    "gen:decors": "tsc --declaration ./package/lib/typescript/index.ts",
     "package": "cd package && npm run build && cd .. && node output.js && npm run dev"
   },
   "devDependencies": {

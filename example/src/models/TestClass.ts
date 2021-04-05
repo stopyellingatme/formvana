@@ -28,7 +28,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 1",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 1" },
       ref_key: "statuses",
     })
@@ -43,7 +43,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 2",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 2" },
     })
   )
@@ -59,7 +59,7 @@ export class ExampleModel {
       label: "Description 3",
       required: false,
       hint: "This is a hint!",
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 3" },
     })
   )
@@ -73,7 +73,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 4",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 4" },
     })
   )
@@ -88,7 +88,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 5",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 5" },
     })
   )
@@ -102,7 +102,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 6",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 6" },
     })
   )
@@ -116,7 +116,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 7",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 7" },
       ref_key: "statuses",
     })
@@ -131,7 +131,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 8",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 8" },
     })
   )
@@ -147,7 +147,7 @@ export class ExampleModel {
       label: "Description 9",
       required: false,
       hint: "This is a hint!",
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 9" },
     })
   )
@@ -162,7 +162,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 10",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 10" },
     })
   )
@@ -176,7 +176,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 11",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 11" },
       ref_key: "statuses",
     })
@@ -191,7 +191,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 12",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 12" },
     })
   )
@@ -205,7 +205,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 13",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 13" },
       ref_key: "statuses",
     })
@@ -220,7 +220,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 14",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 14" },
     })
   )
@@ -235,7 +235,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 15",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 15" },
     })
   )
@@ -249,7 +249,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 16",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 16" },
     })
   )
@@ -263,7 +263,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 17",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 17" },
       ref_key: "statuses",
     })
@@ -278,7 +278,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 18",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 18" },
     })
   )
@@ -292,7 +292,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 19",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 19" },
       ref_key: "statuses",
     })
@@ -308,7 +308,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 20",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 20" },
     })
   )
@@ -324,7 +324,7 @@ export class ExampleModel {
       label: "Description 21",
       required: false,
       hint: "This is a hint!",
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 21" },
     })
   )
@@ -338,7 +338,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 22",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 22" },
     })
   )
@@ -352,7 +352,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 23",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 23" },
       ref_key: "statuses",
     })
@@ -367,7 +367,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 24",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 24" },
     })
   )
@@ -382,7 +382,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 25",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 25" },
     })
   )
@@ -396,7 +396,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 26",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 26" },
     })
   )
@@ -412,7 +412,7 @@ export class ExampleModel {
       label: "Description 27",
       required: false,
       hint: "This is a hint!",
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 27" },
     })
   )
@@ -426,7 +426,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 28",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 28" },
     })
   )
@@ -440,7 +440,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 29",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 29" },
       ref_key: "statuses",
     })
@@ -456,7 +456,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 30",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 30" },
     })
   )
@@ -470,7 +470,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 31",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 31" },
       ref_key: "statuses",
     })
@@ -485,7 +485,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 32",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 32" },
     })
   )
@@ -501,7 +501,7 @@ export class ExampleModel {
       label: "Description 33",
       required: false,
       hint: "This is a hint!",
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 33" },
     })
   )
@@ -515,7 +515,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 34",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 34" },
     })
   )
@@ -530,7 +530,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 35",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 35" },
     })
   )
@@ -544,7 +544,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 36",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 36" },
     })
   )
@@ -558,7 +558,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 37",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 37" },
       ref_key: "statuses",
     })
@@ -573,7 +573,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 38",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 38" },
     })
   )
@@ -589,7 +589,7 @@ export class ExampleModel {
       label: "Description 39",
       required: false,
       hint: "This is a hint!",
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 39" },
     })
   )
@@ -604,7 +604,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 40",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 40" },
     })
   )
@@ -618,7 +618,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 41",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 41" },
       ref_key: "statuses",
     })
@@ -633,7 +633,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 42",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 42" },
     })
   )
@@ -647,7 +647,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 43",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 43" },
       ref_key: "statuses",
     })
@@ -662,7 +662,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 44",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 44" },
     })
   )
@@ -677,7 +677,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 45",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 45" },
     })
   )
@@ -691,7 +691,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 46",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 46" },
     })
   )
@@ -705,7 +705,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 47",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 47" },
       ref_key: "statuses",
     })
@@ -720,7 +720,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 48",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 48" },
     })
   )
@@ -734,7 +734,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 49",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 49" },
       ref_key: "statuses",
     })
@@ -750,7 +750,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 50",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 50" },
     })
   )
@@ -766,7 +766,7 @@ export class ExampleModel {
       label: "Description 51",
       required: false,
       hint: "This is a hint!",
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 51" },
     })
   )
@@ -780,7 +780,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 52",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 52" },
     })
   )
@@ -794,7 +794,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 53",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 53" },
       ref_key: "statuses",
     })
@@ -809,7 +809,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 54",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 54" },
     })
   )
@@ -824,7 +824,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 55",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 55" },
     })
   )
@@ -838,7 +838,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 56",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 56" },
     })
   )
@@ -854,7 +854,7 @@ export class ExampleModel {
       label: "Description 57",
       required: false,
       hint: "This is a hint!",
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 57" },
     })
   )
@@ -868,7 +868,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 58",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 58" },
     })
   )
@@ -882,7 +882,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 59",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 59" },
       ref_key: "statuses",
     })
@@ -898,7 +898,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 60",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 60" },
     })
   )
@@ -912,7 +912,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 61",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 61" },
       ref_key: "statuses",
     })
@@ -927,7 +927,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 62",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 62" },
     })
   )
@@ -943,7 +943,7 @@ export class ExampleModel {
       label: "Description 63",
       required: false,
       hint: "This is a hint!",
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 63" },
     })
   )
@@ -957,7 +957,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 64",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 64" },
     })
   )
@@ -972,7 +972,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 65",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 65" },
     })
   )
@@ -986,7 +986,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 66",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 66" },
     })
   )
@@ -1000,7 +1000,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 67",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 67" },
       ref_key: "statuses",
     })
@@ -1015,7 +1015,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 68",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 68" },
     })
   )
@@ -1031,7 +1031,7 @@ export class ExampleModel {
       label: "Description 69",
       required: false,
       hint: "This is a hint!",
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 69" },
     })
   )
@@ -1046,7 +1046,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 70",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 70" },
     })
   )
@@ -1060,7 +1060,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 71",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 71" },
       ref_key: "statuses",
     })
@@ -1075,7 +1075,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 72",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 72" },
     })
   )
@@ -1089,7 +1089,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 73",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 73" },
       ref_key: "statuses",
     })
@@ -1104,7 +1104,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 74",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 74" },
     })
   )
@@ -1119,7 +1119,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 75",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 75" },
     })
   )
@@ -1133,7 +1133,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 76",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 76" },
     })
   )
@@ -1147,7 +1147,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 77",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 77" },
       ref_key: "statuses",
     })
@@ -1162,7 +1162,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 78",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 78" },
     })
   )
@@ -1176,7 +1176,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 79",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 79" },
       ref_key: "statuses",
     })
@@ -1192,7 +1192,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 80",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 80" },
     })
   )
@@ -1208,7 +1208,7 @@ export class ExampleModel {
       label: "Description 81",
       required: false,
       hint: "This is a hint!",
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 81" },
     })
   )
@@ -1222,7 +1222,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 82",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 82" },
     })
   )
@@ -1236,7 +1236,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 83",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 83" },
       ref_key: "statuses",
     })
@@ -1251,7 +1251,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 84",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 84" },
     })
   )
@@ -1266,7 +1266,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 85",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 85" },
     })
   )
@@ -1280,7 +1280,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 86",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 86" },
     })
   )
@@ -1296,7 +1296,7 @@ export class ExampleModel {
       label: "Description 87",
       required: false,
       hint: "This is a hint!",
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 87" },
     })
   )
@@ -1310,7 +1310,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 88",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 88" },
     })
   )
@@ -1324,7 +1324,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 89",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 89" },
       ref_key: "statuses",
     })
@@ -1340,7 +1340,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 90",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 90" },
     })
   )
@@ -1354,7 +1354,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 91",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 91" },
       ref_key: "statuses",
     })
@@ -1369,7 +1369,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 92",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 92" },
     })
   )
@@ -1385,7 +1385,7 @@ export class ExampleModel {
       label: "Description 93",
       required: false,
       hint: "This is a hint!",
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 93" },
     })
   )
@@ -1399,7 +1399,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 94",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 94" },
     })
   )
@@ -1414,7 +1414,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 95",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 95" },
     })
   )
@@ -1428,7 +1428,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 96",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 96" },
     })
   )
@@ -1442,7 +1442,7 @@ export class ExampleModel {
       type: "select",
       label: "Status 97",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Status 97" },
       ref_key: "statuses",
     })
@@ -1457,7 +1457,7 @@ export class ExampleModel {
       type: "email",
       label: "Email 98",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Email 98" },
     })
   )
@@ -1473,7 +1473,7 @@ export class ExampleModel {
       label: "Description 99",
       required: false,
       hint: "This is a hint!",
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Description 99" },
     })
   )
@@ -1488,7 +1488,7 @@ export class ExampleModel {
       type: "text",
       label: "Name 100",
       required: false,
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 100" },
     })
   )

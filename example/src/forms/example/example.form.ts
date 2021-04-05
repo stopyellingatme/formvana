@@ -27,11 +27,12 @@ const ref_data: Record<string, RefDataItem[]> = {
 
 function initStore() {
   // Just gonna set up the form real quick...
-  let form = new Form({
-    model: new ExampleModel(),
-    field_order: ["description", "status", "email", "name"],
+  let form = new Form(
+    new ExampleModel(),
+    {
+    // field_order: ["description", "status", "email", "name"],
     template: ExampleTemplate,
-    validate_on_events: new OnEvents(true, { focus: false }),
+    validate_on_events: new OnEvents({ focus: false }),
     refs: ref_data,
   });
 

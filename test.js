@@ -59,7 +59,7 @@ const field = (
       type: "${type}",
       label: "${label}",
       required: ${req},${("\n", hint ? 'hint: "' + hint + '",' : "")}
-      classname: "col-span-4 sm:col-span-2",
+      classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "${label}" },${
   ("\n", ref_key ? 'ref_key: "' + ref_key + '",' : "")
 }${

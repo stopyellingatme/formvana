@@ -64,7 +64,10 @@ export class FieldConfig {
     }
   }
 
-  //! DO NOT SET NAME. IT'S SET AUTOMATICALLY IN FORM.TS!
+  /**
+   * ! DO NOT SET NAME
+   * ! IT IS SET AUTOMATICALLY IN FORM.TS
+   */
   name: string;
 
   // Used to add and remove event listeners
@@ -72,18 +75,17 @@ export class FieldConfig {
 
   /**
    * el can be either String or Svelte Component.
-   * This allows us a more flexible dynamic render.
+   * This allows us a more flexible dynamic field generator.
    */
   el: string;
-
+  label?: string;
   type: string = "text"; // Defaults to text, for now
-  label: string;
-
-  // Classes applied to the div wrapping the input field
-  classname: string;
   required: boolean = false;
-
   value: Writable<any> = writable(null);
+
+  // Styling
+  styles?: object;
+  classes?: string;
 
   /**
    * Used if there is a set of "options" to choose from.
@@ -91,16 +93,20 @@ export class FieldConfig {
   options?: any[];
   ref_key?: string; // Reference data key
 
-  disabled?: boolean;
-  hidden?: boolean;
+  disabled: boolean;
+  hidden: boolean;
 
-  hint?: string; // Mainly for textarea, for now
-  group?: FieldGroup;
-  step?: FieldStep;
+  /**
+   * Validation Errors!
+   * We're mainly looking for the class-validator "constraints"
+   * One ValidationError object can have multiple errors (constraints)
+   */
+   errors: Writable<ValidationError> = writable(null);
 
   /**
    * * JSON of things like:
    * -- disabled
+   * -- id="something"
    * -- type="text || email || password || whatever"
    * -- class='input class'
    * -- title='input title'
@@ -109,18 +115,15 @@ export class FieldConfig {
    */
   attributes: object = {};
 
-  /**
-   * Validation Errors!
-   * We're mainly looking for the class-validator "constraints"
-   * One ValidationError object can have multiple errors (constraints)
-   */
-  errors: Writable<ValidationError> = writable(null);
+  hint?: string; // Mainly for textarea, or whatever
+  group?: FieldGroup;
+  step?: FieldStep;
 
-  private clearValue = () => {
+  clearValue = () => {
     this.value.set(null);
   };
 
-  private clearErrors = () => {
+  clearErrors = () => {
     this.errors.set(null);
   };
 

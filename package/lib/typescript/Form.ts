@@ -2,54 +2,12 @@ import { ValidatorOptions } from "class-validator/types";
 import { ValidationError, validate, validateOrReject } from "class-validator";
 import { get, writable, Writable } from "svelte/store";
 import { FieldConfig } from ".";
-
-/**
- * Determines which events to validate/clear validation, on.
- * And, you can bring your own event listeners just by adding one on
- * the init.
- * Good ole Object.assign. It's brazen, but you're a smart kid.
- * Use it wisely.
- */
-export class OnEvents {
-  constructor(eventsOn: boolean = true, init?: Partial<OnEvents>) {
-    Object.assign(this, init);
-    // If eventsOn is false, turn off all event listeners
-    if (!eventsOn) {
-      Object.keys(this).forEach((key) => {
-        this[key] = false;
-      });
-    }
-  }
-
-  input: boolean = true;
-  change: boolean = true;
-  blur: boolean = true;
-  focus: boolean = true;
-  mount: boolean = false;
-  submit: boolean = true;
-}
-
-/**
- * Should we link the values always?
- * Or only if the form is valid?
- */
-export enum LinkOnEvent {
-  Always,
-  Valid,
-}
-
-/**
- * Data format for the reference data items
- * Form.refs are of type Record<string, RefDataItem[]>
- */
-export interface RefDataItem {
-  label: string;
-  value: any;
-}
+import { RefDataItem, OnEvents, LinkOnEvent } from "./common";
 
 /**
  * Formvana - Form Class
- * Form is NOT valid, initially. If you want to make it valid, this.valid.set(true)
+ * Form is NOT valid, initially. 
+ * If you want to make it valid, this.valid.set(true).
  *
  * The main thing to understand here is that the fields and the model are separate.
  * Fields are built using the model, via the @field() & @editable() decorators.
@@ -75,14 +33,15 @@ export interface RefDataItem {
  *
  */
 export class Form {
-  constructor(init?: Partial<Form>) {
+  constructor(model: any, init?: Partial<Form>) {
     Object.keys(this).forEach((key) => {
       if (init[key]) {
         this[key] = init[key];
       }
     });
     // If there's a model, set the inital state's and build the fields
-    if (this.model) {
+    if (model) {
+      this.model = model;
       this.buildFields();
     }
     // If they passed in a field order, set the order.
@@ -100,6 +59,7 @@ export class Form {
 
   /**
    * This is your form Model/Schema.
+   * TODO: Definite candidate for Mapped Type
    *
    * (If you didn't set the model in the constructor)
    * When model is set, call buildFields() to build the fields.
@@ -116,7 +76,7 @@ export class Form {
    * refs hold any reference data you'll be using in the form
    * e.g. seclet dropdowns, radio buttons, etc.
    *
-   * (If you did not set the model in constructor)
+   * If you did not set the model in constructor:
    * Call attachRefData() to link the data to the respective field
    *
    * * Fields & reference data are linked via field.ref_key
@@ -181,17 +141,21 @@ export class Form {
   changed: Writable<boolean> = writable(false);
   touched: Writable<boolean> = writable(false);
 
+  /**
+   * Use the NAME of the field (field.name) to disable/hide the field.
+   */
   hidden_fields: string[] = [];
   disabled_fields: string[] = [];
 
   // Which events should the form be validated on?
   validate_on_events: OnEvents = new OnEvents();
   // Which events should we clear the field errors on?
-  clear_errors_on_events: OnEvents = new OnEvents(false);
+  clear_errors_on_events: OnEvents = new OnEvents({}, true);
 
   // When to link this.field values to this.model values
   link_fields_to_model: LinkOnEvent = LinkOnEvent.Always;
 
+  // Used to make checking for disabled/hidden fields faster
   private field_names: string[] = [];
   /**
    * This is the model's initial state.
@@ -302,7 +266,7 @@ export class Form {
     this.clearErrors();
     // Link the input from the field to the model.
     this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
-    this.hideFields(), this.disableFields();
+    this._hideFields(), this._disableFields();
     // Return class-validator validate() function.
     // Validate the model with given validation config.
     return validate(this.model, this.validation_options).then(
@@ -316,7 +280,7 @@ export class Form {
   validateAsync = async (): Promise<any> => {
     this.clearErrors();
     this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
-    this.hideFields(), this.disableFields();
+    this._hideFields(), this._disableFields();
     try {
       return await validateOrReject(this.model, this.validation_options);
     } catch (errors) {
@@ -342,7 +306,7 @@ export class Form {
   loadData = (
     data: any,
     freshModel: boolean = true,
-    updateState: boolean = true
+    updateInitialState: boolean = true
   ): Form => {
     if (freshModel) {
       this.model = data;
@@ -354,7 +318,7 @@ export class Form {
       this.linkValues(false);
     }
 
-    updateState && this.updateInitialState();
+    updateInitialState && this.updateInitialState();
 
     return this;
   };
@@ -362,8 +326,6 @@ export class Form {
   /**
    * Just pass in the reference data and let the field configs do the rest.
    *
-   * * Ref data MUST BE in format: Record<string, RefDataItem[]>
-   * * Ref data MUST BE in format: Record<string, RefDataItem[]>
    * * Ref data MUST BE in format: Record<string, RefDataItem[]>
    */
   attachRefData = (refs?: Record<string, RefDataItem[]>): void => {
@@ -456,14 +418,26 @@ export class Form {
     this.resetState();
   };
 
-  hideField = (name: string) => {
-    this.hidden_fields.push(name);
-    this.hideFields();
+  hideFields = (names?: string | string[]) => {
+    if (names) {
+      if (Array.isArray(names)) {
+        this.hidden_fields.push(...names);
+      } else {
+        this.hidden_fields.push(names);
+      }
+    }
+    this._hideFields();
   };
 
-  disableField = (name: string) => {
-    this.disabled_fields.push(name);
-    this.disableFields();
+  disableFields = (names?: string | string[]) => {
+    if (names) {
+      if (Array.isArray(names)) {
+        this.disabled_fields.push(...names);
+      } else {
+        this.disabled_fields.push(names);
+      }
+    }
+    this._disableFields();
   };
 
   /**
@@ -501,7 +475,7 @@ export class Form {
   private validateField = (field: FieldConfig): Promise<void> => {
     // Link the input from the field to the model.
     this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
-    this.hideFields(), this.disableFields();
+    this._hideFields(), this._disableFields();
     // this.link_fields_to_model === LinkOnEvent.Always &&
     // this.linkFieldValue(field);
 
@@ -514,7 +488,7 @@ export class Form {
     );
   };
 
-  private hideFields = () => {
+  private _hideFields = () => {
     let i = 0,
       len = this.hidden_fields.length;
     if (len === 0) return;
@@ -535,7 +509,7 @@ export class Form {
     });
   };
 
-  private disableFields = () => {
+  private _disableFields = () => {
     let i = 0,
       len = this.disabled_fields.length;
     if (len === 0) return;
@@ -572,7 +546,7 @@ export class Form {
    */
   private setInitialState = (): void => {
     /**
-     * This is the best method for reliable deep-ish cloning that i've found.
+     * This is the best method for reliable deep-ish cloning that I've found.
      * If you know a BETTER way, be my guest. No extra dependencies please.
      */
     this.stateful_items.forEach((key) => {

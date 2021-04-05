@@ -7,7 +7,7 @@
   export let form;
 </script>
 
-<div class={field.classname}>
+<div class={field.classes}>
   {#if field.el === "input"}
     <Input
       name={field.name}
