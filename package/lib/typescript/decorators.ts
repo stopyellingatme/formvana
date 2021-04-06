@@ -12,7 +12,7 @@ export function editable(target: any, propertyKey: string) {
   Reflect.defineMetadata("editableProperties", properties, target);
 }
 
-export function field(config: FieldConfig) {
+export function field(config: Partial<FieldConfig>) {
   return function (target: any, propertyKey: string) {
     Reflect.defineMetadata("fieldConfig", config, target, propertyKey);
   };

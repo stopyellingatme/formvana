@@ -6,7 +6,7 @@ import { RefDataItem, OnEvents, LinkOnEvent } from "./common";
 
 /**
  * Formvana - Form Class
- * Form is NOT valid, initially. 
+ * Form is NOT valid, initially.
  * If you want to make it valid, this.valid.set(true).
  *
  * The main thing to understand here is that the fields and the model are separate.
@@ -32,8 +32,9 @@ import { RefDataItem, OnEvents, LinkOnEvent } from "./common";
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
  */
-export class Form {
-  constructor(model: any, init?: Partial<Form>) {
+export class Form<MType> {
+  // export class Form {
+  constructor(model: MType, init?: Partial<Form<MType>>) {
     Object.keys(this).forEach((key) => {
       if (init[key]) {
         this[key] = init[key];
@@ -172,6 +173,8 @@ export class Form {
     "refs",
     "field_order",
     "model",
+    "hidden_fields",
+    "disabled_fields",
   ];
 
   /**
@@ -204,27 +207,24 @@ export class Form {
       // Map the @editable fields to the form.fields array.
       this.fields = props.map((prop) => {
         // Get the FieldConfig using metadata reflection
-        const config: FieldConfig = Reflect.getMetadata(
-          "fieldConfig",
-          this.model,
-          prop
-        );
-        //! SET THE NAME OF THE FIELD!
-        config.name = prop;
+        const field: FieldConfig = new FieldConfig({
+          ...Reflect.getMetadata("fieldConfig", this.model, prop),
+          name: prop,
+        });
 
         // If the model has a value, attach it to the field config
         // 0, "", [], etc. are set in the constructor based on type.
         if (this.model[prop]) {
-          config.value.set(this.model[prop]);
+          field.value.set(this.model[prop]);
         }
 
         // Gotta keep track of the required feilds, for our own validation.
-        if (config.required) {
-          this.required_fields.push(config.name);
+        if (field.required) {
+          this.required_fields.push(field.name);
         }
 
         // We made it. Return the field config and let's generate some inputs!
-        return config;
+        return field;
       });
       this.field_names = this.fields.map((f) => f.name);
     }
@@ -291,6 +291,22 @@ export class Form {
   };
 
   /**
+   * If you would like to invalidate a specific field for
+   * any reason.
+   */
+  invalidate = (field_name: string, message: string) => {
+    const field = this.get(field_name),
+      _err = new ValidationError(),
+      err = Object.assign(_err, {
+        property: field_name,
+        value: get(field.value),
+        constraints: [{ error: message }],
+      });
+    this.errors.push(err);
+    this.linkErrors();
+  };
+
+  /**
    * Load new data into the form and build the fields.
    * Useful if you fetched data and need to update the form values.
    *
@@ -307,7 +323,7 @@ export class Form {
     data: any,
     freshModel: boolean = true,
     updateInitialState: boolean = true
-  ): Form => {
+  ): Form<MType> => {
     if (freshModel) {
       this.model = data;
       this.buildFields();
@@ -344,7 +360,7 @@ export class Form {
   /**
    * Generate a Svelte Store from the current "this".
    */
-  storify = (): Writable<Form> => {
+  storify = (): Writable<Form<MType>> => {
     const f = writable(this);
     return f;
   };
@@ -358,6 +374,13 @@ export class Form {
   setOrder = (order: string[]): void => {
     this.field_order = order;
     this.createOrder();
+  };
+
+  /**
+   * Get Field by name
+   */
+  get = (name: string): FieldConfig => {
+    return this.fields.filter((f) => f.name === name)[0];
   };
 
   /**
@@ -503,7 +526,7 @@ export class Form {
 
   private _hideField = (name: string) => {
     this.fields.forEach((f) => {
-      if ((f.name = name)) {
+      if (f.name === name) {
         f.hidden = true;
       }
     });
@@ -524,7 +547,7 @@ export class Form {
 
   private _disableField = (name: string) => {
     this.fields.forEach((f) => {
-      if ((f.name = name)) {
+      if (f.name === name) {
         f.disabled = true;
         f.attributes["disabled"] = true;
       }
@@ -584,7 +607,7 @@ export class Form {
         });
         // If this.errors is not empty then attach the errors to the fields
         if (this[key] && this[key].length > 0) {
-          this.linkErrors(this.errors);
+          this.linkErrors();
         }
       } else if (key === "model") {
         /**
@@ -736,7 +759,7 @@ export class Form {
     }
   };
 
-  private linkErrors = (errors: ValidationError[]): void => {
+  private linkErrors = (errors: ValidationError[] = this.errors): void => {
     errors.forEach((err) => {
       this.fields.forEach((field) => {
         if (err.property === field.name) {

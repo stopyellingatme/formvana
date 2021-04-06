@@ -1,6 +1,8 @@
 // Script to generate 100's of inputs for testing.
 const fs = require("fs");
 
+const output_path = `./example/src/models/TestClass.ts`;
+
 const test_class_string = (fields) => `
 import {
   Contains,
@@ -15,7 +17,6 @@ import {
   IsString
 } from "class-validator";
 import { editable, field } from "@formvana";
-import { FieldConfig } from "@formvana";
 
 export enum Status {
   ACTIVE,
@@ -53,8 +54,7 @@ const field = (
 ) => `
 	@editable
   ${validators.join("\n")}
-  @field(
-    new FieldConfig({
+  @field({
       el: "${el}",
       type: "${type}",
       label: "${label}",
@@ -67,7 +67,7 @@ const field = (
 }${
   ("\n", is_step ? "step: { index: " + name + ", label: " + label + " }," : "")
 }
-    })
+    }
   )
   ${name}${initial_val ? " = " + initial_val : ""};
 `;
@@ -96,7 +96,7 @@ function generateFields() {
 
   const model = test_class_string(fields);
 
-  fs.writeFile(`./example/src/models/TestClass.ts`, model, null, fwcb);
+  fs.writeFile(output_path, model, null, fwcb);
 }
 
 function psudoRandomGetField(i) {

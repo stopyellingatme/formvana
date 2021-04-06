@@ -53,7 +53,7 @@ export class FieldConfig {
         break;
 
       default:
-        this.value.set("");
+        this.value.set(undefined);
         break;
     }
 
@@ -68,7 +68,7 @@ export class FieldConfig {
    * ! DO NOT SET NAME
    * ! IT IS SET AUTOMATICALLY IN FORM.TS
    */
-  name: string;
+  readonly name: string;
 
   // Used to add and remove event listeners
   node: HTMLElement;
