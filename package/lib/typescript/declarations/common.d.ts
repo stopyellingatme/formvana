@@ -7,6 +7,8 @@
  * Also has the good ole Object.assign in the constructor.
  * It's brazen, but you're a smart kid.
  * Use it wisely.
+ *
+ * TODO: Possilbe candidate for Mapped Type
  */
 export declare class OnEvents {
     constructor(init?: Partial<OnEvents>, disableAll?: boolean);
@@ -40,6 +42,8 @@ export declare enum LinkOnEvent {
 /**
  * Data format for the reference data items
  * Form.refs are of type Record<string, RefDataItem[]>
+ *
+ * TODO: Possilbe candidate for Mapped Type
  */
 export interface RefDataItem {
     label: string;

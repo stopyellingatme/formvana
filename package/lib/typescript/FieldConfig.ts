@@ -1,4 +1,4 @@
-import { ValidationError } from "class-validator/types";
+import { ValidationError } from "class-validator";
 import { writable, Writable } from "svelte/store";
 
 export interface FieldGroup {
@@ -24,10 +24,12 @@ export class FieldConfig {
   constructor(init?: Partial<FieldConfig>) {
     // I know, Object.assign... lots of freedom there.
     Object.assign(this, init);
-    this.attributes["type"] = this.type;
+    this.attributes["type"] = !this.attributes["type"]
+      ? this.type
+      : this.attributes["type"];
 
     /**
-     * Just trying to set some sane defaults when initializing field.
+     * Trying to set some sane defaults when initializing field.
      * These can be over-written easily by simply adding a value to your
      * class field.
      * E.g. class YourClass{ description: string = "This is a descriptor." }
@@ -93,15 +95,15 @@ export class FieldConfig {
   options?: any[];
   ref_key?: string; // Reference data key
 
-  disabled: boolean;
-  hidden: boolean;
+  disabled: boolean = false;
+  hidden: boolean = false;
 
   /**
    * Validation Errors!
    * We're mainly looking for the class-validator "constraints"
    * One ValidationError object can have multiple errors (constraints)
    */
-   errors: Writable<ValidationError> = writable(null);
+  errors: Writable<ValidationError> = writable(null);
 
   /**
    * * JSON of things like:

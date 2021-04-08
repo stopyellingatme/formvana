@@ -1,4 +1,4 @@
-import { ValidationError } from "class-validator/types";
+import { ValidationError } from "class-validator";
 import { Writable } from "svelte/store";
 export interface FieldGroup {
     name: string;
@@ -23,7 +23,7 @@ export declare class FieldConfig {
      * ! DO NOT SET NAME
      * ! IT IS SET AUTOMATICALLY IN FORM.TS
      */
-    name: string;
+    readonly name: string;
     node: HTMLElement;
     /**
      * el can be either String or Svelte Component.

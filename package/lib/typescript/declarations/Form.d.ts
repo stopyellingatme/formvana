@@ -5,7 +5,8 @@ import { FieldConfig } from ".";
 import { RefDataItem, OnEvents, LinkOnEvent } from "./common";
 /**
  * Formvana - Form Class
- * Form is NOT valid, initially. If you want to make it valid, this.valid.set(true)
+ * Form is NOT valid, initially.
+ * If you want to make it valid, this.valid.set(true).
  *
  * The main thing to understand here is that the fields and the model are separate.
  * Fields are built using the model, via the @field() & @editable() decorators.
@@ -29,11 +30,15 @@ import { RefDataItem, OnEvents, LinkOnEvent } from "./common";
  * Just break it up into 100 or so fields per form (max-ish) if its a huge form.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
+ * TODO: what if they want to add their own event listeners (on specific fields)?
+ * TODO: Break up form properties and functions (FormProperties & FormApi)
+ * TODO: Add a changes (value changes) observable
  */
-export declare class Form {
-    constructor(init?: Partial<Form>);
+export declare class Form<MType> {
+    constructor(model: MType, init?: Partial<Form<MType>>);
     /**
      * This is your form Model/Schema.
+     * TODO: Definite candidate for Mapped Type
      *
      * (If you didn't set the model in the constructor)
      * When model is set, call buildFields() to build the fields.
@@ -55,29 +60,12 @@ export declare class Form {
      */
     refs: Record<string, RefDataItem[]>;
     /**
-     * Determines the ordering of this.fields.
-     * Simply an array of field names (or group names or stepper names)
-     * in the order to be displayed
-     */
-    field_order: string[];
-    /**
-     * Form Template Layout
-     *
-     * Render the form into a custom svelte template!
-     * Use a svelte component.
-     * * The component/template must accept {form} prop
-     *
-     * Note: add ` types": ["svelte"] ` to tsconfig compilerOptions
-     * to remove TS import error of .svelte files (for your template)
-     */
-    template: any;
-    /**
      * Validation options come from class-validator ValidatorOptions.
      *
      * Biggest perf increase comes from setting validationError.target = false
      * (so the whole model is not attached to each error message)
      */
-    validation_options: ValidatorOptions;
+    readonly validation_options: ValidatorOptions;
     /**
      * The errors are of type ValidationError which comes from class-validator.
      * Errors are usually attached to the fields which the error is for.
@@ -100,9 +88,26 @@ export declare class Form {
      */
     hidden_fields: string[];
     disabled_fields: string[];
-    validate_on_events: OnEvents;
-    clear_errors_on_events: OnEvents;
-    link_fields_to_model: LinkOnEvent;
+    readonly validate_on_events: OnEvents;
+    readonly clear_errors_on_events: OnEvents;
+    readonly link_fields_to_model: LinkOnEvent;
+    /**
+     * Determines the ordering of this.fields.
+     * Simply an array of field names (or group names or stepper names)
+     * in the order to be displayed
+     */
+    field_order: string[];
+    /**
+     * Form Template Layout
+     *
+     * Render the form into a custom svelte template!
+     * Use a svelte component.
+     * * The component/template must accept {form} prop
+     *
+     * Note: add ` types": ["svelte"] ` to tsconfig compilerOptions
+     * to remove TS import error of .svelte files (for your template)
+     */
+    template: any;
     private field_names;
     /**
      * This is the model's initial state.
@@ -119,11 +124,6 @@ export declare class Form {
      * Keep track of the fields so we can validate faster.
      */
     private required_fields;
-    /**
-     * * Here be Functions. Beware.
-     * * Here be Functions. Beware.
-     * * Here be Functions. Beware.
-     */
     /**
      * This is the first method that was written for formvana :)
      *
@@ -148,12 +148,6 @@ export declare class Form {
      */
     useField: (node: HTMLElement) => void;
     /**
-     * Well, validate the form!
-     * Clear the errors first, then do it, obviously.
-     */
-    validate: () => Promise<ValidationError[]>;
-    validateAsync: () => Promise<any>;
-    /**
      * Load new data into the form and build the fields.
      * Useful if you fetched data and need to update the form values.
      *
@@ -166,26 +160,23 @@ export declare class Form {
      *
      * Check example.form.ts for an example use case.
      */
-    loadData: (data: any, freshModel?: boolean, updateState?: boolean) => Form;
+    loadData: (data: any, freshModel?: boolean, updateInitialState?: boolean) => Form<MType>;
     /**
      * Just pass in the reference data and let the field configs do the rest.
      *
      * * Ref data MUST BE in format: Record<string, RefDataItem[]>
-     * * Ref data MUST BE in format: Record<string, RefDataItem[]>
-     * * Ref data MUST BE in format: Record<string, RefDataItem[]>
      */
     attachRefData: (refs?: Record<string, RefDataItem[]>) => void;
     /**
-     * Generate a Svelte Store from the current "this".
+     * Well, validate the form!
+     * Clear the errors first, then do it, obviously.
      */
-    storify: () => Writable<Form>;
+    validate: () => Promise<ValidationError[]>;
+    validateAsync: () => Promise<void>;
     /**
-     * Set the field order.
-     * Layout param is simply an array of field (or group)
-     * names in the order to be displayed.
-     * Leftover fields are appended to bottom of form.
+     * If wanna invalidate a specific field for any reason.
      */
-    setOrder: (order: string[]) => void;
+    invalidateField: (field_name: string, message: string) => void;
     /**
      * * Use this if you're trying to update the layout after initialization.
      * Similar to this.setOrder()
@@ -196,22 +187,55 @@ export declare class Form {
      * formState.updateState({ ...newState });
      */
     buildStoredLayout: (formState: Writable<any>, order: string[]) => Writable<any>;
-    updateInitialState: () => void;
+    /**
+     * Set the field order.
+     * Layout param is simply an array of field (or group)
+     * names in the order to be displayed.
+     * Leftover fields are appended to bottom of form.
+     */
+    setOrder: (order: string[]) => void;
+    get: (fieldName: string) => FieldConfig;
+    /**
+     * Generate a Svelte Store from the current "this".
+     */
+    storify: () => Writable<Form<MType>>;
     clearErrors: () => void;
-    reset: () => void;
+    /**
+     * Hide a field or fields
+     * @param names? string | string[]
+     */
     hideFields: (names?: string | string[]) => void;
+    /**
+     * Disable a field or fields
+     * @param names? string | string[]
+     */
     disableFields: (names?: string | string[]) => void;
     /**
      *! Make sure to call this when the component is unloaded/destroyed
      * Removes all event listeners and clears the form state.
      */
     destroy: () => void;
+    reset: () => void;
+    updateInitialState: () => void;
     /**
      * Validate the field!
      * This is  attached to the field:
      * useField -> attachOnValidateEvents(node) ->  validateField
      */
     private validateField;
+    private handleValidation;
+    /**
+     * TODO: Clean up this arfv implementation. Seems too clunky.
+     *
+     * Check if there are any required fields in the errors.
+     * If there are no required fields in the errors, the form is valid
+     */
+    private requiredFieldsValid;
+    private clearFieldErrors;
+    /**
+     * Using this.field_order, rearrange the order of the fields.
+     */
+    private createOrder;
     private _hideFields;
     private _hideField;
     private _disableFields;
@@ -227,28 +251,16 @@ export declare class Form {
      * But it resets the form to it's initial state.
      */
     private resetState;
-    /**
-     * TODO: Clean up this arfv implementation. Seems too clunky.
-     *
-     * Check if there are any required fields in the errors.
-     * If there are no required fields in the errors, the form is valid
-     */
-    private requiredFieldsValid;
-    private handleValidation;
-    private linkValues;
-    private linkFieldValue;
     private getStateSnapshot;
     /**
-     * TODO: Might better way to do comparison than JSON.stringify()
-     * TODO: Be my guest to fix it if you know how.
-     * But...
+     * Is the current form state different than the initial state?
+     *
      * I've tested it with > 1000 fields in a single class with very slight input lag.
      */
     private hasChanged;
+    private linkValues;
     private linkFieldErrors;
     private linkErrors;
-    private clearFieldErrors;
-    private createOrder;
     private attachOnValidateEvents;
     private attachOnClearErrorEvents;
 }

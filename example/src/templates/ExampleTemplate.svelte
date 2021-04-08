@@ -60,14 +60,14 @@
           on:click|preventDefault={$form.reset}
           class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-md shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
         >
-          Reset
+          Changed
         </button>
       {:else}
         <button
           disabled
           class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md shadow-sm cursor-not-allowed focus:outline-none"
         >
-          Reset
+          Unchanged
         </button>
       {/if}
       {#if $valid}
@@ -75,14 +75,29 @@
           type="submit"
           class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-md shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
         >
-          Save
+          Valid
         </button>
       {:else}
         <button
           disabled
           class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md shadow-sm cursor-not-allowed focus:outline-none"
         >
-          Save
+          Invalid
+        </button>
+      {/if}
+      {#if $valid && $changed}
+        <button
+          type="submit"
+          class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-md shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
+        >
+          Valid &amp; Changed
+        </button>
+      {:else}
+        <button
+          disabled
+          class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md shadow-sm cursor-not-allowed focus:outline-none"
+        >
+          Invalid or Unchanged
         </button>
       {/if}
     </div>
