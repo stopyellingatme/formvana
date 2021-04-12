@@ -2,7 +2,7 @@ import { ValidatorOptions } from "class-validator/types";
 import { ValidationError, validate, validateOrReject } from "class-validator";
 import { get, writable, Writable } from "svelte/store";
 import { FieldConfig } from ".";
-import { RefDataItem, OnEvents, LinkOnEvent } from "./common";
+import { RefDataItem, OnEvents, LinkOnEvent } from "./types";
 
 /**
  * Formvana - Form Class
@@ -16,7 +16,7 @@ import { RefDataItem, OnEvents, LinkOnEvent } from "./common";
  *
  *
  * Recommended Use:
- *  - Initialize let form = new Form({model: MODEL, refs: REFS, template: TEMPLATE, etc.})
+ *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
  *  - Set the model (if you didn't in the first step)
  *  - Attach reference data (if you didn't in the first step)
  *  - Storify the form - check example.form.ts for an example
@@ -267,12 +267,9 @@ export class Form<MType> {
    */
   useField = (node: HTMLElement): void => {
     // Attach HTML Node to field so we can remove event listeners later
-    this.fields.forEach((field) => {
-      //@ts-ignore
-      if (field.name === node.name) {
-        field.node = node;
-      }
-    });
+    //@ts-ignore
+    const f = this.get(node.name);
+    f.node = node;
 
     this.attachOnValidateEvents(node);
     this.attachOnClearErrorEvents(node);
@@ -542,11 +539,13 @@ export class Form<MType> {
    * useField -> attachOnValidateEvents(node) ->  validateField
    */
   private validateField = (field: FieldConfig): Promise<void> => {
-    // Link the input from the field to the model.
+    /**
+     * Link the input from the field to the model.
+     * We aren't linking (only) the field value.
+     * We link all values just in case the field change propigates other field changes.
+     */
     this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
     this._hideFields(), this._disableFields();
-    // this.link_fields_to_model === LinkOnEvent.Always &&
-    // this.linkFieldValue(field);
 
     // Return class-validator validate() function.
     // Validate the model with given validation config.

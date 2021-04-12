@@ -1,4 +1,5 @@
 import { ValidationError } from "class-validator";
+import { SvelteComponent } from "svelte";
 import { writable, Writable } from "svelte/store";
 
 export interface FieldGroup {
@@ -59,9 +60,12 @@ export class FieldConfig {
         break;
     }
 
+    // If there's no aria-label and the title attribute is present...
     if (!this.attributes["aria-label"] && this.attributes["title"]) {
+      // Set aria-label = title
       this.attributes["aria-label"] = this.attributes["title"];
-    } else {
+    } else if (!this.attributes["aria-label"]) {
+      // If no aria-label then set it to the label or name
       this.attributes["aria-label"] = this.label || this.name;
     }
   }
@@ -79,7 +83,7 @@ export class FieldConfig {
    * el can be either String or Svelte Component.
    * This allows us a more flexible dynamic field generator.
    */
-  el: string;
+  el: string | SvelteComponent;
   label?: string;
   type: string = "text"; // Defaults to text, for now
   required: boolean = false;

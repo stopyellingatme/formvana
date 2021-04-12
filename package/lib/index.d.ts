@@ -1,6 +1,6 @@
-import { ValidationError, ValidatorOptions } from "class-validator/types";
+import { ValidationError } from "class-validator";
 import { Writable } from "svelte/store";
-import { ValidationError as ValidationError$0 } from "class-validator";
+import { ValidatorOptions } from "class-validator/types";
 interface FieldGroup {
     name: string;
     classnames?: string[]; // Order determines when to be applied
@@ -145,7 +145,7 @@ interface RefDataItem {
  *
  * Performance is blazing with < 500 fields.
  * Can render up to 2000 inputs in one class, but don't do that.
- * Just break it up into 100 or so fields per form (max-ish) if its a huge form.
+ * Just break it up into 100 or so fields per form (max 250) if its a huge form.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
  * TODO: what if they want to add their own event listeners (on specific fields)?
@@ -185,13 +185,13 @@ declare class Form<MType> {
      * Biggest perf increase comes from setting validationError.target = false
      * (so the whole model is not attached to each error message)
      */
-    validation_options: ValidatorOptions;
+    readonly validation_options: ValidatorOptions;
     /**
      * The errors are of type ValidationError which comes from class-validator.
      * Errors are usually attached to the fields which the error is for.
      * This pattern adds flexibility at the cost of a little complexity.
      */
-    errors: ValidationError$0[];
+    errors: ValidationError[];
     /**
      * These next properties are all pretty self-explanatory.
      *
@@ -305,7 +305,7 @@ declare class Form<MType> {
      * Well, validate the form!
      * Clear the errors first, then do it, obviously.
      */
-    validate: () => Promise<ValidationError$0[]>;
+    validate: () => Promise<ValidationError[]>;
     validateAsync: () => Promise<void>;
     /**
      * If wanna invalidate a specific field for any reason.
