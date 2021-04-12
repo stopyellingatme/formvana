@@ -1,8 +1,6 @@
 # Formvana
 
-_**Searching for Form Nirvana with the help of Typescript and (currently) Svelte.**_
-----
-
+## _**Searching for Form Nirvana with the help of Typescript and Svelte.**_
 
 **What I Want!**
 
@@ -13,6 +11,15 @@ _**Searching for Form Nirvana with the help of Typescript and (currently) Svelte
 - Field Groups/Field Layout is nice too
 
 ---
+
+**To Do:**
+
+1. Better DynamicForm functionality
+   1. Template event passing
+   2. Validate on submit (submission function passing)
+2. Default input templates
+3. Write script to generate 100's of inputs and test perf
+
 
 ## VERY EARLY PRE-ALPHA LIBRARY
 
@@ -38,7 +45,7 @@ The field setup and parsing is handled by the Form.ts class.
 It takes the model (containing the special decorators) and builds an array of fields based on the given FieldConfigs of the model.
 Using this pattern, along with class-validator, allows a beautiful Form handling experience.
 
-The Form.fields array makes it easy to itterate over and generate form fields dymanically. There are form options which specify when to validate input or clear errors (on input, change, focus, blur, etc.).
+The Form.fields array makes it easy to loop over and generate form fields dymanically. There are form options which specify when to validate input or clear errors (on input, change, focus, blur, etc.).
 It's also very easy to get data out of the Form by calling Form.model.
 
 ---
@@ -53,8 +60,8 @@ It's also very easy to get data out of the Form by calling Form.model.
 - Write tests to generate 100s of form configs, add data/validate, test performance
 - Remove Svelte dependency? - Maybe fork it?
 
+---
 
-----
 ## &bull; YourTsModel.ts (e.g. Business.ts)
 
 <details>
@@ -139,23 +146,44 @@ class Business {
 
 </details>
 
-
-
 ## &bull; Form.ts
 
 - Model and Fields (form.model & form.fields)
 
-The model above can be attached either by new Form({model: new Business()}) or form.model = new Busniess().
+1. Set the Model
+2. Build the Fields ( form.buildFields() )
+
+The model (in the section) above can be attached by one of the following methods:
+
+```js
+const form = new Form({ model: new Business() });
+
+or;
+
+const form = new Form();
+form.model = new Busniess();
+```
 
 However, this ONLY sets the model.
 
-MODEL AND FIELDS ARE DIFFERENT THINGS!
+`MODEL AND FIELDS ARE DIFFERENT THINGS!`
 
-So, set the model and call form.buildFields() to build the fields with the model's field configurations.
+Call `form.buildFields()` to build/set the form.fields with the model's field configurations.
 
-If the model already has data, it will be reflected in the fields.value as well.
+If the model's fields already have data, the field data will be reflected in form.fields.value.
+
+`Validation!`
+1. Set validation options via `form.validation_options`.
+2. See available options at [class-validator](https://github.com/typestack/class-validator)
+
+`TODO:`
+1. Styling references.
+2. How layout is handled.
+3. validate_on and clear_errors_on_events stuff.
+4. And what's going on with errors. How are those handled?
 
 ---
+
 **REFERENCE DATA:**
 
 Attach reference data to dropdowns by calling form.attachRefData(refData).
@@ -166,18 +194,18 @@ Attach reference data to dropdowns by calling form.attachRefData(refData).
 
 ```json
 {
-	"ref_key": [
-		{value: 0, label: "First Choice"},
-		{value: 1, label: "Second Choice"}
-	]
+  "ref_key": [
+    { "value": 0, "label": "First Choice" },
+    { "value": 1, "label": "Second Choice" }
+  ]
 }
 ```
+
 ---
 
 **AND! Make sure to call form.destroy() to remove event listeners!**
 
 ^^ I'm working on a way to do some of this automagically.
-
 
 _FORM.TS TODO:_
 
@@ -187,8 +215,6 @@ _FORM.TS TODO:_
 - how events (validation/clear errors) are handled/can be set
 - layout setup
 
-
-
 ## &bull; FieldConfig.ts
 
 Form.fields are of type FieldConfig.ts
@@ -196,7 +222,7 @@ The constructor will attempt to parse the input type and add a sensable default 
 
 Also contains the HTML Node which is being validated/targeted.
 
-<details> 
+<details>
 
 <summary>The current default Field Configuration class looks like this.</summary>
 
@@ -230,24 +256,30 @@ class FieldConfig {
     if (this.el === "select" || this.el === "dropdown") {
       this.options = [];
     }
+
+    if (!this.attributes["title"]) {
+      this.attributes["title"] = this.label || this.name;
+    }
   }
 
   //! DO NOT SET NAME. IT'S SET AUTOMATICALLY BY FORM.TS!
   name: string;
+  // Main use is to add and remove event listeners
   node: HTMLElement;
   el: string; // Element to render in your frontend
-  type: string = "text"; // Defaults to text
+  type: string = "text"; // Defaults to text, for now
   label: string;
   classname: string;
   required: boolean = false;
-  hint?: string;
 
   value: Writable<any> = writable(null);
 
   options?: any[];
   ref_key?: string; // Reference data key
 
+  hint?: string; // Mainly for textarea, for now
   group?: FieldGroup;
+  step?: FieldStep;
 
   /**
    * * String array of things like:
@@ -261,6 +293,8 @@ class FieldConfig {
 
   /**
    * Validation Errors!
+   * We're mainly looking for the class-validator "constraints"
+   * One ValidationError object can have multiple errors (constraints)
    */
   errors: Writable<ValidationError> = writable(null);
 
@@ -281,11 +315,9 @@ class FieldConfig {
 
 </details>
 
-
-
 ## &bull; typescript.utils.ts
 
-This is where the specialized (reflect-metadata) decorators are declared. 
+This is where the specialized (reflect-metadata) decorators are declared.
 
 ```
 @editable and @field
@@ -293,13 +325,11 @@ This is where the specialized (reflect-metadata) decorators are declared.
 
 [Got the idea from here.](https://www.meziantou.net/generate-an-html-form-from-an-object-in-typescript.htm)
 
-
 ## &bull; Form.svelte
 
 This generates the form dynamically based on the @fields on the TS model. I would like to remove the tailwind parts for broader use, but it's good for testing right now.
 
 Eventually the area with inputs will be a named \<slot\> to pass in something like a \<Fields prop={field} \\> type of component.
-
 
 ## Recommended Use
 
@@ -310,7 +340,7 @@ Just run it and see how you feel about this whole method.
 
 ---
 
-*Note that you will need to have [Node.js](https://nodejs.org) 15.7.0 installed, for now.*
+_Note that you will need to have [Node.js](https://nodejs.org) 15.7.0 installed, for now._
 
 ## So, for now, you can run it like an app
 

@@ -1,0 +1,39 @@
+{
+  "name": "formvana",
+  "version": "0.0.2",
+  "main": "lib/index.js",
+  "browser": "lib/index.js",
+  "module": "lib/index.mjs",
+  "types": "lib/index.d.ts",
+  "license": "MIT",
+  "repository": "https://github.com/stopyellingatme/formvana",
+  "author": "Taylor King <tking@kingking.io>",
+  "description": "Searching for Form Nirvana with Typescript and Svelte.",
+  "homepage": "https://github.com/stopyellingatme/formvana",
+  "keywords": [
+    "forms",
+    "validation",
+    "svelte"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -cw"
+  },
+  "devDependencies": {
+    "rollup-plugin-postcss": "^4.0.0"
+  },
+  "peerDependencies": {
+    "svelte": "^3.35.0"
+  },
+  "dependencies": {
+    "class-validator": "^0.13.1",
+    "reflect-metadata": "^0.1.13",
+    "typescript": "^3.4.3"
+  },
+  "files": [
+    "lib"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
