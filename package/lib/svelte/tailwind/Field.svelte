@@ -5,38 +5,42 @@
 
   export let field;
   export let form;
+
+  $: hidden = field.hidden;
 </script>
 
-<div class={field.classes}>
-  {#if field.el === "input"}
-    <Input
-      name={field.name}
-      label={field.label}
-      attrs={field.attributes}
-      valueStore={field.value}
-      errorsStore={field.errors}
-      useInput={$form.useField}
-    />
-  {:else if field.el === "select" || field.el === "dropdown"}
-    <Dropdown
-      name={field.name}
-      label={field.label}
-      attrs={field.attributes}
-      options={field.options}
-      valueStore={field.value}
-      errorsStore={field.errors}
-      useInput={$form.useField}
-    />
-  {:else if field.el === "textarea"}
-    <!-- More fields go here! -->
-    <Textarea
-      name={field.name}
-      label={field.label}
-      hint={field.hint}
-      attrs={field.attributes}
-      valueStore={field.value}
-      errorsStore={field.errors}
-      useInput={$form.useField}
-    />
-  {/if}
-</div>
+{#if !hidden}
+  <div class={field.classes}>
+    {#if field.el === "input"}
+      <Input
+        name={field.name}
+        label={field.label}
+        attrs={field.attributes}
+        valueStore={field.value}
+        errorsStore={field.errors}
+        useInput={$form.useField}
+      />
+    {:else if field.el === "select" || field.el === "dropdown"}
+      <Dropdown
+        name={field.name}
+        label={field.label}
+        attrs={field.attributes}
+        options={field.options}
+        valueStore={field.value}
+        errorsStore={field.errors}
+        useInput={$form.useField}
+      />
+    {:else if field.el === "textarea"}
+      <!-- More fields go here! -->
+      <Textarea
+        name={field.name}
+        label={field.label}
+        hint={field.hint}
+        attrs={field.attributes}
+        valueStore={field.value}
+        errorsStore={field.errors}
+        useInput={$form.useField}
+      />
+    {/if}
+  </div>
+{/if}

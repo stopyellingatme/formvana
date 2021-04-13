@@ -84,6 +84,7 @@ export class FieldConfig {
    * This allows us a more flexible dynamic field generator.
    */
   el: string | SvelteComponent;
+
   label?: string;
   type: string = "text"; // Defaults to text, for now
   required: boolean = false;
@@ -107,7 +108,7 @@ export class FieldConfig {
    * We're mainly looking for the class-validator "constraints"
    * One ValidationError object can have multiple errors (constraints)
    */
-  errors: Writable<ValidationError> = writable(null);
+  errors: Writable<ValidationError | null> = writable(null);
 
   /**
    * * JSON of things like:

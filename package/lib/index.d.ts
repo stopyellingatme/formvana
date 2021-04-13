@@ -1,6 +1,7 @@
 import { ValidationError } from "class-validator";
 import { Writable } from "svelte/store";
 import { ValidatorOptions } from "class-validator/types";
+declare module "*.svelte";
 interface FieldGroup {
     name: string;
     classnames?: string[]; // Order determines when to be applied
@@ -31,7 +32,7 @@ declare class FieldConfig {
      * el can be either String or Svelte Component.
      * This allows us a more flexible dynamic field generator.
      */
-    el: string;
+    el: string | SvelteComponent;
     label?: string;
     type: string; // Defaults to text, for now
     required: boolean;
@@ -51,7 +52,7 @@ declare class FieldConfig {
      * We're mainly looking for the class-validator "constraints"
      * One ValidationError object can have multiple errors (constraints)
      */
-    errors: Writable<ValidationError>;
+    errors: Writable<ValidationError | null>;
     /**
      * * JSON of things like:
      * -- disabled
@@ -70,6 +71,9 @@ declare class FieldConfig {
     clearErrors: () => void;
     clear: () => void;
 }
+/**
+ * TODO: Define strict types for FieldConfig
+ */
 /**
  * Determines which events to validate/clear validation, on.
  * And, you can bring your own event listeners just by adding one on
@@ -121,6 +125,7 @@ interface RefDataItem {
     label: string;
     value: any;
 }
+type RefData<T extends Record<string, RefDataItem[]>> = {};
 /**
  * Formvana - Form Class
  * Form is NOT valid, initially.
@@ -133,7 +138,7 @@ interface RefDataItem {
  *
  *
  * Recommended Use:
- *  - Initialize let form = new Form({model: MODEL, refs: REFS, template: TEMPLATE, etc.})
+ *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
  *  - Set the model (if you didn't in the first step)
  *  - Attach reference data (if you didn't in the first step)
  *  - Storify the form - check example.form.ts for an example
@@ -152,8 +157,8 @@ interface RefDataItem {
  * TODO: Break up form properties and functions (FormProperties & FormApi)
  * TODO: Add a changes (value changes) observable
  */
-declare class Form<MType> {
-    constructor(model: MType, init?: Partial<Form<MType>>);
+declare class Form {
+    constructor(model: any, init?: Partial<Form>);
     //#region ** Fields **
     //#region Core Functionality Fields
     /**
@@ -257,12 +262,10 @@ declare class Form<MType> {
     //#region ** External Methods **
     //#region - Form Setup
     /**
-     * This is the first method that was written for formvana :)
-     *
      * Build the field configs from this.model using metadata-reflection.
      * More comments inside...
      */
-    buildFields: () => void;
+    private buildFields;
     /**
      * MUST BE ATTACHED TO SAME ELEMENT WITH FIELD.NAME!
      * MUST BE ATTACHED TO SAME ELEMENT WITH FIELD.NAME!
@@ -292,7 +295,7 @@ declare class Form<MType> {
      *
      * Check example.form.ts for an example use case.
      */
-    loadData: (data: any, freshModel?: boolean, updateInitialState?: boolean) => Form<MType>;
+    loadData: (data: any, freshModel?: boolean, updateInitialState?: boolean) => Form;
     /**
      * Just pass in the reference data and let the field configs do the rest.
      *
@@ -310,7 +313,7 @@ declare class Form<MType> {
     /**
      * If wanna invalidate a specific field for any reason.
      */
-    invalidateField: (field_name: string, message: string) => void;
+    invalidateField: (field_name: string, message?: string) => void;
     //#endregion
     //#region - Styling
     /**
@@ -330,16 +333,6 @@ declare class Form<MType> {
      * Leftover fields are appended to bottom of form.
      */
     setOrder: (order: string[]) => void;
-    //#endregion
-    //#region - Utility Methods
-    // Get Field by name
-    get: (fieldName: string) => FieldConfig;
-    /**
-     * Generate a Svelte Store from the current "this".
-     */
-    storify: () => Writable<Form<MType>>;
-    // Clear ALL the errors.
-    clearErrors: () => void;
     /**
      * Hide a field or fields
      * @param names? string | string[]
@@ -350,6 +343,16 @@ declare class Form<MType> {
      * @param names? string | string[]
      */
     disableFields: (names?: string | string[]) => void;
+    //#endregion
+    //#region - Utility Methods
+    // Get Field by name
+    get: (fieldName: string) => FieldConfig;
+    /**
+     * Generate a Svelte Store from the current "this".
+     */
+    storify: () => Writable<Form>;
+    // Clear ALL the errors.
+    clearErrors: () => void;
     /**
      *! Make sure to call this when the component is unloaded/destroyed
      * Removes all event listeners and clears the form state.
@@ -372,24 +375,12 @@ declare class Form<MType> {
      */
     private validateField;
     private handleValidation;
-    /**
-     * TODO: Clean up this arfv implementation. Seems too clunky.
-     *
-     * Check if there are any required fields in the errors.
-     * If there are no required fields in the errors, the form is valid
-     */
-    private requiredFieldsValid;
-    private clearFieldErrors;
     //#endregion
     //#region - Styling
     /**
      * Using this.field_order, rearrange the order of the fields.
      */
     private createOrder;
-    private _hideFields;
-    private _hideField;
-    private _disableFields;
-    private _disableField;
     //#endregion
     //#region - Form State
     // Clears everything before being destoryed.
@@ -404,27 +395,81 @@ declare class Form<MType> {
      * But it resets the form to it's initial state.
      */
     private resetState;
-    // Returns a string of the current state
-    private getStateSnapshot;
-    /**
-     * Is the current form state different than the initial state?
-     *
-     * I've tested it with > 1000 fields in a single class with very slight input lag.
-     */
-    private hasChanged;
-    //#endregion
-    //#region - Linking Utilities
-    // Link values from FIELDS toMODEL or MODEL to FIELDS
-    private linkValues;
-    private linkFieldErrors;
-    private linkErrors;
-    //#endregion
-    //#region - HTML Node Helpers
-    private attachOnValidateEvents;
-    private attachOnClearErrorEvents;
 }
 declare function editable(target: any, propertyKey: string): void;
 declare function field(config: Partial<FieldConfig>): (target: any, propertyKey: string) => void;
+//#region Utility Functions
+// Get the form field by name
+declare function _get(name: string, fields: FieldConfig[]): FieldConfig;
+/**
+ *
+ * Build the field configs from this.model using metadata-reflection.
+ * More comments inside...
+ */
+declare function _buildFormFields(model: any): FieldConfig[];
+declare function _getRequiredFieldNames(fields: FieldConfig[]): string[];
+//#endregion
+//#region HTML Event Helpers
+declare function _attachOnValidateEvents(node: HTMLElement, field: FieldConfig, validate_on_events: OnEvents, validationCb: Function): void;
+declare function _attachOnClearErrorEvents(node: HTMLElement, field: FieldConfig, clear_errors_on_events: OnEvents, clearValidationCb?: Function): void;
+//#endregion
+//#region Linking Utilities
+// Link values from FIELDS toMODEL or MODEL to FIELDS
+declare function _linkValues(fromFieldsToModel: boolean, fields: FieldConfig[], model: any): void;
+declare function _linkFieldErrors(errors: ValidationError[], field: FieldConfig): void;
+declare function _linkErrors(errors: ValidationError[], fields: FieldConfig[]): void;
+//#endregion
+//#region Validation Helpers
+/**
+ * TODO: Clean up this arfv implementation. Seems too clunky.
+ *
+ * Check if there are any required fields in the errors.
+ * If there are no required fields in the errors, the form is valid
+ */
+declare function _requiredFieldsValid(errors: ValidationError[], required_fields: string[]): boolean;
+//#endregion
+//#region Form State
+// Returns a string of the current state
+declare function _getStateSnapshot(form: Form, stateful_items: string[]): string;
+/**
+ * Is the current form state different than the initial state?
+ *
+ * I've tested it with > 1000 fields in a single class with very slight input lag.
+ */
+declare function _hasChanged(form: Form, stateful_items: string[], initial_state_str: string): void;
+//#endregion
+//#region - Styling
+/**
+ * Using this.field_order, rearrange the order of the fields.
+ */
+// export function createOrder(): void {
+//   let newLayout = [];
+//   let leftovers = [];
+//   // Loop over the order...
+//   this.field_order.forEach((name) => {
+//     const field = _get(name, this.fields);
+//     // If the field.name and the order name match...
+//     if (
+//       field.name === name ||
+//       (field.group && field.group.name === name) ||
+//       (field.step && `${field.step.index}` === name)
+//     ) {
+//       // Then push it to the fields array
+//       newLayout.push(field);
+//     } else if (
+//       leftovers.indexOf(field) === -1 &&
+//       this.field_order.indexOf(field.name) === -1
+//     ) {
+//       // Field is not in the order, so push it to bottom of order.
+//       leftovers.push(field);
+//     }
+//   });
+//   this.fields = [...newLayout, ...leftovers];
+// }
+declare function _hideFields(hidden_fields: string[], field_names: string[], fields: FieldConfig[]): void;
+declare function _hideField(name: string, fields: FieldConfig[]): void;
+declare function _disableFields(disabled_fields: string[], field_names: string[], fields: FieldConfig[]): void;
+declare function _disableField(name: string, fields: FieldConfig[]): void;
 export * from "./svelte";
-export { FieldGroup, FieldStep, FieldConfig, Form, editable, field, OnEvents, LinkOnEvent, RefDataItem };
+export { FieldGroup, FieldStep, FieldConfig, Form, editable, field, _get, _buildFormFields, _getRequiredFieldNames, _attachOnValidateEvents, _attachOnClearErrorEvents, _linkValues, _linkFieldErrors, _linkErrors, _requiredFieldsValid, _getStateSnapshot, _hasChanged, _hideFields, _hideField, _disableFields, _disableField, OnEvents, LinkOnEvent, RefDataItem, RefData };
 //# sourceMappingURL=index.d.ts.map

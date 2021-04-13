@@ -1,4 +1,5 @@
 import { ValidationError } from "class-validator";
+import { SvelteComponent } from "svelte";
 import { Writable } from "svelte/store";
 export interface FieldGroup {
     name: string;
@@ -29,7 +30,7 @@ export declare class FieldConfig {
      * el can be either String or Svelte Component.
      * This allows us a more flexible dynamic field generator.
      */
-    el: string;
+    el: string | SvelteComponent;
     label?: string;
     type: string;
     required: boolean;
@@ -48,7 +49,7 @@ export declare class FieldConfig {
      * We're mainly looking for the class-validator "constraints"
      * One ValidationError object can have multiple errors (constraints)
      */
-    errors: Writable<ValidationError>;
+    errors: Writable<ValidationError | null>;
     /**
      * * JSON of things like:
      * -- disabled

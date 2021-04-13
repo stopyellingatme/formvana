@@ -27,13 +27,12 @@ const ref_data: Record<string, RefDataItem[]> = {
 
 function initStore() {
   // Just gonna set up the form real quick...
-  let form = new Form(
-    new ExampleModel(),
-    {
+  let form = new Form(new ExampleModel(), {
     // field_order: ["description", "status", "email", "name"],
     template: ExampleTemplate,
     validate_on_events: new OnEvents({ focus: false }),
     refs: ref_data,
+    hidden_fields: ["description_99", "status_97"],
   });
 
   // And add it to the store...
@@ -67,9 +66,9 @@ export const init = () => {
     // get(formState).validate();
   }, 1000);
 
-  // setTimeout(() => {
-  //   get(formState).updateInitialState();
-  // }, 3000);
+  setTimeout(() => {
+    // get(formState).updateInitialState();
+  }, 3000);
 
   /**
    * Update form with backend data

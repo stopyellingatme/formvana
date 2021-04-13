@@ -3,6 +3,21 @@ import { ValidationError, validate, validateOrReject } from "class-validator";
 import { get, writable, Writable } from "svelte/store";
 import { FieldConfig } from ".";
 import { RefDataItem, OnEvents, LinkOnEvent } from "./types";
+import {
+  _buildFormFields,
+  _getRequiredFieldNames,
+  _get,
+  _attachOnValidateEvents,
+  _attachOnClearErrorEvents,
+  _linkFieldErrors,
+  _linkErrors,
+  _linkValues,
+  _requiredFieldsValid,
+  _getStateSnapshot,
+  _hasChanged,
+  _hideFields,
+  _disableFields,
+} from "./common";
 
 /**
  * Formvana - Form Class
@@ -35,8 +50,8 @@ import { RefDataItem, OnEvents, LinkOnEvent } from "./types";
  * TODO: Break up form properties and functions (FormProperties & FormApi)
  * TODO: Add a changes (value changes) observable
  */
-export class Form<MType> {
-  constructor(model: MType, init?: Partial<Form<MType>>) {
+export class Form {
+  constructor(model: any, init?: Partial<Form>) {
     Object.keys(this).forEach((key) => {
       if (init[key]) {
         this[key] = init[key];
@@ -58,6 +73,14 @@ export class Form<MType> {
     // Well well, reference data. Better attach that to the fields.
     if (this.refs) {
       this.attachRefData();
+    }
+
+    if (this.disabled_fields && this.disabled_fields.length > 0) {
+      _disableFields(this.disabled_fields, this.field_names, this.fields);
+    }
+
+    if (this.hidden_fields && this.hidden_fields.length > 0) {
+      _hideFields(this.hidden_fields, this.field_names, this.fields);
     }
 
     // Wait until everything is initalized then set the inital state.
@@ -213,41 +236,15 @@ export class Form<MType> {
   //#region - Form Setup
 
   /**
-   * This is the first method that was written for formvana :)
-   *
    * Build the field configs from this.model using metadata-reflection.
    * More comments inside...
    */
-  buildFields = (): void => {
-    if (this.model) {
-      // Grab the editableProperties from the @editable decorator
-      let props = Reflect.getMetadata("editableProperties", this.model);
-      // Map the @editable fields to the form.fields array.
-      this.fields = props.map((prop) => {
-        // Get the FieldConfig using metadata reflection
-        const field: FieldConfig = new FieldConfig({
-          ...Reflect.getMetadata("fieldConfig", this.model, prop),
-          name: prop,
-        });
-
-        // If the model has a value, attach it to the field config
-        // 0, "", [], etc. are set in the constructor based on type.
-        if (this.model[prop]) {
-          field.value.set(this.model[prop]);
-        }
-
-        // Gotta keep track of the required feilds, for our own validation.
-        if (field.required) {
-          this.required_fields.push(field.name);
-        }
-
-        // We made it. Return the field config and let's generate some inputs!
-        return field;
-      });
-      // Set the field names for faster searching
-      //(instead of mapping the names (potentially) each keystoke)
-      this.field_names = this.fields.map((f) => f.name);
-    }
+  private buildFields = (model = this.model): void => {
+    this.fields = _buildFormFields(model);
+    // Set the field names for faster searching
+    //(instead of mapping the names (potentially) each keystoke)
+    this.field_names = this.fields.map((f) => f.name);
+    this.required_fields = _getRequiredFieldNames(this.fields);
   };
 
   /**
@@ -268,11 +265,16 @@ export class Form<MType> {
   useField = (node: HTMLElement): void => {
     // Attach HTML Node to field so we can remove event listeners later
     //@ts-ignore
-    const f = this.get(node.name);
+    const f = _get(node.name, this.fields);
     f.node = node;
 
-    this.attachOnValidateEvents(node);
-    this.attachOnClearErrorEvents(node);
+    _attachOnValidateEvents(
+      node,
+      f,
+      this.validate_on_events,
+      this.validateField
+    );
+    _attachOnClearErrorEvents(node, f, this.clear_errors_on_events);
   };
 
   /**
@@ -292,7 +294,7 @@ export class Form<MType> {
     data: any,
     freshModel: boolean = true,
     updateInitialState: boolean = true
-  ): Form<MType> => {
+  ): Form => {
     if (freshModel) {
       this.model = data;
       this.buildFields();
@@ -300,7 +302,7 @@ export class Form<MType> {
       Object.keys(this.model).forEach((key) => {
         this.model[key] = data[key];
       });
-      this.linkValues(false);
+      _linkValues(false, this.fields, this.model);
     }
 
     updateInitialState && this.updateInitialState();
@@ -336,8 +338,10 @@ export class Form<MType> {
   validate = (): Promise<ValidationError[]> => {
     this.clearErrors();
     // Link the input from the field to the model.
-    this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
-    this._hideFields(), this._disableFields();
+    this.link_fields_to_model === LinkOnEvent.Always &&
+      _linkValues(true, this.fields, this.model);
+    _hideFields(this.hidden_fields, this.field_names, this.fields),
+      _disableFields(this.disabled_fields, this.field_names, this.fields);
     // Return class-validator validate() function.
     // Validate the model with given validation config.
     return validate(this.model, this.validation_options).then(
@@ -350,8 +354,10 @@ export class Form<MType> {
 
   validateAsync = async (): Promise<void> => {
     this.clearErrors();
-    this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
-    this._hideFields(), this._disableFields();
+    this.link_fields_to_model === LinkOnEvent.Always &&
+      _linkValues(true, this.fields, this.model);
+    _hideFields(this.hidden_fields, this.field_names, this.fields),
+      _disableFields(this.disabled_fields, this.field_names, this.fields);
     try {
       return await validateOrReject(this.model, this.validation_options);
     } catch (errors) {
@@ -364,16 +370,20 @@ export class Form<MType> {
   /**
    * If wanna invalidate a specific field for any reason.
    */
-  invalidateField = (field_name: string, message: string): void => {
-    const field = this.get(field_name),
-      _err = new ValidationError(),
-      err = Object.assign(_err, {
+  invalidateField = (field_name: string, message?: string): void => {
+    const field = _get(field_name, this.fields),
+      _err = new ValidationError();
+    if (!message) {
+      this.validateField(field);
+    } else {
+      const err = Object.assign(_err, {
         property: field_name,
         value: get(field.value),
         constraints: [{ error: message }],
       });
-    this.errors.push(err);
-    this.linkErrors();
+      this.errors.push(err);
+      _linkErrors(this.errors, this.fields);
+    }
   };
 
   //#endregion
@@ -429,30 +439,6 @@ export class Form<MType> {
     this.field_order = order;
     this.createOrder();
   };
-  //#endregion
-
-  //#region - Utility Methods
-
-  // Get Field by name
-  get = (fieldName: string): FieldConfig => {
-    return this.fields.filter((f) => f.name === fieldName)[0];
-  };
-
-  /**
-   * Generate a Svelte Store from the current "this".
-   */
-  storify = (): Writable<Form<MType>> => {
-    const f = writable(this);
-    return f;
-  };
-
-  // Clear ALL the errors.
-  clearErrors = (): void => {
-    this.errors = [];
-    this.fields.forEach((field) => {
-      field.errors.set(null);
-    });
-  };
 
   /**
    * Hide a field or fields
@@ -466,7 +452,7 @@ export class Form<MType> {
         this.hidden_fields.push(names);
       }
     }
-    this._hideFields();
+    _hideFields(this.hidden_fields, this.field_names, this.fields);
   };
 
   /**
@@ -481,7 +467,32 @@ export class Form<MType> {
         this.disabled_fields.push(names);
       }
     }
-    this._disableFields();
+    _disableFields(this.disabled_fields, this.field_names, this.fields);
+  };
+
+  //#endregion
+
+  //#region - Utility Methods
+
+  // Get Field by name
+  get = (fieldName: string): FieldConfig => {
+    return _get(fieldName, this.fields);
+  };
+
+  /**
+   * Generate a Svelte Store from the current "this".
+   */
+  storify = (): Writable<Form> => {
+    const f = writable(this);
+    return f;
+  };
+
+  // Clear ALL the errors.
+  clearErrors = (): void => {
+    this.errors = [];
+    this.fields.forEach((field) => {
+      field.errors.set(null);
+    });
   };
 
   /**
@@ -489,10 +500,9 @@ export class Form<MType> {
    * Removes all event listeners and clears the form state.
    */
   destroy = (): void => {
-    const fields = this.fields;
-    if (fields && fields.length > 0) {
+    if (this.fields && this.fields.length > 0) {
       // For each field...
-      fields.forEach((f) => {
+      this.fields.forEach((f) => {
         // Remove all the event listeners!
         Object.keys(this.validate_on_events).forEach((key) => {
           f.node.removeEventListener(key, (ev) => {
@@ -501,7 +511,7 @@ export class Form<MType> {
         });
         Object.keys(this.clear_errors_on_events).forEach((key) => {
           f.node.removeEventListener(key, (ev) => {
-            this.clearFieldErrors(f);
+            f.errors.set(null);
           });
         });
       });
@@ -544,8 +554,10 @@ export class Form<MType> {
      * We aren't linking (only) the field value.
      * We link all values just in case the field change propigates other field changes.
      */
-    this.link_fields_to_model === LinkOnEvent.Always && this.linkValues(true);
-    this._hideFields(), this._disableFields();
+    this.link_fields_to_model === LinkOnEvent.Always &&
+      _linkValues(true, this.fields, this.model);
+    _hideFields(this.hidden_fields, this.field_names, this.fields),
+      _disableFields(this.disabled_fields, this.field_names, this.fields);
 
     // Return class-validator validate() function.
     // Validate the model with given validation config.
@@ -567,17 +579,14 @@ export class Form<MType> {
       // Are we validating the whole form or just the fields?
       if (field) {
         // Link errors to field (to show validation errors)
-        this.linkFieldErrors(errors, field);
+        _linkFieldErrors(errors, field);
       } else {
         // This is validatino for the whole form!
-        this.linkErrors(errors);
+        _linkErrors(errors, this.fields);
       }
 
-      // TODO: Clean up this arfv implementation. Seems too clunky.
-      // All required fields valid (arfv)
-      const arfv = this.requiredFieldsValid(errors);
-
-      if (arfv) {
+      // All required fields are valid?
+      if (_requiredFieldsValid(errors, this.required_fields)) {
         this.valid.set(true);
       } else {
         this.valid.set(false);
@@ -587,40 +596,14 @@ export class Form<MType> {
 
       // If the config tells us to link the values only when the form
       // is valid, then link them here.
-      this.link_fields_to_model === LinkOnEvent.Valid && this.linkValues(true);
+      this.link_fields_to_model === LinkOnEvent.Valid &&
+        _linkValues(true, this.fields, this.model);
+
       this.valid.set(true); // Form is valid!
       this.clearErrors(); // Clear form errors
     }
     // Check for changes
-    this.hasChanged();
-  };
-
-  /**
-   * TODO: Clean up this arfv implementation. Seems too clunky.
-   *
-   * Check if there are any required fields in the errors.
-   * If there are no required fields in the errors, the form is valid
-   */
-  private requiredFieldsValid = (errors: ValidationError[]): boolean => {
-    if (errors.length === 0) return true;
-    // Go ahead and return if there are no errors
-    let i = 0,
-      len = this.required_fields.length;
-    // If there are no required fields, just go ahead and return
-    if (len === 0) return true;
-    // Otherwise we have to map the names of the errors so we can
-    // check if they're for a required field
-    const errs = errors.map((e) => e.property);
-    for (; len > i; ++i) {
-      if (errs.includes(this.required_fields[i])) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  private clearFieldErrors = (field: FieldConfig): void => {
-    field.errors.set(null);
+    _hasChanged(this, this.stateful_items, this.initial_state_str);
   };
 
   //#endregion
@@ -635,7 +618,7 @@ export class Form<MType> {
     let leftovers = [];
     // Loop over the order...
     this.field_order.forEach((name) => {
-      const field = this.get(name);
+      const field = _get(name, this.fields);
       // If the field.name and the order name match...
       if (
         field.name === name ||
@@ -654,44 +637,6 @@ export class Form<MType> {
     });
     this.fields = [...newLayout, ...leftovers];
   };
-
-  private _hideFields = () => {
-    let i = 0,
-      len = this.hidden_fields.length;
-    if (len === 0) return;
-    for (; len > i; ++i) {
-      const field = this.hidden_fields[i],
-        field_index = this.field_names.indexOf(field);
-      if (field_index !== -1) {
-        this._hideField(this.field_names[i]);
-      }
-    }
-  };
-
-  private _hideField = (name: string) => {
-    const f = this.get(name);
-    f.hidden = true;
-  };
-
-  private _disableFields = () => {
-    let i = 0,
-      len = this.disabled_fields.length;
-    if (len === 0) return;
-    for (; len > i; ++i) {
-      const field = this.disabled_fields[i],
-        field_index = this.field_names.indexOf(field);
-      if (field_index !== -1) {
-        this._disableField(this.field_names[i]);
-      }
-    }
-  };
-
-  private _disableField = (name: string) => {
-    const f = this.get(name);
-    f.disabled = true;
-    f.attributes["disabled"] = true;
-  };
-
   //#endregion
 
   //#region - Form State
@@ -749,7 +694,7 @@ export class Form<MType> {
         });
         // If this.errors is not empty then attach the errors to the fields
         if (this.errors && this.errors.length > 0) {
-          this.linkErrors();
+          _linkErrors(this.errors, this.fields);
         }
       } else if (key === "model") {
         /**
@@ -766,141 +711,13 @@ export class Form<MType> {
         Object.keys(this[key]).forEach((mkey) => {
           this[key][mkey] = model_state[mkey];
         });
-        this.linkValues(false);
+        _linkValues(false, this.fields, this.model);
       } else {
         this[key] = JSON.parse(JSON.stringify(this.initial_state[key]));
       }
     });
   };
 
-  // Returns a string of the current state
-  private getStateSnapshot = (): string => {
-    let i = 0,
-      len = this.stateful_items.length,
-      result = {};
-    for (; len > i; ++i) {
-      const item = this.stateful_items[i];
-      result[item] = this[item];
-    }
-    return JSON.stringify(result);
-  };
-
-  /**
-   * Is the current form state different than the initial state?
-   *
-   * I've tested it with > 1000 fields in a single class with very slight input lag.
-   */
-  private hasChanged = (): void => {
-    const state = this.getStateSnapshot();
-
-    if (state === this.initial_state_str) {
-      this.changed.set(false);
-      return;
-    }
-    this.changed.set(true);
-  };
-
-  //#endregion
-
-  //#region - Linking Utilities
-
-  // Link values from FIELDS toMODEL or MODEL to FIELDS
-  private linkValues = (fromFieldsToModel: boolean): void => {
-    // Still the fastest way i've seen to loop in JS.
-    let i = 0,
-      len = this.fields.length;
-    for (; len > i; ++i) {
-      // Get name and value of the field
-      const name = this.fields[i].name,
-        val = this.fields[i].value;
-      if (fromFieldsToModel) {
-        // Link field values to the model
-        this.model[name] = get(val);
-      } else {
-        // Link model values to the fields
-        val.set(this.model[name]);
-      }
-    }
-  };
-
-  private linkFieldErrors = (
-    errors: ValidationError[],
-    field: FieldConfig
-  ): void => {
-    const error = errors.filter((e) => e.property === field.name);
-    // Check if there's an error for the field
-    if (error && error.length > 0) {
-      field.errors.set(error[0]);
-    } else {
-      field.errors.set(null);
-    }
-  };
-
-  private linkErrors = (errors: ValidationError[] = this.errors): void => {
-    errors.forEach((err) => {
-      const f = this.get(err.property);
-      f.errors.set(err);
-    });
-  };
-
-  //#endregion
-
-  //#region - HTML Node Helpers
-
-  private attachOnValidateEvents = (node: HTMLElement): void => {
-    // Get the field, for passing to the validateField func
-    //@ts-ignore
-    const field = this.get(node.name);
-
-    Object.entries(this.validate_on_events).forEach(
-      ([eventName, shouldListen]) => {
-        // If shouldListen true, then add the event listener
-        // If the field has options, we can assume it will use the change event listener
-        if (field.options) {
-          // so don't add the input event listener
-          if (shouldListen && eventName !== "input") {
-            node.addEventListener(
-              eventName,
-              (ev) => {
-                this.validateField(field);
-              },
-              false
-            );
-          }
-        }
-        // Else, we can assume it will use the input event listener
-        // * This may be changed in the future
-        else {
-          // and don't add the change event listener
-          if (shouldListen && eventName !== "change") {
-            node.addEventListener(
-              eventName,
-              (ev) => {
-                this.validateField(field);
-              },
-              false
-            );
-          }
-        }
-      }
-    );
-  };
-
-  private attachOnClearErrorEvents = (node: HTMLElement): void => {
-    //@ts-ignore
-    const field = this.get(node.name);
-
-    Object.entries(this.clear_errors_on_events).forEach(
-      ([eventName, shouldListen]) => {
-        // If the OnEvent is true, then add the event listener
-        if (shouldListen) {
-          node.addEventListener(eventName, (ev) => {
-            this.clearFieldErrors(field);
-          });
-        }
-      }
-    );
-  };
   //#endregion
 
   //#endregion ^^ Internal Methods ^^

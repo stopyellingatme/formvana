@@ -1,4 +1,8 @@
 /**
+ * TODO: Define strict types for FieldConfig
+ */
+
+/**
  * Determines which events to validate/clear validation, on.
  * And, you can bring your own event listeners just by adding one on
  * the init.
@@ -59,4 +63,8 @@ export enum LinkOnEvent {
 export interface RefDataItem {
   label: string;
   value: any;
+}
+
+export type RefData<T extends Record<string, RefDataItem[]>> = {
+	
 }

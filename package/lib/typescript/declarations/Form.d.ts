@@ -2,7 +2,7 @@ import { ValidatorOptions } from "class-validator/types";
 import { ValidationError } from "class-validator";
 import { Writable } from "svelte/store";
 import { FieldConfig } from ".";
-import { RefDataItem, OnEvents, LinkOnEvent } from "./common";
+import { RefDataItem, OnEvents, LinkOnEvent } from "./types";
 /**
  * Formvana - Form Class
  * Form is NOT valid, initially.
@@ -15,7 +15,7 @@ import { RefDataItem, OnEvents, LinkOnEvent } from "./common";
  *
  *
  * Recommended Use:
- *  - Initialize let form = new Form({model: MODEL, refs: REFS, template: TEMPLATE, etc.})
+ *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
  *  - Set the model (if you didn't in the first step)
  *  - Attach reference data (if you didn't in the first step)
  *  - Storify the form - check example.form.ts for an example
@@ -27,15 +27,15 @@ import { RefDataItem, OnEvents, LinkOnEvent } from "./common";
  *
  * Performance is blazing with < 500 fields.
  * Can render up to 2000 inputs in one class, but don't do that.
- * Just break it up into 100 or so fields per form (max-ish) if its a huge form.
+ * Just break it up into 100 or so fields per form (max 250) if its a huge form.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
  * TODO: what if they want to add their own event listeners (on specific fields)?
  * TODO: Break up form properties and functions (FormProperties & FormApi)
  * TODO: Add a changes (value changes) observable
  */
-export declare class Form<MType> {
-    constructor(model: MType, init?: Partial<Form<MType>>);
+export declare class Form {
+    constructor(model: any, init?: Partial<Form>);
     /**
      * This is your form Model/Schema.
      * TODO: Definite candidate for Mapped Type
@@ -125,12 +125,10 @@ export declare class Form<MType> {
      */
     private required_fields;
     /**
-     * This is the first method that was written for formvana :)
-     *
      * Build the field configs from this.model using metadata-reflection.
      * More comments inside...
      */
-    buildFields: () => void;
+    private buildFields;
     /**
      * MUST BE ATTACHED TO SAME ELEMENT WITH FIELD.NAME!
      * MUST BE ATTACHED TO SAME ELEMENT WITH FIELD.NAME!
@@ -160,7 +158,7 @@ export declare class Form<MType> {
      *
      * Check example.form.ts for an example use case.
      */
-    loadData: (data: any, freshModel?: boolean, updateInitialState?: boolean) => Form<MType>;
+    loadData: (data: any, freshModel?: boolean, updateInitialState?: boolean) => Form;
     /**
      * Just pass in the reference data and let the field configs do the rest.
      *
@@ -176,7 +174,7 @@ export declare class Form<MType> {
     /**
      * If wanna invalidate a specific field for any reason.
      */
-    invalidateField: (field_name: string, message: string) => void;
+    invalidateField: (field_name: string, message?: string) => void;
     /**
      * * Use this if you're trying to update the layout after initialization.
      * Similar to this.setOrder()
@@ -194,12 +192,6 @@ export declare class Form<MType> {
      * Leftover fields are appended to bottom of form.
      */
     setOrder: (order: string[]) => void;
-    get: (fieldName: string) => FieldConfig;
-    /**
-     * Generate a Svelte Store from the current "this".
-     */
-    storify: () => Writable<Form<MType>>;
-    clearErrors: () => void;
     /**
      * Hide a field or fields
      * @param names? string | string[]
@@ -210,6 +202,12 @@ export declare class Form<MType> {
      * @param names? string | string[]
      */
     disableFields: (names?: string | string[]) => void;
+    get: (fieldName: string) => FieldConfig;
+    /**
+     * Generate a Svelte Store from the current "this".
+     */
+    storify: () => Writable<Form>;
+    clearErrors: () => void;
     /**
      *! Make sure to call this when the component is unloaded/destroyed
      * Removes all event listeners and clears the form state.
@@ -225,21 +223,9 @@ export declare class Form<MType> {
     private validateField;
     private handleValidation;
     /**
-     * TODO: Clean up this arfv implementation. Seems too clunky.
-     *
-     * Check if there are any required fields in the errors.
-     * If there are no required fields in the errors, the form is valid
-     */
-    private requiredFieldsValid;
-    private clearFieldErrors;
-    /**
      * Using this.field_order, rearrange the order of the fields.
      */
     private createOrder;
-    private _hideFields;
-    private _hideField;
-    private _disableFields;
-    private _disableField;
     private clearState;
     /**
      * Grab a snapshot of several items that generally define the state of the form
@@ -251,16 +237,4 @@ export declare class Form<MType> {
      * But it resets the form to it's initial state.
      */
     private resetState;
-    private getStateSnapshot;
-    /**
-     * Is the current form state different than the initial state?
-     *
-     * I've tested it with > 1000 fields in a single class with very slight input lag.
-     */
-    private hasChanged;
-    private linkValues;
-    private linkFieldErrors;
-    private linkErrors;
-    private attachOnValidateEvents;
-    private attachOnClearErrorEvents;
 }
