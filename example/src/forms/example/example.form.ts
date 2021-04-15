@@ -30,7 +30,7 @@ function initStore() {
   let form = new Form(new ExampleModel(), {
     // field_order: ["description", "status", "email", "name"],
     template: ExampleTemplate,
-    validate_on_events: new OnEvents({ focus: false }),
+    on_events: new OnEvents({ focus: false }),
     refs: ref_data,
     hidden_fields: ["description_99", "status_97"],
   });

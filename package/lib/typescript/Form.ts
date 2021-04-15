@@ -7,7 +7,7 @@ import {
   _buildFormFields,
   _getRequiredFieldNames,
   _get,
-  _attachOnValidateEvents,
+  _attachEventListeners,
   _attachOnClearErrorEvents,
   _linkFieldErrors,
   _linkErrors,
@@ -17,6 +17,13 @@ import {
   _hasChanged,
   _hideFields,
   _disableFields,
+  _createOrder,
+  _clearState,
+  _setInitialState,
+  _resetState,
+  _handleValidation,
+  _handleOnEvent,
+  _validateField,
 } from "./common";
 
 /**
@@ -46,7 +53,7 @@ import {
  * Just break it up into 100 or so fields per form (max 250) if its a huge form.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
- * TODO: what if they want to add their own event listeners (on specific fields)?
+ * TODO: decouple class-validator as to allow validation to be plugin based
  * TODO: Break up form properties and functions (FormProperties & FormApi)
  * TODO: Add a changes (value changes) observable
  */
@@ -84,7 +91,12 @@ export class Form {
     }
 
     // Wait until everything is initalized then set the inital state.
-    this.setInitialState();
+    _setInitialState(
+      this,
+      this.stateful_items,
+      this.initial_state,
+      this.initial_state_str
+    );
   }
 
   //#region ** Fields **
@@ -162,8 +174,11 @@ export class Form {
   hidden_fields: string[] = [];
   disabled_fields: string[] = [];
 
-  // Which events should the form be validated on?
-  readonly validate_on_events: OnEvents = new OnEvents();
+  /**
+   * Which events should the form do things on?
+   * (validate, link values, hide/disable fields)
+   */
+  readonly on_events: OnEvents = new OnEvents();
   // Which events should we clear the field errors on?
   readonly clear_errors_on_events: OnEvents = new OnEvents({}, true);
 
@@ -204,7 +219,7 @@ export class Form {
    * Shove the stateful_items into the inital state for a decent snapshot.
    */
   private initial_state: any = {};
-  private initial_state_str: string = null;
+  private initial_state_str: string = "";
   private stateful_items = [
     "valid",
     "touched",
@@ -231,13 +246,12 @@ export class Form {
 
   //#endregion ^^ Fields ^^
 
-  //#region ** External Methods **
+  //#region ** Form API **
 
   //#region - Form Setup
 
   /**
-   * Build the field configs from this.model using metadata-reflection.
-   * More comments inside...
+   * Build the field configs via this.model using metadata-reflection.
    */
   private buildFields = (model = this.model): void => {
     this.fields = _buildFormFields(model);
@@ -248,9 +262,7 @@ export class Form {
   };
 
   /**
-   * MUST BE ATTACHED TO SAME ELEMENT WITH FIELD.NAME!
-   * MUST BE ATTACHED TO SAME ELEMENT WITH FIELD.NAME!
-   * MUST BE ATTACHED TO SAME ELEMENT WITH FIELD.NAME!
+   * ATTACH TO SAME ELEMENT AS FIELD.NAME!
    *
    * Use on the element that will be interacted with.
    * e.g. <input/> -- <button/> -- <select/> -- etc.
@@ -261,6 +273,8 @@ export class Form {
    * This is for Svelte's "use:FUNCTION" feature.
    * The "use" directive passes the HTML Node as a parameter
    * to the given function (e.g. use:useField(node: HTMLNode)).
+   *
+   * TODO: Create new Type that has/adds/includes node.name
    */
   useField = (node: HTMLElement): void => {
     // Attach HTML Node to field so we can remove event listeners later
@@ -268,20 +282,26 @@ export class Form {
     const f = _get(node.name, this.fields);
     f.node = node;
 
-    _attachOnValidateEvents(
-      node,
-      f,
-      this.validate_on_events,
-      this.validateField
+    _attachEventListeners(f, this.on_events, (e: Event) =>
+      _handleOnEvent(
+        this,
+        this.required_fields,
+        this.stateful_items,
+        this.initial_state_str,
+        this.field_names,
+        f
+      )
     );
-    _attachOnClearErrorEvents(node, f, this.clear_errors_on_events);
+    _attachOnClearErrorEvents(node, this.clear_errors_on_events, (e: Event) => {
+      f.errors.set(null);
+    });
   };
 
   /**
    * Load new data into the form and build the fields.
    * Useful if you fetched data and need to update the form values.
    *
-   * Fresh defaults to True. So the default is to pass in a new instance
+   * ReInit defaults to True. So the default is to pass in a new instance
    * of the model (e.g. new ExampleMode(incoming_data)).
    * If fresh is False then the incoming_data will be serialized into
    * the model.
@@ -292,10 +312,10 @@ export class Form {
    */
   loadData = (
     data: any,
-    freshModel: boolean = true,
-    updateInitialState: boolean = true
+    re_init: boolean = true,
+    update_initial_state: boolean = true
   ): Form => {
-    if (freshModel) {
+    if (re_init) {
       this.model = data;
       this.buildFields();
     } else {
@@ -305,7 +325,7 @@ export class Form {
       _linkValues(false, this.fields, this.model);
     }
 
-    updateInitialState && this.updateInitialState();
+    update_initial_state && this.updateInitialState();
 
     return this;
   };
@@ -327,6 +347,22 @@ export class Form {
       });
     }
   };
+
+  addEventListenerToFields = (
+    event: keyof HTMLElementEventMap,
+    callback: Function,
+    field_names: string | string[]
+  ): void => {
+    if (Array.isArray(field_names)) {
+      const fields = field_names.map((f) => _get(f, this.fields));
+      fields.forEach((f) => {
+        f.node.addEventListener(event, (e) => callback(e), false);
+      });
+    } else {
+      const field = _get(field_names, this.fields);
+      field.node.addEventListener(event, (e) => callback(e), false);
+    }
+  };
   //#endregion
 
   //#region - Validation
@@ -346,7 +382,7 @@ export class Form {
     // Validate the model with given validation config.
     return validate(this.model, this.validation_options).then(
       (errors: ValidationError[]) => {
-        this.handleValidation(errors);
+        _handleValidation(this, errors, this.required_fields);
         return errors;
       }
     );
@@ -361,26 +397,26 @@ export class Form {
     try {
       return await validateOrReject(this.model, this.validation_options);
     } catch (errors) {
-      this.handleValidation(errors);
+      _handleValidation(this, errors, this.required_fields);
       // console.log("Errors: ", errors);
       return errors;
     }
   };
 
   /**
-   * If wanna invalidate a specific field for any reason.
+   * If want to (in)validate a specific field for any reason.
    */
-  invalidateField = (field_name: string, message?: string): void => {
-    const field = _get(field_name, this.fields),
-      _err = new ValidationError();
+  validateField = (field_name: string, message?: string): void => {
+    const field = _get(field_name, this.fields);
     if (!message) {
-      this.validateField(field);
+      _validateField(this, field, this.required_fields);
     } else {
-      const err = Object.assign(_err, {
-        property: field_name,
-        value: get(field.value),
-        constraints: [{ error: message }],
-      });
+      const _err = new ValidationError(),
+        err = Object.assign(_err, {
+          property: field_name,
+          value: get(field.value),
+          constraints: [{ error: message }],
+        });
       this.errors.push(err);
       _linkErrors(this.errors, this.fields);
     }
@@ -388,46 +424,86 @@ export class Form {
 
   //#endregion
 
-  //#region - Styling
+  //#region - Utility Methods
+
+  // Get Field by name
+  get = (field_name: string): FieldConfig => {
+    return _get(field_name, this.fields);
+  };
 
   /**
-   * * Use this if you're trying to update the layout after initialization.
-   * Similar to this.setOrder()
-   *
-   * Like this:
-   * const layout = ["description", "status", "email", "name"];
-   * const newState = sget(formState).buildStoredLayout(formState, layout);
-   * formState.updateState({ ...newState });
+   * Generate a Svelte Store from the current "this".
    */
-  buildStoredLayout = (
-    formState: Writable<any>,
-    order: string[]
-  ): Writable<any> => {
-    let fields = [];
-    let leftovers = [];
-    // Update the order
-    formState.update((state) => (state.field_order = order));
-    // Get the Form state
-    const state = get(formState);
-    state.field_order.forEach((item) => {
-      state.fields.forEach((field) => {
-        if (
-          field.name === item ||
-          (field.group && field.group.name === item) ||
-          (field.step && `${field.step.index}` === item)
-        ) {
-          fields.push(field);
-        } else if (
-          leftovers.indexOf(field) === -1 &&
-          state.field_order.indexOf(field.name) === -1
-        ) {
-          leftovers.push(field);
-        }
-      });
-    });
-    state.fields = [...fields, ...leftovers];
-    return state;
+  storify = (): Writable<Form> => {
+    const f = writable(this);
+    return f;
   };
+
+  // Clear ALL the errors.
+  clearErrors = (): void => {
+    this.errors = [];
+    this.fields.forEach((f) => {
+      f.errors.set(null);
+    });
+  };
+
+  /**
+   *! Make sure to call this when the component is unloaded/destroyed
+   * Removes all event listeners and clears the form state.
+   */
+  destroy = (): void => {
+    if (this.fields && this.fields.length > 0) {
+      // For each field...
+      this.fields.forEach((f) => {
+        // Remove all the event listeners!
+        Object.keys(this.on_events).forEach((key) => {
+          f.node.removeEventListener(key, (ev) => {
+            (e) =>
+              _handleOnEvent(
+                this,
+                this.required_fields,
+                this.stateful_items,
+                this.initial_state_str,
+                this.field_names,
+                f
+              );
+            // this.validateField(f);
+          });
+        });
+        Object.keys(this.clear_errors_on_events).forEach((key) => {
+          f.node.removeEventListener(key, (e) => {
+            f.errors.set(null);
+          });
+        });
+      });
+    }
+    // Reset everything else.
+    _clearState(this, this.initial_state, this.required_fields);
+  };
+
+  //#endregion
+
+  //#region - Form State
+
+  // Resets to the inital state of the form.
+  reset = (): void => {
+    _resetState(this, this.stateful_items, this.initial_state);
+  };
+
+  // Well, this updates the initial state of the form.
+  updateInitialState = (): void => {
+    _setInitialState(
+      this,
+      this.stateful_items,
+      this.initial_state,
+      this.initial_state_str
+    );
+    this.changed.set(false);
+  };
+
+  //#endregion
+
+  //#region - Styling
 
   /**
    * Set the field order.
@@ -437,7 +513,7 @@ export class Form {
    */
   setOrder = (order: string[]): void => {
     this.field_order = order;
-    this.createOrder();
+    this.fields = _createOrder(this.field_order, this.fields);
   };
 
   /**
@@ -472,253 +548,5 @@ export class Form {
 
   //#endregion
 
-  //#region - Utility Methods
-
-  // Get Field by name
-  get = (fieldName: string): FieldConfig => {
-    return _get(fieldName, this.fields);
-  };
-
-  /**
-   * Generate a Svelte Store from the current "this".
-   */
-  storify = (): Writable<Form> => {
-    const f = writable(this);
-    return f;
-  };
-
-  // Clear ALL the errors.
-  clearErrors = (): void => {
-    this.errors = [];
-    this.fields.forEach((field) => {
-      field.errors.set(null);
-    });
-  };
-
-  /**
-   *! Make sure to call this when the component is unloaded/destroyed
-   * Removes all event listeners and clears the form state.
-   */
-  destroy = (): void => {
-    if (this.fields && this.fields.length > 0) {
-      // For each field...
-      this.fields.forEach((f) => {
-        // Remove all the event listeners!
-        Object.keys(this.validate_on_events).forEach((key) => {
-          f.node.removeEventListener(key, (ev) => {
-            this.validateField(f);
-          });
-        });
-        Object.keys(this.clear_errors_on_events).forEach((key) => {
-          f.node.removeEventListener(key, (ev) => {
-            f.errors.set(null);
-          });
-        });
-      });
-    }
-    // Reset everything else.
-    this.clearState();
-  };
-
-  //#endregion
-
-  //#region - Form State
-
-  // Resets to the inital state of the form.
-  reset = (): void => {
-    this.resetState();
-  };
-
-  // Well, this updates the initial state of the form.
-  updateInitialState = (): void => {
-    this.setInitialState();
-    this.changed.set(false);
-  };
-
-  //#endregion
-
-  //#endregion ^^ External Methods ^^
-
-  //#region ** Internal Methods **
-
-  //#region - Validation
-
-  /**
-   * Validate the field!
-   * This is  attached to the field:
-   * useField -> attachOnValidateEvents(node) ->  validateField
-   */
-  private validateField = (field: FieldConfig): Promise<void> => {
-    /**
-     * Link the input from the field to the model.
-     * We aren't linking (only) the field value.
-     * We link all values just in case the field change propigates other field changes.
-     */
-    this.link_fields_to_model === LinkOnEvent.Always &&
-      _linkValues(true, this.fields, this.model);
-    _hideFields(this.hidden_fields, this.field_names, this.fields),
-      _disableFields(this.disabled_fields, this.field_names, this.fields);
-
-    // Return class-validator validate() function.
-    // Validate the model with given validation config.
-    return validate(this.model, this.validation_options).then(
-      (errors: ValidationError[]) => {
-        this.handleValidation(errors, field);
-      }
-    );
-  };
-
-  private handleValidation = (
-    errors: ValidationError[],
-    field?: FieldConfig
-  ): void => {
-    // There are errors!
-    if (errors.length > 0) {
-      this.errors = errors;
-
-      // Are we validating the whole form or just the fields?
-      if (field) {
-        // Link errors to field (to show validation errors)
-        _linkFieldErrors(errors, field);
-      } else {
-        // This is validatino for the whole form!
-        _linkErrors(errors, this.fields);
-      }
-
-      // All required fields are valid?
-      if (_requiredFieldsValid(errors, this.required_fields)) {
-        this.valid.set(true);
-      } else {
-        this.valid.set(false);
-      }
-    } else {
-      // We can't get here unless the errors we see are for non-required fields
-
-      // If the config tells us to link the values only when the form
-      // is valid, then link them here.
-      this.link_fields_to_model === LinkOnEvent.Valid &&
-        _linkValues(true, this.fields, this.model);
-
-      this.valid.set(true); // Form is valid!
-      this.clearErrors(); // Clear form errors
-    }
-    // Check for changes
-    _hasChanged(this, this.stateful_items, this.initial_state_str);
-  };
-
-  //#endregion
-
-  //#region - Styling
-
-  /**
-   * Using this.field_order, rearrange the order of the fields.
-   */
-  private createOrder = (): void => {
-    let newLayout = [];
-    let leftovers = [];
-    // Loop over the order...
-    this.field_order.forEach((name) => {
-      const field = _get(name, this.fields);
-      // If the field.name and the order name match...
-      if (
-        field.name === name ||
-        (field.group && field.group.name === name) ||
-        (field.step && `${field.step.index}` === name)
-      ) {
-        // Then push it to the fields array
-        newLayout.push(field);
-      } else if (
-        leftovers.indexOf(field) === -1 &&
-        this.field_order.indexOf(field.name) === -1
-      ) {
-        // Field is not in the order, so push it to bottom of order.
-        leftovers.push(field);
-      }
-    });
-    this.fields = [...newLayout, ...leftovers];
-  };
-  //#endregion
-
-  //#region - Form State
-
-  // Clears everything before being destoryed.
-  private clearState = (): void => {
-    this.model = null;
-    this.initial_state = {};
-    this.required_fields = [];
-    this.refs = null;
-    this.template = null;
-  };
-
-  /**
-   * Grab a snapshot of several items that generally define the state of the form
-   * and serialize them into a format that's easy-ish to check/deserialize (for resetting)
-   */
-  private setInitialState = (): void => {
-    /**
-     * This is the best method for reliable deep-ish cloning that I've found.
-     * If you know a BETTER way, be my guest. No extra dependencies please.
-     */
-    this.stateful_items.forEach((key) => {
-      if (key === "valid" || key === "touched" || key === "changed") {
-        get(this[key])
-          ? (this.initial_state[key] = writable(true))
-          : (this.initial_state[key] = writable(false));
-      } else {
-        this.initial_state[key] = JSON.parse(JSON.stringify(this[key]));
-      }
-      this.initial_state_str = JSON.stringify(this.initial_state);
-    });
-  };
-
-  /**
-   * This one's kinda harry.
-   * But it resets the form to it's initial state.
-   */
-  private resetState = (): void => {
-    this.stateful_items.forEach((key) => {
-      if (key === "valid" || key === "touched" || key === "changed") {
-        // Check the inital_state's key
-        get(this.initial_state[key])
-          ? this[key].set(true)
-          : this[key].set(false);
-      } else if (key === "errors") {
-        // Clear the errors so we don't have leftovers all over the place
-        this.clearErrors();
-        // Attach errors located in initial_state (to this.errors)
-        this.errors = this.initial_state.errors.map((e) => {
-          // Create new ValidationError to match the class-validator error type
-          let err = new ValidationError();
-          Object.assign(err, e);
-          return err;
-        });
-        // If this.errors is not empty then attach the errors to the fields
-        if (this.errors && this.errors.length > 0) {
-          _linkErrors(this.errors, this.fields);
-        }
-      } else if (key === "model") {
-        /**
-         * We have to disconnect the initial_state's model so that we don't get
-         * burned by reference links.
-         * We also don't want to overwrite the actual model, because it contains
-         * all the metadata for validation, feilds, etc.
-         * So we just copy the inital_state[model] and shove it's values back into
-         * this.model.
-         * That way when we reset the form, we still get validation errors from the
-         * model's decorators.
-         */
-        const model_state = JSON.parse(JSON.stringify(this.initial_state[key]));
-        Object.keys(this[key]).forEach((mkey) => {
-          this[key][mkey] = model_state[mkey];
-        });
-        _linkValues(false, this.fields, this.model);
-      } else {
-        this[key] = JSON.parse(JSON.stringify(this.initial_state[key]));
-      }
-    });
-  };
-
-  //#endregion
-
-  //#endregion ^^ Internal Methods ^^
+  //#endregion ^^ Form API ^^
 }

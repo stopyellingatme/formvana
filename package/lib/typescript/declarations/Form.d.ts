@@ -30,7 +30,7 @@ import { RefDataItem, OnEvents, LinkOnEvent } from "./types";
  * Just break it up into 100 or so fields per form (max 250) if its a huge form.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
- * TODO: what if they want to add their own event listeners (on specific fields)?
+ * TODO: decouple class-validator as to allow validation to be plugin based
  * TODO: Break up form properties and functions (FormProperties & FormApi)
  * TODO: Add a changes (value changes) observable
  */
@@ -88,7 +88,11 @@ export declare class Form {
      */
     hidden_fields: string[];
     disabled_fields: string[];
-    readonly validate_on_events: OnEvents;
+    /**
+     * Which events should the form do things on?
+     * (validate, link values, hide/disable fields)
+     */
+    readonly on_events: OnEvents;
     readonly clear_errors_on_events: OnEvents;
     readonly link_fields_to_model: LinkOnEvent;
     /**
@@ -125,8 +129,7 @@ export declare class Form {
      */
     private required_fields;
     /**
-     * Build the field configs from this.model using metadata-reflection.
-     * More comments inside...
+     * Build the field configs via this.model using metadata-reflection.
      */
     private buildFields;
     /**
@@ -143,13 +146,15 @@ export declare class Form {
      * This is for Svelte's "use:FUNCTION" feature.
      * The "use" directive passes the HTML Node as a parameter
      * to the given function (e.g. use:useField(node: HTMLNode)).
+     *
+     * TODO: Create new Type that has/adds/includes node.name
      */
     useField: (node: HTMLElement) => void;
     /**
      * Load new data into the form and build the fields.
      * Useful if you fetched data and need to update the form values.
      *
-     * Fresh defaults to True. So the default is to pass in a new instance
+     * ReInit defaults to True. So the default is to pass in a new instance
      * of the model (e.g. new ExampleMode(incoming_data)).
      * If fresh is False then the incoming_data will be serialized into
      * the model.
@@ -158,13 +163,14 @@ export declare class Form {
      *
      * Check example.form.ts for an example use case.
      */
-    loadData: (data: any, freshModel?: boolean, updateInitialState?: boolean) => Form;
+    loadData: (data: any, re_init?: boolean, update_initial_state?: boolean) => Form;
     /**
      * Just pass in the reference data and let the field configs do the rest.
      *
      * * Ref data MUST BE in format: Record<string, RefDataItem[]>
      */
     attachRefData: (refs?: Record<string, RefDataItem[]>) => void;
+    addEventListenerToFields: (event: keyof HTMLElementEventMap, callback: Function, field_names: string | string[]) => void;
     /**
      * Well, validate the form!
      * Clear the errors first, then do it, obviously.
@@ -172,19 +178,22 @@ export declare class Form {
     validate: () => Promise<ValidationError[]>;
     validateAsync: () => Promise<void>;
     /**
-     * If wanna invalidate a specific field for any reason.
+     * If want to (in)validate a specific field for any reason.
      */
-    invalidateField: (field_name: string, message?: string) => void;
+    validateField: (field_name: string, message?: string) => void;
+    get: (fieldName: string) => FieldConfig;
     /**
-     * * Use this if you're trying to update the layout after initialization.
-     * Similar to this.setOrder()
-     *
-     * Like this:
-     * const layout = ["description", "status", "email", "name"];
-     * const newState = sget(formState).buildStoredLayout(formState, layout);
-     * formState.updateState({ ...newState });
+     * Generate a Svelte Store from the current "this".
      */
-    buildStoredLayout: (formState: Writable<any>, order: string[]) => Writable<any>;
+    storify: () => Writable<Form>;
+    clearErrors: () => void;
+    /**
+     *! Make sure to call this when the component is unloaded/destroyed
+     * Removes all event listeners and clears the form state.
+     */
+    destroy: () => void;
+    reset: () => void;
+    updateInitialState: () => void;
     /**
      * Set the field order.
      * Layout param is simply an array of field (or group)
@@ -202,39 +211,4 @@ export declare class Form {
      * @param names? string | string[]
      */
     disableFields: (names?: string | string[]) => void;
-    get: (fieldName: string) => FieldConfig;
-    /**
-     * Generate a Svelte Store from the current "this".
-     */
-    storify: () => Writable<Form>;
-    clearErrors: () => void;
-    /**
-     *! Make sure to call this when the component is unloaded/destroyed
-     * Removes all event listeners and clears the form state.
-     */
-    destroy: () => void;
-    reset: () => void;
-    updateInitialState: () => void;
-    /**
-     * Validate the field!
-     * This is  attached to the field:
-     * useField -> attachOnValidateEvents(node) ->  validateField
-     */
-    private validateField;
-    private handleValidation;
-    /**
-     * Using this.field_order, rearrange the order of the fields.
-     */
-    private createOrder;
-    private clearState;
-    /**
-     * Grab a snapshot of several items that generally define the state of the form
-     * and serialize them into a format that's easy-ish to check/deserialize (for resetting)
-     */
-    private setInitialState;
-    /**
-     * This one's kinda harry.
-     * But it resets the form to it's initial state.
-     */
-    private resetState;
 }
