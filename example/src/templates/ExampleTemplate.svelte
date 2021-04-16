@@ -1,11 +1,16 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import LoadingIndicator from "@formvana/lib/svelte/LoadingIndicator.svelte";
-  import Field from "@formvana/lib/svelte/tailwind/Field.svelte";
+  import LoadingIndicator from "@formvana/lib/generator/LoadingIndicator.svelte";
+  import Field from "@formvana/lib/generator/tailwind/Field.svelte";
   import { createEventDispatcher } from "svelte";
   const dispatch = createEventDispatcher();
 
-  //* Form State
+  /**
+   * REQUIRED!
+   *
+   * You must export a form variable if this component
+   * is being used in DynamicForm.
+   */
   export let form;
 
   const handleSubmit = (e) => {

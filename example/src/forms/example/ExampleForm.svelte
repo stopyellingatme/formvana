@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { onSubmit, init, formState } from "./example.form";
-  import DynamicForm from "@formvana/lib/svelte/DynamicForm.svelte";
+  import DynamicForm from "@formvana/lib/generator/DynamicForm.svelte";
 
   onMount(() => {
     setTimeout(() => {
@@ -13,10 +13,7 @@
     console.log("MADE IT HERE -- ", e);
 
     // $formState.validate();
-  }
+  };
 </script>
 
-<DynamicForm
-  form={formState}
-  on:submit={handleSubmit}
-/>
+<DynamicForm form={formState} on:submit={handleSubmit} />

@@ -8,7 +8,7 @@
     "build": "bolt ws run build",
     "dev": "cd example && rollup -cw",
     "gen:test": "node test.js",
-    "gen:decorators": "tsc --declaration ./package/lib/typescript/index.ts --outDir ./package/lib/typescript/declarations --emitDeclarationOnly true",
+    "gen:decorators": "tsc --declaration ./package/lib/core/index.ts --outDir ./package/lib/core/declarations --emitDeclarationOnly true",
     "package": "cd package && npm run build && cd .. && node output.js && npm run dev"
   },
   "devDependencies": {

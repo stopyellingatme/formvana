@@ -1,2 +1,2 @@
-export * from "./svelte";
-export * from "./typescript";
+export * from "./generator";
+export * from "./core";

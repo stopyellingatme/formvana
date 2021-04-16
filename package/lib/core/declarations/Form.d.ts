@@ -31,7 +31,6 @@ import { RefDataItem, OnEvents, LinkOnEvent } from "./types";
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
  * TODO: decouple class-validator as to allow validation to be plugin based
- * TODO: Break up form properties and functions (FormProperties & FormApi)
  * TODO: Add a changes (value changes) observable
  */
 export declare class Form {
@@ -84,6 +83,11 @@ export declare class Form {
     changed: Writable<boolean>;
     touched: Writable<boolean>;
     /**
+     * Output value changes.
+     * Similar to Angular form.valueChanges
+     */
+    changes: Writable<Record<string, any>>;
+    /**
      * Use the NAME of the field (field.name) to disable/hide the field.
      */
     hidden_fields: string[];
@@ -133,9 +137,7 @@ export declare class Form {
      */
     private buildFields;
     /**
-     * MUST BE ATTACHED TO SAME ELEMENT WITH FIELD.NAME!
-     * MUST BE ATTACHED TO SAME ELEMENT WITH FIELD.NAME!
-     * MUST BE ATTACHED TO SAME ELEMENT WITH FIELD.NAME!
+     * ATTACH TO SAME ELEMENT AS FIELD.NAME!
      *
      * Use on the element that will be interacted with.
      * e.g. <input/> -- <button/> -- <select/> -- etc.
@@ -181,7 +183,7 @@ export declare class Form {
      * If want to (in)validate a specific field for any reason.
      */
     validateField: (field_name: string, message?: string) => void;
-    get: (fieldName: string) => FieldConfig;
+    get: (field_name: string) => FieldConfig;
     /**
      * Generate a Svelte Store from the current "this".
      */

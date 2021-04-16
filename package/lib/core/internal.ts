@@ -49,6 +49,19 @@ export function _getRequiredFieldNames(fields: FieldConfig[]): string[] {
   return required_field_names;
 }
 
+export function _setValueChanges(form: Form, field_name: string, change: any) {
+  const changes = get(form.changes);
+
+  // The change is on the same field
+  if (changes[field_name]) {
+    changes[field_name] = change;
+    form.changes.set({ ...changes });
+  } else {
+    // Change is on a different field
+    form.changes.set({ ...changes, [field_name]: change });
+  }
+}
+
 //#endregion
 
 //#region HTML Event Helpers
@@ -182,6 +195,8 @@ export function _handleOnEvent(
   form.link_fields_to_model === LinkOnEvent.Always &&
     _linkValues(true, form.fields, form.model);
 
+  _setValueChanges(form, field.name, get(field.value));
+
   _hideFields(form.hidden_fields, field_names, form.fields),
     _disableFields(form.disabled_fields, field_names, form.fields);
 
@@ -240,7 +255,7 @@ export async function _handleValidation(
       form.clearErrors(); // Clear form errors
     }
   } catch (e) {
-		console.error(e);
+    console.error(e);
     if (e) throw e;
   }
 }
@@ -340,6 +355,8 @@ export function _setInitialState(
       get(form[key])
         ? (initial_state[key] = writable(true))
         : (initial_state[key] = writable(false));
+    } else if (key === "changes") {
+      initial_state[key] = writable(get(form.changes));
     } else {
       initial_state[key] = JSON.parse(JSON.stringify(form[key]));
     }
@@ -390,6 +407,13 @@ export function _resetState(
         form[key][mkey] = model_state[mkey];
       });
       _linkValues(false, form.fields, form.model);
+    } else if (key === "changes") {
+      // Reset form value changes!
+      if (get(initial_state[key]) === {}) {
+        form.changes.set({});
+      } else {
+        form.changes.set(get(initial_state[key]));
+      }
     } else {
       form[key] = JSON.parse(JSON.stringify(initial_state[key]));
     }

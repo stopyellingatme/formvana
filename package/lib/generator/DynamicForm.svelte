@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Form } from "../typescript";
+  import { Form } from "../core";
   import { onDestroy, onMount } from "svelte";
   import { createEventDispatcher } from "svelte";
   import { Writable } from "svelte/store";

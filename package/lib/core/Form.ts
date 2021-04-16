@@ -24,7 +24,7 @@ import {
   _handleValidation,
   _handleOnEvent,
   _validateField,
-} from "./common";
+} from "./internal";
 
 /**
  * Formvana - Form Class
@@ -33,8 +33,10 @@ import {
  *
  * The main thing to understand here is that the fields and the model are separate.
  * Fields are built using the model, via the @field() & @editable() decorators.
- * We keep the fields and the model in sync based on the provided form config,
- * but we do our best to initialize it with good, sane defaults.
+ * We keep the fields and the model in sync (simply) via model property names
+ * which are mapped to field.name.
+ * We do our best to initialize this thing with good, sane defaults without
+ * adding too many restrictions.
  *
  *
  * Recommended Use:
@@ -54,8 +56,6 @@ import {
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
  * TODO: decouple class-validator as to allow validation to be plugin based
- * TODO: Break up form properties and functions (FormProperties & FormApi)
- * TODO: Add a changes (value changes) observable
  */
 export class Form {
   constructor(model: any, init?: Partial<Form>) {
@@ -169,6 +169,14 @@ export class Form {
   touched: Writable<boolean> = writable(false);
 
   /**
+   * Emits value changes as a plain JS object.
+   * Format: { [field.name]: value }
+   *
+   * Similar to Angular form.valueChanges
+   */
+  changes: Writable<Record<string, any>> = writable({});
+
+  /**
    * Use the NAME of the field (field.name) to disable/hide the field.
    */
   hidden_fields: string[] = [];
@@ -224,6 +232,7 @@ export class Form {
     "valid",
     "touched",
     "changed",
+    "changes",
     "errors",
     "required_fields",
     "refs",

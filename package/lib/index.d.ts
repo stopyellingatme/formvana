@@ -1,7 +1,7 @@
 import { ValidationError } from "class-validator";
+import { SvelteComponent } from "svelte";
 import { Writable } from "svelte/store";
 import { ValidatorOptions } from "class-validator/types";
-declare module "*.svelte";
 interface FieldGroup {
     name: string;
     classnames?: string[]; // Order determines when to be applied
@@ -154,7 +154,6 @@ type RefData<T extends Record<string, RefDataItem[]>> = {};
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
  * TODO: decouple class-validator as to allow validation to be plugin based
- * TODO: Break up form properties and functions (FormProperties & FormApi)
  * TODO: Add a changes (value changes) observable
  */
 declare class Form {
@@ -208,6 +207,11 @@ declare class Form {
     loading: Writable<boolean>;
     changed: Writable<boolean>;
     touched: Writable<boolean>;
+    /**
+     * Output value changes.
+     * Similar to Angular form.valueChanges
+     */
+    changes: Writable<Record<string, any>>;
     /**
      * Use the NAME of the field (field.name) to disable/hide the field.
      */
@@ -269,9 +273,7 @@ declare class Form {
      */
     private buildFields;
     /**
-     * MUST BE ATTACHED TO SAME ELEMENT WITH FIELD.NAME!
-     * MUST BE ATTACHED TO SAME ELEMENT WITH FIELD.NAME!
-     * MUST BE ATTACHED TO SAME ELEMENT WITH FIELD.NAME!
+     * ATTACH TO SAME ELEMENT AS FIELD.NAME!
      *
      * Use on the element that will be interacted with.
      * e.g. <input/> -- <button/> -- <select/> -- etc.
@@ -322,7 +324,7 @@ declare class Form {
     //#endregion
     //#region - Utility Methods
     // Get Field by name
-    get: (fieldName: string) => FieldConfig;
+    get: (field_name: string) => FieldConfig;
     /**
      * Generate a Svelte Store from the current "this".
      */
@@ -372,6 +374,7 @@ declare function _get(name: string, fields: FieldConfig[]): FieldConfig;
  */
 declare function _buildFormFields(model: any): FieldConfig[];
 declare function _getRequiredFieldNames(fields: FieldConfig[]): string[];
+declare function _onValueChanges(form: Form, field_name: string, change: any): void;
 //#endregion
 //#region HTML Event Helpers
 declare function _attachEventListeners(field: FieldConfig, on_events: OnEvents, callback: Function): void;
@@ -431,6 +434,6 @@ declare function _hideFields(hidden_fields: string[], field_names: string[], fie
 declare function _hideField(name: string, fields: FieldConfig[]): void;
 declare function _disableFields(disabled_fields: string[], field_names: string[], fields: FieldConfig[]): void;
 declare function _disableField(name: string, fields: FieldConfig[]): void;
-export * from "./svelte";
-export { FieldGroup, FieldStep, FieldConfig, Form, editable, field, _get, _buildFormFields, _getRequiredFieldNames, _attachEventListeners, _attachOnClearErrorEvents, _linkValues, _linkFieldErrors, _linkErrors, _handleOnEvent, _validateField, _handleValidation, _requiredFieldsValid, _getStateSnapshot, _hasChanged, _clearState, _setInitialState, _resetState, _createOrder, _hideFields, _hideField, _disableFields, _disableField, OnEvents, LinkOnEvent, RefDataItem, RefData };
+export * from "./generator";
+export { FieldGroup, FieldStep, FieldConfig, Form, editable, field, _get, _buildFormFields, _getRequiredFieldNames, _onValueChanges, _attachEventListeners, _attachOnClearErrorEvents, _linkValues, _linkFieldErrors, _linkErrors, _handleOnEvent, _validateField, _handleValidation, _requiredFieldsValid, _getStateSnapshot, _hasChanged, _clearState, _setInitialState, _resetState, _createOrder, _hideFields, _hideField, _disableFields, _disableField, OnEvents, LinkOnEvent, RefDataItem, RefData };
 //# sourceMappingURL=index.d.ts.map
