@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Form } from "../core";
+  import { Form } from "@formvana";
   import { onDestroy, onMount } from "svelte";
   import { createEventDispatcher } from "svelte";
   import { Writable } from "svelte/store";

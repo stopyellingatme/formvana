@@ -1,4 +1,5 @@
 import { ValidationError } from "class-validator";
+import { Writable } from "svelte/store";
 import { FieldConfig } from "./FieldConfig";
 import { Form } from "./Form";
 import { OnEvents } from "./types";
@@ -10,7 +11,7 @@ export declare function _get(name: string, fields: FieldConfig[]): FieldConfig;
  */
 export declare function _buildFormFields(model: any): FieldConfig[];
 export declare function _getRequiredFieldNames(fields: FieldConfig[]): string[];
-export declare function _onValueChanges(form: Form, field_name: string, change: any): void;
+export declare function _setValueChanges(changes: Writable<Record<string, any>>, field_name: string, change: any): void;
 export declare function _attachEventListeners(field: FieldConfig, on_events: OnEvents, callback: Function): void;
 export declare function _attachOnClearErrorEvents(node: HTMLElement, clear_errors_on_events: OnEvents, callback?: Function): void;
 export declare function _linkValues(fromFieldsToModel: boolean, fields: FieldConfig[], model: any): void;
@@ -21,7 +22,15 @@ export declare function _linkValues(fromFieldsToModel: boolean, fields: FieldCon
 export declare function _linkFieldErrors(errors: ValidationError[], field: FieldConfig, filter_term: keyof ValidationError): void;
 export declare function _linkErrors(errors: ValidationError[], fields: FieldConfig[]): void;
 export declare function _handleOnEvent(form: Form, required_fields: string[], stateful_items: string[], initial_state_str: string, field_names: string[], field: FieldConfig): Promise<void>;
+/**
+ * TODO: Decouple class-validator as to allow plugin based validation
+ *
+ */
 export declare function _validateField(form: Form, field: FieldConfig, required_fields: string[]): Promise<void>;
+/**
+ * Handle all the things associated with validation!
+ * Link the errors to the fields.
+ */
 export declare function _handleValidation(form: Form, errors: ValidationError[], required_fields: string[], field?: FieldConfig): Promise<void>;
 /**
  * TODO: Clean up this arfv implementation. Seems too clunky.

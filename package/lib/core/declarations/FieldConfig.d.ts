@@ -19,7 +19,7 @@ export interface FieldStep {
  * an easy-to-use format to work with.
  */
 export declare class FieldConfig {
-    constructor(init?: Partial<FieldConfig>);
+    constructor(init: Partial<FieldConfig>);
     /**
      * ! DO NOT SET NAME
      * ! IT IS SET AUTOMATICALLY IN FORM.TS
@@ -29,13 +29,20 @@ export declare class FieldConfig {
     /**
      * el can be either String or Svelte Component.
      * This allows us a more flexible dynamic field generator.
+     * Using a template also allows you to style each input as needed.
      */
-    el: string | SvelteComponent;
+    selector?: string;
+    template?: SvelteComponent;
     label?: string;
     type: string;
     required: boolean;
     value: Writable<any>;
-    styles?: object;
+    /**
+     * You can use these to apply styles.
+     * However, using a template/component is recommended.
+     *
+     */
+    styles?: string;
     classes?: string;
     /**
      * Used if there is a set of "options" to choose from.

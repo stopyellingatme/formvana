@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import LoadingIndicator from "@formvana/lib/generator/LoadingIndicator.svelte";
-  import Field from "@formvana/lib/generator/tailwind/Field.svelte";
+  import LoadingIndicator from "./inputs/LoadingIndicator.svelte";
+  import Field from "./inputs/Field.svelte";
   import { createEventDispatcher } from "svelte";
   const dispatch = createEventDispatcher();
 

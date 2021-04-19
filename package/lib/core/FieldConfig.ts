@@ -22,13 +22,18 @@ export interface FieldStep {
  * an easy-to-use format to work with.
  */
 export class FieldConfig {
-  constructor(init?: Partial<FieldConfig>) {
+  constructor(init: Partial<FieldConfig>) {
     // I know, Object.assign... lots of freedom there.
     Object.assign(this, init);
     this.attributes["type"] = !this.attributes["type"]
       ? this.type
       : this.attributes["type"];
 
+    if (!this.selector && !this.template) {
+      throw new Error(
+        `Please pass in a valid Element.\nEither a string selector or a SvelteComponent.`
+      );
+    }
     /**
      * Trying to set some sane defaults when initializing field.
      * These can be over-written easily by simply adding a value to your
@@ -82,16 +87,22 @@ export class FieldConfig {
   /**
    * el can be either String or Svelte Component.
    * This allows us a more flexible dynamic field generator.
+   * Using a template also allows you to style each input as needed.
    */
-  el: string | SvelteComponent;
+  selector?: string;
+  template?: SvelteComponent;
 
   label?: string;
   type: string = "text"; // Defaults to text, for now
   required: boolean = false;
   value: Writable<any> = writable(null);
 
-  // Styling
-  styles?: object;
+  /**
+   * You can use these to apply styles.
+   * However, using a template/component is recommended.
+   *
+   */
+  styles?: string;
   classes?: string;
 
   /**

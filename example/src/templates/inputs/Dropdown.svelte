@@ -8,14 +8,15 @@
   let menu_open = false;
   const toggle = () => (menu_open = !menu_open);
 
-  export let useInput;
-  export let valueStore; // Used as active_index
-  export let errorsStore;
-
+  export let field;
   export let options;
-  export let label;
-  export let name;
-  export let attrs = {};
+  export let useInput = null;
+  $: errorsStore = field.errors;
+  $: valueStore = field.value;
+
+  let name = field.name;
+  let label = field.label;
+  let attrs = field.attributes || {};
 
   let default_class =
     "bg-white relative w-full border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm";
@@ -24,7 +25,7 @@
 
   $: selectedLabel =
     options && options[$valueStore] && options[$valueStore].label;
-    
+
   $: input_attributes = Object.assign({}, attrs);
   $: errors = $errorsStore && $errorsStore.constraints;
   $: cls =

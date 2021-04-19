@@ -10,8 +10,10 @@ import { RefDataItem, OnEvents, LinkOnEvent } from "./types";
  *
  * The main thing to understand here is that the fields and the model are separate.
  * Fields are built using the model, via the @field() & @editable() decorators.
- * We keep the fields and the model in sync based on the provided form config,
- * but we do our best to initialize it with good, sane defaults.
+ * We keep the fields and the model in sync (simply) via model property names
+ * which are mapped to field.name.
+ * We do our best to initialize this thing with good, sane defaults without
+ * adding too many restrictions.
  *
  *
  * Recommended Use:
@@ -30,8 +32,9 @@ import { RefDataItem, OnEvents, LinkOnEvent } from "./types";
  * Just break it up into 100 or so fields per form (max 250) if its a huge form.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
- * TODO: decouple class-validator as to allow validation to be plugin based
- * TODO: Add a changes (value changes) observable
+ * TODO: Finish making default html inputs for all normal form controls
+ * TODO: Create easy component/pattern for field groups and stepper/wizzard
+ * TODO: Decouple class-validator as to allow validation to be plugin based
  */
 export declare class Form {
     constructor(model: any, init?: Partial<Form>);
@@ -83,7 +86,9 @@ export declare class Form {
     changed: Writable<boolean>;
     touched: Writable<boolean>;
     /**
-     * Output value changes.
+     * Emits value changes as a plain JS object.
+     * Format: { [field.name]: value }
+     *
      * Similar to Angular form.valueChanges
      */
     changes: Writable<Record<string, any>>;

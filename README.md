@@ -71,13 +71,12 @@ It's also very easy to get data out of the Form by calling Form.model.
 ```ts
 // Business.ts
 import { Length, IsEmail, IsString } from "class-validator";
-import { editable, field } from "../typescript.utils";
+import { field } from "../typescript.utils";
 import { FieldConfig } from "../FieldConfig";
 
 class Business {
   id: string;
 
-  @editable
   @Length(10, 90)
   @IsString()
   @field(
@@ -92,7 +91,6 @@ class Business {
   )
   name: string = "";
 
-  @editable
   @IsEmail()
   @field(
     new FieldConfig({
@@ -106,7 +104,6 @@ class Business {
   )
   email: string = "";
 
-  @editable
   @Length(10, 240)
   @field(
     new FieldConfig({
@@ -128,7 +125,6 @@ class Business {
   state: string = "";
   zip: string = "";
 
-  @editable
   @IsString()
   @field(
     new FieldConfig({
@@ -175,12 +171,6 @@ If the model's fields already have data, the field data will be reflected in for
 `Validation!`
 1. Set validation options via `form.validation_options`.
 2. See available options at [class-validator](https://github.com/typestack/class-validator)
-
-`TODO:`
-1. Styling references.
-2. How layout is handled.
-3. validate_on and clear_errors_on_events stuff.
-4. And what's going on with errors. How are those handled?
 
 ---
 

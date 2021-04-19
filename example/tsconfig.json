@@ -2,11 +2,8 @@
     "compilerOptions": {
         "baseUrl": "./",
         "target": "esNext",
-        "module": "esNext",
         "moduleResolution": "node",
-        "sourceMap": true,
         "allowJs": true,
-        "emitDeclarationOnly": false,
         "noLib": false,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,

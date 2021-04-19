@@ -17,9 +17,9 @@ export function _get(name: string, fields: FieldConfig[]): FieldConfig {
  * More comments inside...
  */
 export function _buildFormFields(model: any): FieldConfig[] {
-  // Grab the editableProperties from the @editable decorator
+  // Grab the editableProperties from the @field decorator
   let props: string[] = Reflect.getMetadata("editableProperties", model);
-  // Map the @editable fields to the form.fields array.
+  // Map the @field fields to the form.fields array.
   const fields = props.map((prop: string) => {
     // Get the FieldConfig using metadata reflection
     const field: FieldConfig = new FieldConfig({
@@ -49,16 +49,20 @@ export function _getRequiredFieldNames(fields: FieldConfig[]): string[] {
   return required_field_names;
 }
 
-export function _setValueChanges(form: Form, field_name: string, change: any) {
-  const changes = get(form.changes);
+export function _setValueChanges(
+  changes: Writable<Record<string, any>>,
+  field_name: string,
+  change: any
+) {
+  const _changes = get(changes);
 
   // The change is on the same field
-  if (changes[field_name]) {
-    changes[field_name] = change;
-    form.changes.set({ ...changes });
+  if (_changes[field_name]) {
+    _changes[field_name] = change;
+    changes.set({ ..._changes });
   } else {
     // Change is on a different field
-    form.changes.set({ ...changes, [field_name]: change });
+    changes.set({ ..._changes, [field_name]: change });
   }
 }
 
@@ -179,6 +183,14 @@ export function _linkErrors(
 //#endregion
 
 //#region Validation Helpers
+
+/**
+ * Hanlde the events that will fire for each field.
+ * Corresponds to the form.on_events field.
+ *
+ * TODO: Add plugin area, hoist-er
+ * TODO: Decouple class-validator!
+ */
 export function _handleOnEvent(
   form: Form,
   required_fields: string[],
@@ -195,7 +207,7 @@ export function _handleOnEvent(
   form.link_fields_to_model === LinkOnEvent.Always &&
     _linkValues(true, form.fields, form.model);
 
-  _setValueChanges(form, field.name, get(field.value));
+  _setValueChanges(form.changes, field.name, get(field.value));
 
   _hideFields(form.hidden_fields, field_names, form.fields),
     _disableFields(form.disabled_fields, field_names, form.fields);
@@ -205,6 +217,10 @@ export function _handleOnEvent(
   });
 }
 
+/**
+ * TODO: Decouple class-validator as to allow plugin based validation
+ *
+ */
 export function _validateField(
   form: Form,
   field: FieldConfig,
@@ -217,46 +233,45 @@ export function _validateField(
   );
 }
 
+/**
+ * Handle all the things associated with validation!
+ * Link the errors to the fields.
+ */
 export async function _handleValidation(
   form: Form,
   errors: ValidationError[],
   required_fields: string[],
   field?: FieldConfig
 ): Promise<void> {
-  try {
-    // There are errors!
-    if (errors.length > 0) {
-      form.errors = errors;
+  // There are errors!
+  if (errors.length > 0) {
+    form.errors = errors;
 
-      // Are we validating the whole form or just the fields?
-      if (field) {
-        // Link errors to field (to show validation errors)
-        _linkFieldErrors(errors, field, "property");
-      } else {
-        // This is validatino for the whole form!
-        _linkErrors(errors, form.fields);
-      }
-
-      // All required fields are valid?
-      if (_requiredFieldsValid(errors, required_fields)) {
-        form.valid.set(true);
-      } else {
-        form.valid.set(false);
-      }
+    // Are we validating the whole form or just the fields?
+    if (field) {
+      // Link errors to field (to show validation errors)
+      _linkFieldErrors(errors, field, "property");
     } else {
-      // We can't get here unless the errors we see are for non-required fields
-
-      // If the config tells us to link the values only when the form
-      // is valid, then link them here.
-      form.link_fields_to_model === LinkOnEvent.Valid &&
-        _linkValues(true, form.fields, form.model);
-
-      form.valid.set(true); // Form is valid!
-      form.clearErrors(); // Clear form errors
+      // This is validatino for the whole form!
+      _linkErrors(errors, form.fields);
     }
-  } catch (e) {
-    console.error(e);
-    if (e) throw e;
+
+    // All required fields are valid?
+    if (_requiredFieldsValid(errors, required_fields)) {
+      form.valid.set(true);
+    } else {
+      form.valid.set(false);
+    }
+  } else {
+    // We can't get here unless the errors we see are for non-required fields
+
+    // If the config tells us to link the values only when the form
+    // is valid, then link them here.
+    form.link_fields_to_model === LinkOnEvent.Valid &&
+      _linkValues(true, form.fields, form.model);
+
+    form.valid.set(true); // Form is valid!
+    form.clearErrors(); // Clear form errors
   }
 }
 

@@ -55,22 +55,25 @@ import {
  * Just break it up into 100 or so fields per form (max 250) if its a huge form.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
- * TODO: decouple class-validator as to allow validation to be plugin based
+ * TODO: Decouple class-validator as to allow validation to be plugin based
+ * TODO: Create easy component/pattern for field groups and stepper/wizzard
  */
 export class Form {
   constructor(model: any, init?: Partial<Form>) {
-    Object.keys(this).forEach((key) => {
-      if (init[key]) {
-        this[key] = init[key];
-      }
-    });
+    if (init) {
+      Object.keys(this).forEach((key) => {
+        if (init[key]) {
+          this[key] = init[key];
+        }
+      });
+    }
     // If there's a model, set the inital state's and build the fields
     if (model) {
       this.model = model;
       this.buildFields();
     } else {
       throw new Error(
-        "Model is not valid (falsey). Please pass in a valid (truthy) model."
+        "Model is not valid. Please pass in a valid model."
       );
     }
     // If they passed in a field order, set the order.
@@ -127,7 +130,7 @@ export class Form {
    *
    * * Fields & reference data are linked via field.ref_key
    */
-  refs: Record<string, RefDataItem[]> = null;
+  refs: Record<string, RefDataItem[]> = {};
 
   /**
    * Validation options come from class-validator ValidatorOptions.

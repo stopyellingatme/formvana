@@ -1,6 +1,6 @@
 import { get } from "svelte/store";
 import { Form, OnEvents, RefDataItem } from "@formvana";
-import { ExampleModel } from "../../models/TestClass";
+import { ExampleModel } from "../../models/ExampleClass";
 //@ts-ignore
 import ExampleTemplate from "../../templates/ExampleTemplate.svelte";
 
@@ -28,7 +28,6 @@ const ref_data: Record<string, RefDataItem[]> = {
 function initStore() {
   // Just gonna set up the form real quick...
   let form = new Form(new ExampleModel(), {
-    // field_order: ["description", "status", "email", "name"],
     template: ExampleTemplate,
     on_events: new OnEvents({ focus: false }),
     refs: ref_data,
@@ -69,6 +68,10 @@ export const init = () => {
   setTimeout(() => {
     // get(formState).updateInitialState();
   }, 3000);
+
+  // get(formState).changes.subscribe((val) => {
+  //   console.log("CHANGE: ", val);
+  // });
 
   /**
    * Update form with backend data

@@ -1,7 +1,7 @@
 // Script to generate 100's of inputs for testing.
 const fs = require("fs");
 
-const output_path = `./example/src/models/TestClass.ts`;
+const output_path = `./example/src/models/ExampleClass.ts`;
 
 const test_class_string = (fields) => `
 import {
@@ -16,7 +16,7 @@ import {
   Max,
   IsString
 } from "class-validator";
-import { editable, field } from "@formvana";
+import { field } from "@formvana";
 
 export enum Status {
   ACTIVE,
@@ -52,10 +52,9 @@ const field = (
   is_group,
   is_step
 ) => `
-	@editable
   ${validators.join("\n")}
   @field({
-      el: "${el}",
+      selector: "${el}",
       type: "${type}",
       label: "${label}",
       required: ${req},${("\n", hint ? 'hint: "' + hint + '",' : "")}
@@ -154,9 +153,7 @@ function psudoRandomGetField(i) {
       true,
       "select",
       null,
-      [
-        `@IsEnum(Status, { message: "Please choose a Status" })`,
-      ],
+      [`@IsEnum(Status, { message: "Please choose a Status" })`],
       null,
       "statuses",
       null,

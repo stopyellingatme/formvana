@@ -20,7 +20,7 @@ interface FieldStep {
  * an easy-to-use format to work with.
  */
 declare class FieldConfig {
-    constructor(init?: Partial<FieldConfig>);
+    constructor(init: Partial<FieldConfig>);
     /**
      * ! DO NOT SET NAME
      * ! IT IS SET AUTOMATICALLY IN FORM.TS
@@ -31,14 +31,20 @@ declare class FieldConfig {
     /**
      * el can be either String or Svelte Component.
      * This allows us a more flexible dynamic field generator.
+     * Using a template also allows you to style each input as needed.
      */
-    el: string | SvelteComponent;
+    selector?: string;
+    template?: SvelteComponent;
     label?: string;
     type: string; // Defaults to text, for now
     required: boolean;
     value: Writable<any>;
-    // Styling
-    styles?: object;
+    /**
+     * You can use these to apply styles.
+     * However, using a template/component is recommended.
+     *
+     */
+    styles?: string;
     classes?: string;
     /**
      * Used if there is a set of "options" to choose from.
@@ -133,8 +139,10 @@ type RefData<T extends Record<string, RefDataItem[]>> = {};
  *
  * The main thing to understand here is that the fields and the model are separate.
  * Fields are built using the model, via the @field() & @editable() decorators.
- * We keep the fields and the model in sync based on the provided form config,
- * but we do our best to initialize it with good, sane defaults.
+ * We keep the fields and the model in sync (simply) via model property names
+ * which are mapped to field.name.
+ * We do our best to initialize this thing with good, sane defaults without
+ * adding too many restrictions.
  *
  *
  * Recommended Use:
@@ -153,8 +161,8 @@ type RefData<T extends Record<string, RefDataItem[]>> = {};
  * Just break it up into 100 or so fields per form (max 250) if its a huge form.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
- * TODO: decouple class-validator as to allow validation to be plugin based
- * TODO: Add a changes (value changes) observable
+ * TODO: Decouple class-validator as to allow validation to be plugin based
+ * TODO: Create easy component/pattern for field groups and stepper/wizzard
  */
 declare class Form {
     constructor(model: any, init?: Partial<Form>);
@@ -208,7 +216,9 @@ declare class Form {
     changed: Writable<boolean>;
     touched: Writable<boolean>;
     /**
-     * Output value changes.
+     * Emits value changes as a plain JS object.
+     * Format: { [field.name]: value }
+     *
      * Similar to Angular form.valueChanges
      */
     changes: Writable<Record<string, any>>;
@@ -362,7 +372,6 @@ declare class Form {
      */
     disableFields: (names?: string | string[]) => void;
 }
-declare function editable(target: any, propertyKey: string): void;
 declare function field(config: Partial<FieldConfig>): (target: any, propertyKey: string) => void;
 //#region Utility Functions
 // Get the form field by name
@@ -374,7 +383,7 @@ declare function _get(name: string, fields: FieldConfig[]): FieldConfig;
  */
 declare function _buildFormFields(model: any): FieldConfig[];
 declare function _getRequiredFieldNames(fields: FieldConfig[]): string[];
-declare function _onValueChanges(form: Form, field_name: string, change: any): void;
+declare function _setValueChanges(changes: Writable<Record<string, any>>, field_name: string, change: any): void;
 //#endregion
 //#region HTML Event Helpers
 declare function _attachEventListeners(field: FieldConfig, on_events: OnEvents, callback: Function): void;
@@ -393,7 +402,15 @@ declare function _linkErrors(errors: ValidationError[], fields: FieldConfig[]): 
 //#endregion
 //#region Validation Helpers
 declare function _handleOnEvent(form: Form, required_fields: string[], stateful_items: string[], initial_state_str: string, field_names: string[], field: FieldConfig): Promise<void>;
+/**
+ * TODO: Decouple class-validator as to allow plugin based validation
+ *
+ */
 declare function _validateField(form: Form, field: FieldConfig, required_fields: string[]): Promise<void>;
+/**
+ * Handle all the things associated with validation!
+ * Link the errors to the fields.
+ */
 declare function _handleValidation(form: Form, errors: ValidationError[], required_fields: string[], field?: FieldConfig): Promise<void>;
 /**
  * TODO: Clean up this arfv implementation. Seems too clunky.
@@ -434,6 +451,5 @@ declare function _hideFields(hidden_fields: string[], field_names: string[], fie
 declare function _hideField(name: string, fields: FieldConfig[]): void;
 declare function _disableFields(disabled_fields: string[], field_names: string[], fields: FieldConfig[]): void;
 declare function _disableField(name: string, fields: FieldConfig[]): void;
-export * from "./generator";
-export { FieldGroup, FieldStep, FieldConfig, Form, editable, field, _get, _buildFormFields, _getRequiredFieldNames, _onValueChanges, _attachEventListeners, _attachOnClearErrorEvents, _linkValues, _linkFieldErrors, _linkErrors, _handleOnEvent, _validateField, _handleValidation, _requiredFieldsValid, _getStateSnapshot, _hasChanged, _clearState, _setInitialState, _resetState, _createOrder, _hideFields, _hideField, _disableFields, _disableField, OnEvents, LinkOnEvent, RefDataItem, RefData };
+export { FieldGroup, FieldStep, FieldConfig, Form, field, _get, _buildFormFields, _getRequiredFieldNames, _setValueChanges, _attachEventListeners, _attachOnClearErrorEvents, _linkValues, _linkFieldErrors, _linkErrors, _handleOnEvent, _validateField, _handleValidation, _requiredFieldsValid, _getStateSnapshot, _hasChanged, _clearState, _setInitialState, _resetState, _createOrder, _hideFields, _hideField, _disableFields, _disableField, OnEvents, LinkOnEvent, RefDataItem, RefData };
 //# sourceMappingURL=index.d.ts.map
