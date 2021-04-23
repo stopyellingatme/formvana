@@ -65,11 +65,11 @@ export const init = () => {
     // get(formState).validate();
   }, 1000);
 
-  setTimeout(() => {
+  // setTimeout(() => {
     // get(formState).updateInitialState();
-  }, 3000);
+  // }, 3000);
 
-  // get(formState).changes.subscribe((val) => {
+  // get(formState).value_changes.subscribe((val) => {
   //   console.log("CHANGE: ", val);
   // });
 

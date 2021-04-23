@@ -2,7 +2,7 @@ import { ValidatorOptions } from "class-validator/types";
 import { ValidationError } from "class-validator";
 import { Writable } from "svelte/store";
 import { FieldConfig } from ".";
-import { RefDataItem, OnEvents, LinkOnEvent } from "./types";
+import { OnEvents, LinkOnEvent, RefData } from "./types";
 /**
  * Formvana - Form Class
  * Form is NOT valid, initially.
@@ -32,12 +32,12 @@ import { RefDataItem, OnEvents, LinkOnEvent } from "./types";
  * Just break it up into 100 or so fields per form (max 250) if its a huge form.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
- * TODO: Finish making default html inputs for all normal form controls
- * TODO: Create easy component/pattern for field groups and stepper/wizzard
  * TODO: Decouple class-validator as to allow validation to be plugin based
+ * TODO: Create easy component/pattern for field groups and stepper/wizzard
+ * TODO: Create plugin base for form template styling
  */
-export declare class Form {
-    constructor(model: any, init?: Partial<Form>);
+export declare class Form<FormModelType extends object> {
+    constructor(model: FormModelType, init?: Partial<Form<FormModelType>>);
     /**
      * This is your form Model/Schema.
      * TODO: Definite candidate for Mapped Type
@@ -45,7 +45,7 @@ export declare class Form {
      * (If you didn't set the model in the constructor)
      * When model is set, call buildFields() to build the fields.
      */
-    model: any;
+    model: FormModelType;
     /**
      * Fields are built from the model's metadata using reflection.
      * If model is set, call buildFields().
@@ -60,8 +60,10 @@ export declare class Form {
      *
      * * Fields & reference data are linked via field.ref_key
      */
-    refs: Record<string, RefDataItem[]>;
+    refs: RefData;
     /**
+     * TODO: Decouple class-validator/allow other validators!
+     *
      * Validation options come from class-validator ValidatorOptions.
      *
      * Biggest perf increase comes from setting validationError.target = false
@@ -91,7 +93,7 @@ export declare class Form {
      *
      * Similar to Angular form.valueChanges
      */
-    changes: Writable<Record<string, any>>;
+    value_changes: Writable<Record<string, any>>;
     /**
      * Use the NAME of the field (field.name) to disable/hide the field.
      */
@@ -170,13 +172,16 @@ export declare class Form {
      *
      * Check example.form.ts for an example use case.
      */
-    loadData: (data: any, re_init?: boolean, update_initial_state?: boolean) => Form;
+    loadData: <T extends FormModelType>(data: T, re_init?: boolean, update_initial_state?: boolean) => Form<FormModelType>;
     /**
      * Just pass in the reference data and let the field configs do the rest.
      *
      * * Ref data MUST BE in format: Record<string, RefDataItem[]>
      */
-    attachRefData: (refs?: Record<string, RefDataItem[]>) => void;
+    attachRefData: (refs?: RefData) => void;
+    /**
+     * TODO: Optionaly, attach the _handleOnEvents function?
+     */
     addEventListenerToFields: (event: keyof HTMLElementEventMap, callback: Function, field_names: string | string[]) => void;
     /**
      * Well, validate the form!
@@ -192,7 +197,7 @@ export declare class Form {
     /**
      * Generate a Svelte Store from the current "this".
      */
-    storify: () => Writable<Form>;
+    storify: () => Writable<Form<FormModelType>>;
     clearErrors: () => void;
     /**
      *! Make sure to call this when the component is unloaded/destroyed

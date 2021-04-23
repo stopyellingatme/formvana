@@ -4,12 +4,10 @@ import { Writable } from "svelte/store";
 import { ValidatorOptions } from "class-validator/types";
 interface FieldGroup {
     name: string;
-    classnames?: string[]; // Order determines when to be applied
     label?: string;
 }
 interface FieldStep {
     index: number;
-    classnames?: string[]; // Order determines when to be applied
     label?: string;
 }
 /**
@@ -68,18 +66,22 @@ declare class FieldConfig {
      * -- title='input title'
      * -- multiple
      * -- etc.
+     * -- anything you want!
      */
     attributes: object;
     hint?: string; // Mainly for textarea, or whatever
     group?: FieldGroup;
     step?: FieldStep;
+    private initial_value;
     clearValue: () => void;
     clearErrors: () => void;
     clear: () => void;
+    setInitialValue: (value: any) => void;
 }
 /**
  * TODO: Define strict types for FieldConfig
  */
+// export type FormModel<T> = T extends object ? T : undefined;
 /**
  * Determines which events to validate/clear validation, on.
  * And, you can bring your own event listeners just by adding one on
@@ -131,7 +133,7 @@ interface RefDataItem {
     label: string;
     value: any;
 }
-type RefData<T extends Record<string, RefDataItem[]>> = {};
+type RefData = Record<string, RefDataItem[]>;
 /**
  * Formvana - Form Class
  * Form is NOT valid, initially.
@@ -163,9 +165,10 @@ type RefData<T extends Record<string, RefDataItem[]>> = {};
  *
  * TODO: Decouple class-validator as to allow validation to be plugin based
  * TODO: Create easy component/pattern for field groups and stepper/wizzard
+ * TODO: Create plugin base for form template styling
  */
-declare class Form {
-    constructor(model: any, init?: Partial<Form>);
+declare class Form<FormModelType extends object> {
+    constructor(model: FormModelType, init?: Partial<Form<FormModelType>>);
     //#region ** Fields **
     //#region Core Functionality Fields
     /**
@@ -175,7 +178,7 @@ declare class Form {
      * (If you didn't set the model in the constructor)
      * When model is set, call buildFields() to build the fields.
      */
-    model: any;
+    model: FormModelType;
     /**
      * Fields are built from the model's metadata using reflection.
      * If model is set, call buildFields().
@@ -190,8 +193,10 @@ declare class Form {
      *
      * * Fields & reference data are linked via field.ref_key
      */
-    refs: Record<string, RefDataItem[]>;
+    refs: RefData;
     /**
+     * TODO: Decouple class-validator/allow other validators!
+     *
      * Validation options come from class-validator ValidatorOptions.
      *
      * Biggest perf increase comes from setting validationError.target = false
@@ -221,7 +226,7 @@ declare class Form {
      *
      * Similar to Angular form.valueChanges
      */
-    changes: Writable<Record<string, any>>;
+    value_changes: Writable<Record<string, any>>;
     /**
      * Use the NAME of the field (field.name) to disable/hide the field.
      */
@@ -311,13 +316,16 @@ declare class Form {
      *
      * Check example.form.ts for an example use case.
      */
-    loadData: (data: any, re_init?: boolean, update_initial_state?: boolean) => Form;
+    loadData: <T extends FormModelType>(data: T, re_init?: boolean, update_initial_state?: boolean) => Form<FormModelType>;
     /**
      * Just pass in the reference data and let the field configs do the rest.
      *
      * * Ref data MUST BE in format: Record<string, RefDataItem[]>
      */
-    attachRefData: (refs?: Record<string, RefDataItem[]>) => void;
+    attachRefData: (refs?: RefData) => void;
+    /**
+     * TODO: Optionaly, attach the _handleOnEvents function?
+     */
     addEventListenerToFields: (event: keyof HTMLElementEventMap, callback: Function, field_names: string | string[]) => void;
     //#endregion
     //#region - Validation
@@ -338,7 +346,7 @@ declare class Form {
     /**
      * Generate a Svelte Store from the current "this".
      */
-    storify: () => Writable<Form>;
+    storify: () => Writable<Form<FormModelType>>;
     // Clear ALL the errors.
     clearErrors: () => void;
     /**
@@ -401,17 +409,32 @@ declare function _linkFieldErrors(errors: ValidationError[], field: FieldConfig,
 declare function _linkErrors(errors: ValidationError[], fields: FieldConfig[]): void;
 //#endregion
 //#region Validation Helpers
-declare function _handleOnEvent(form: Form, required_fields: string[], stateful_items: string[], initial_state_str: string, field_names: string[], field: FieldConfig): Promise<void>;
+/**
+ * This is used to add functions and callbacks to the OnEvent
+ * handler. Functions can be added in a plugin-style manner now.
+ */
+declare function _usePlugins(funcs: any | any[]): void;
+/**
+ * Hanlde the events that will fire for each field.
+ * Corresponds to the form.on_events field.
+ *
+ * TODO: Add plugin area, hoist-er
+ * TODO: Decouple class-validator!
+ */
+declare function _handleOnEvent<T extends object>(form: Form<T>, required_fields: string[], stateful_items: string[], initial_state_str: string, field_names: string[], field: FieldConfig): Promise<void>;
 /**
  * TODO: Decouple class-validator as to allow plugin based validation
  *
  */
-declare function _validateField(form: Form, field: FieldConfig, required_fields: string[]): Promise<void>;
+declare function _validateField<T extends object>(form: Form<T>, field: FieldConfig, required_fields: string[]): Promise<void>;
 /**
  * Handle all the things associated with validation!
  * Link the errors to the fields.
+ * Check if all required fields are valid.
+ * Link values from fields to model if
+ * form.link_fields_to_model === LinkOnEvent.Valid is true.
  */
-declare function _handleValidation(form: Form, errors: ValidationError[], required_fields: string[], field?: FieldConfig): Promise<void>;
+declare function _handleValidation<T extends object>(form: Form<T>, errors: ValidationError[], required_fields: string[], field?: FieldConfig): Promise<void>;
 /**
  * TODO: Clean up this arfv implementation. Seems too clunky.
  *
@@ -422,25 +445,25 @@ declare function _requiredFieldsValid(errors: ValidationError[], required_fields
 //#endregion
 //#region - Form State
 // Returns a string of the current state
-declare function _getStateSnapshot(form: Form, stateful_items: string[]): string;
+declare function _getStateSnapshot<T extends object>(form: Form<T>, stateful_items: string[]): string;
 /**
  * Is the current form state different than the initial state?
  *
  * I've tested it with > 1000 fields in a single class with very slight input lag.
  */
-declare function _hasChanged(form: Form, stateful_items: string[], initial_state_str: string): void;
+declare function _hasChanged<T extends object>(form: Form<T>, stateful_items: string[], initial_state_str: string): void;
 // Clears everything before being destoryed.
-declare function _clearState(form: Form, initial_state: any, required_fields: string[]): void;
+declare function _clearState<T extends object>(form: Form<T>, initial_state: any, required_fields: string[]): void;
 /**
  * Grab a snapshot of several items that generally define the state of the form
  * and serialize them into a format that's easy-ish to check/deserialize (for resetting)
  */
-declare function _setInitialState(form: Form, stateful_items: string[], initial_state: any, initial_state_str: string): void;
+declare function _setInitialState<T extends object>(form: Form<T>, stateful_items: string[], initial_state: any, initial_state_str: string): void;
 /**
  * This one's kinda harry.
  * But it resets the form to it's initial state.
  */
-declare function _resetState(form: Form, stateful_items: string[], initial_state: any): void;
+declare function _resetState<T extends object>(form: Form<T>, stateful_items: string[], initial_state: any): void;
 //#endregion
 //#region - Styling
 /**
@@ -451,5 +474,5 @@ declare function _hideFields(hidden_fields: string[], field_names: string[], fie
 declare function _hideField(name: string, fields: FieldConfig[]): void;
 declare function _disableFields(disabled_fields: string[], field_names: string[], fields: FieldConfig[]): void;
 declare function _disableField(name: string, fields: FieldConfig[]): void;
-export { FieldGroup, FieldStep, FieldConfig, Form, field, _get, _buildFormFields, _getRequiredFieldNames, _setValueChanges, _attachEventListeners, _attachOnClearErrorEvents, _linkValues, _linkFieldErrors, _linkErrors, _handleOnEvent, _validateField, _handleValidation, _requiredFieldsValid, _getStateSnapshot, _hasChanged, _clearState, _setInitialState, _resetState, _createOrder, _hideFields, _hideField, _disableFields, _disableField, OnEvents, LinkOnEvent, RefDataItem, RefData };
+export { FieldGroup, FieldStep, FieldConfig, Form, field, _get, _buildFormFields, _getRequiredFieldNames, _setValueChanges, _attachEventListeners, _attachOnClearErrorEvents, _linkValues, _linkFieldErrors, _linkErrors, _usePlugins, _handleOnEvent, _validateField, _handleValidation, _requiredFieldsValid, _getStateSnapshot, _hasChanged, _clearState, _setInitialState, _resetState, _createOrder, _hideFields, _hideField, _disableFields, _disableField, OnEvents, LinkOnEvent, RefDataItem, RefData };
 //# sourceMappingURL=index.d.ts.map

@@ -6,6 +6,16 @@ import { LinkOnEvent, OnEvents } from "./types";
 
 //#region Utility Functions
 
+// function _initialize<FormModelType extends Object>(
+//   form: Form<FormModelType>,
+//   init: Partial<Form<FormModelType>>,
+//   key: keyof Partial<Form<FormModelType>> | keyof Form<FormModelType>
+// ): void {
+//   if (init[key]) {
+//     form[key] = init[key];
+//   }
+// }
+
 // Get the form field by name
 export function _get(name: string, fields: FieldConfig[]): FieldConfig {
   return fields.filter((f) => f.name === name)[0];
@@ -30,7 +40,7 @@ export function _buildFormFields(model: any): FieldConfig[] {
     // If the model has a value, attach it to the field config
     // 0, "", [], etc. are set in the constructor based on type.
     if (model[prop]) {
-      field.value.set(model[prop]);
+      field.setInitialValue(model[prop]);
     }
 
     // We made it. Return the field config and let's generate some inputs!
@@ -185,32 +195,46 @@ export function _linkErrors(
 //#region Validation Helpers
 
 /**
+ * This is used to add functions and callbacks to the OnEvent
+ * handler. Functions can be added in a plugin-style manner now.
+ */
+export function _usePlugins(funcs: any | any[]) {
+  if (Array.isArray(funcs)) {
+    funcs.forEach((func) => {
+      () => func();
+    });
+  } else {
+    () => funcs();
+  }
+}
+
+/**
  * Hanlde the events that will fire for each field.
  * Corresponds to the form.on_events field.
  *
  * TODO: Add plugin area, hoist-er
  * TODO: Decouple class-validator!
  */
-export function _handleOnEvent(
-  form: Form,
+export function _handleOnEvent<T extends Object>(
+  form: Form<T>,
   required_fields: string[],
   stateful_items: string[],
   initial_state_str: string,
   field_names: string[],
   field: FieldConfig
 ): Promise<void> {
-  /**
-   * Link the input from the field to the model.
-   * We aren't linking (only) the field value.
-   * We link all values just in case the field change propigates other field changes.
-   */
-  form.link_fields_to_model === LinkOnEvent.Always &&
-    _linkValues(true, form.fields, form.model);
-
-  _setValueChanges(form.changes, field.name, get(field.value));
-
-  _hideFields(form.hidden_fields, field_names, form.fields),
-    _disableFields(form.disabled_fields, field_names, form.fields);
+  _usePlugins([
+    /**
+     * Link the input from the field to the model.
+     * We aren't linking (only) the field value.
+     * We link all values just in case the field change propigates other field changes.
+     */
+    form.link_fields_to_model === LinkOnEvent.Always &&
+      _linkValues(true, form.fields, form.model),
+    _setValueChanges(form.value_changes, field.name, get(field.value)),
+    _hideFields(form.hidden_fields, field_names, form.fields),
+    _disableFields(form.disabled_fields, field_names, form.fields),
+  ]);
 
   return _validateField(form, field, required_fields).then(() => {
     _hasChanged(form, stateful_items, initial_state_str);
@@ -221,8 +245,8 @@ export function _handleOnEvent(
  * TODO: Decouple class-validator as to allow plugin based validation
  *
  */
-export function _validateField(
-  form: Form,
+export function _validateField<T extends Object>(
+  form: Form<T>,
   field: FieldConfig,
   required_fields: string[]
 ): Promise<void> {
@@ -236,9 +260,12 @@ export function _validateField(
 /**
  * Handle all the things associated with validation!
  * Link the errors to the fields.
+ * Check if all required fields are valid.
+ * Link values from fields to model if
+ * form.link_fields_to_model === LinkOnEvent.Valid is true.
  */
-export async function _handleValidation(
-  form: Form,
+export async function _handleValidation<T extends Object>(
+  form: Form<T>,
   errors: ValidationError[],
   required_fields: string[],
   field?: FieldConfig
@@ -307,8 +334,8 @@ export function _requiredFieldsValid(
 //#region - Form State
 
 // Returns a string of the current state
-export function _getStateSnapshot(
-  form: Form,
+export function _getStateSnapshot<T extends Object>(
+  form: Form<T>,
   stateful_items: string[]
 ): string {
   let i = 0,
@@ -326,8 +353,8 @@ export function _getStateSnapshot(
  *
  * I've tested it with > 1000 fields in a single class with very slight input lag.
  */
-export function _hasChanged(
-  form: Form,
+export function _hasChanged<T extends Object>(
+  form: Form<T>,
   stateful_items: string[],
   initial_state_str: string
 ): void {
@@ -339,12 +366,12 @@ export function _hasChanged(
 }
 
 // Clears everything before being destoryed.
-export function _clearState(
-  form: Form,
+export function _clearState<T extends Object>(
+  form: Form<T>,
   initial_state: any,
   required_fields: string[]
 ): void {
-  form.model = null;
+  form.model = undefined;
   initial_state = {};
   required_fields = [];
   form.refs = null;
@@ -355,8 +382,8 @@ export function _clearState(
  * Grab a snapshot of several items that generally define the state of the form
  * and serialize them into a format that's easy-ish to check/deserialize (for resetting)
  */
-export function _setInitialState(
-  form: Form,
+export function _setInitialState<T extends Object>(
+  form: Form<T>,
   stateful_items: string[],
   initial_state: any,
   initial_state_str: string
@@ -371,7 +398,7 @@ export function _setInitialState(
         ? (initial_state[key] = writable(true))
         : (initial_state[key] = writable(false));
     } else if (key === "changes") {
-      initial_state[key] = writable(get(form.changes));
+      initial_state[key] = writable(get(form.value_changes));
     } else {
       initial_state[key] = JSON.parse(JSON.stringify(form[key]));
     }
@@ -383,8 +410,8 @@ export function _setInitialState(
  * This one's kinda harry.
  * But it resets the form to it's initial state.
  */
-export function _resetState(
-  form: Form,
+export function _resetState<T extends Object>(
+  form: Form<T>,
   stateful_items: string[],
   initial_state: any
 ): void {
@@ -419,15 +446,16 @@ export function _resetState(
        */
       const model_state = JSON.parse(JSON.stringify(initial_state[key]));
       Object.keys(form[key]).forEach((mkey) => {
+        // It has a hard time with blank strings.
         form[key][mkey] = model_state[mkey];
       });
       _linkValues(false, form.fields, form.model);
     } else if (key === "changes") {
       // Reset form value changes!
       if (get(initial_state[key]) === {}) {
-        form.changes.set({});
+        form.value_changes.set({});
       } else {
-        form.changes.set(get(initial_state[key]));
+        form.value_changes.set(get(initial_state[key]));
       }
     } else {
       form[key] = JSON.parse(JSON.stringify(initial_state[key]));

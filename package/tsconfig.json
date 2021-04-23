@@ -1,9 +1,9 @@
 {
     "compilerOptions": {
-        "target": "esNext",
+        "target": "ES2018",
         "moduleResolution": "node",
-        "isolatedModules": true,
-        "strict": false,
+        "noUnusedLocals": true,
+        "strict": true,
         "esModuleInterop": true,
         "declaration": true,
         "declarationMap": true,
@@ -11,9 +11,6 @@
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
         "outDir": "./lib",
-        "types": [
-            "svelte"
-        ]
     },
     "include": [
         "lib"

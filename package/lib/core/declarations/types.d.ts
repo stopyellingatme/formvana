@@ -52,4 +52,4 @@ export interface RefDataItem {
     label: string;
     value: any;
 }
-export declare type RefData<T extends Record<string, RefDataItem[]>> = {};
+export declare type RefData = Record<string, RefDataItem[]>;

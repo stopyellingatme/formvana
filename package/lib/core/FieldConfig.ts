@@ -4,13 +4,11 @@ import { writable, Writable } from "svelte/store";
 
 export interface FieldGroup {
   name: string;
-  classnames?: string[]; // Order determines when to be applied
   label?: string;
 }
 
 export interface FieldStep {
   index: number;
-  classnames?: string[]; // Order determines when to be applied
   label?: string;
 }
 
@@ -25,15 +23,18 @@ export class FieldConfig {
   constructor(init: Partial<FieldConfig>) {
     // I know, Object.assign... lots of freedom there.
     Object.assign(this, init);
-    this.attributes["type"] = !this.attributes["type"]
-      ? this.type
-      : this.attributes["type"];
 
     if (!this.selector && !this.template) {
       throw new Error(
         `Please pass in a valid Element.\nEither a string selector or a SvelteComponent.`
       );
     }
+
+    // Set the type attribute if it's not already set
+    if (!this.attributes["type"]) {
+      this.attributes["type"] = this.type;
+    }
+
     /**
      * Trying to set some sane defaults when initializing field.
      * These can be over-written easily by simply adding a value to your
@@ -44,16 +45,16 @@ export class FieldConfig {
      */
     switch (this.type) {
       case "text" || "email" || "password" || "string":
-        this.value.set("");
+        this.setInitialValue("");
         break;
       case "decimal" || "double":
-        this.value.set(0.0);
+        this.setInitialValue(0.0);
         break;
       case "number" || "int" || "integer":
-        this.value.set(0);
+        this.setInitialValue(0);
         break;
       case "boolean" || "choice" || "radio" || "checkbox":
-        this.value.set(false);
+        this.setInitialValue(false);
         this.options = [];
         break;
       case "select" || "dropdown":
@@ -61,7 +62,7 @@ export class FieldConfig {
         break;
 
       default:
-        this.value.set(undefined);
+        this.setInitialValue(undefined);
         break;
     }
 
@@ -95,7 +96,7 @@ export class FieldConfig {
   label?: string;
   type: string = "text"; // Defaults to text, for now
   required: boolean = false;
-  value: Writable<any> = writable(null);
+  value: Writable<any> = writable(undefined);
 
   /**
    * You can use these to apply styles.
@@ -130,6 +131,7 @@ export class FieldConfig {
    * -- title='input title'
    * -- multiple
    * -- etc.
+   * -- anything you want!
    */
   attributes: object = {};
 
@@ -137,8 +139,10 @@ export class FieldConfig {
   group?: FieldGroup;
   step?: FieldStep;
 
+  private initial_value: any;
+
   clearValue = () => {
-    this.value.set(null);
+    this.value.set(this.initial_value);
   };
 
   clearErrors = () => {
@@ -148,5 +152,10 @@ export class FieldConfig {
   clear = () => {
     this.clearValue();
     this.clearErrors();
+  };
+
+  setInitialValue = (value: any) => {
+    this.initial_value = value;
+    this.value.set(value);
   };
 }

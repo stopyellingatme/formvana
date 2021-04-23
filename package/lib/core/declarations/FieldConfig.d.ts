@@ -3,12 +3,10 @@ import { SvelteComponent } from "svelte";
 import { Writable } from "svelte/store";
 export interface FieldGroup {
     name: string;
-    classnames?: string[];
     label?: string;
 }
 export interface FieldStep {
     index: number;
-    classnames?: string[];
     label?: string;
 }
 /**
@@ -66,12 +64,15 @@ export declare class FieldConfig {
      * -- title='input title'
      * -- multiple
      * -- etc.
+     * -- anything you want!
      */
     attributes: object;
     hint?: string;
     group?: FieldGroup;
     step?: FieldStep;
+    private initial_value;
     clearValue: () => void;
     clearErrors: () => void;
     clear: () => void;
+    setInitialValue: (value: any) => void;
 }
