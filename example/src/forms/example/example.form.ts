@@ -32,6 +32,10 @@ function initStore() {
     on_events: new OnEvents({ focus: false }),
     refs: ref_data,
     hidden_fields: ["description_99", "status_97"],
+    performance_options: {
+      link_all_values_on_event: "field",
+      enable_change_detection: true
+    },
   });
 
   // And add it to the store...
@@ -62,12 +66,12 @@ export const init = () => {
   setTimeout(() => {
     get(formState).loading.set(false);
     // get(formState).valid.set(true);
-    // get(formState).validate();
+    get(formState).validate();
   }, 1000);
 
-  // setTimeout(() => {
-    // get(formState).updateInitialState();
-  // }, 3000);
+  setTimeout(() => {
+  get(formState).updateInitialState();
+  }, 3000);
 
   // get(formState).value_changes.subscribe((val) => {
   //   console.log("CHANGE: ", val);

@@ -1,20 +1,17 @@
-import { ValidationError, validate } from "class-validator";
+import { validate } from "class-validator";
 import { get, writable, Writable } from "svelte/store";
 import { FieldConfig } from "./FieldConfig";
 import { Form } from "./Form";
-import { LinkOnEvent, OnEvents } from "./types";
+import {
+  Callback,
+  LinkOnEvent,
+  LinkValuesOnEvent,
+  OnEvents,
+  ValidationCallback,
+  ValidationError,
+} from "./types";
 
 //#region Utility Functions
-
-// function _initialize<FormModelType extends Object>(
-//   form: Form<FormModelType>,
-//   init: Partial<Form<FormModelType>>,
-//   key: keyof Partial<Form<FormModelType>> | keyof Form<FormModelType>
-// ): void {
-//   if (init[key]) {
-//     form[key] = init[key];
-//   }
-// }
 
 // Get the form field by name
 export function _get(name: string, fields: FieldConfig[]): FieldConfig {
@@ -26,9 +23,14 @@ export function _get(name: string, fields: FieldConfig[]): FieldConfig {
  * Build the field configs from this.model using metadata-reflection.
  * More comments inside...
  */
-export function _buildFormFields(model: any): FieldConfig[] {
+export function _buildFormFields(
+  model: any,
   // Grab the editableProperties from the @field decorator
-  let props: string[] = Reflect.getMetadata("editableProperties", model);
+  props: string[] = Reflect.getMetadata("editableProperties", model)
+): FieldConfig[] {
+  // Grab the editableProperties from the @field decorator
+  // let props: string[] = Reflect.getMetadata("editableProperties", model);
+
   // Map the @field fields to the form.fields array.
   const fields = props.map((prop: string) => {
     // Get the FieldConfig using metadata reflection
@@ -61,18 +63,17 @@ export function _getRequiredFieldNames(fields: FieldConfig[]): string[] {
 
 export function _setValueChanges(
   changes: Writable<Record<string, any>>,
-  field_name: string,
-  change: any
+  field: FieldConfig
 ) {
   const _changes = get(changes);
 
   // The change is on the same field
-  if (_changes[field_name]) {
-    _changes[field_name] = change;
+  if (_changes[field.name]) {
+    _changes[field.name] = get(field.value);
     changes.set({ ..._changes });
   } else {
     // Change is on a different field
-    changes.set({ ..._changes, [field_name]: change });
+    changes.set({ ..._changes, [field.name]: get(field.value) });
   }
 }
 
@@ -90,33 +91,6 @@ export function _attachEventListeners(
     if (shouldListen) {
       field.node.addEventListener(eventName, (e: Event) => callback(e), false);
     }
-    // If the field has options, we can assume it will use the change event listener
-    // if (field.options) {
-    //   // so don't add the input event listener
-    //   if (shouldListen && eventName !== "input") {
-    //     node.addEventListener(
-    //       eventName,
-    //       (ev) => {
-    //         callback(field);
-    //       },
-    //       false
-    //     );
-    //   }
-    // }
-    // // Else, we can assume it will use the input event listener
-    // // * This may be changed in the future
-    // else {
-    //   // and don't add the change event listener
-    //   if (shouldListen && eventName !== "change") {
-    //     node.addEventListener(
-    //       eventName,
-    //       (ev) => {
-    //         callback(field);
-    //       },
-    //       false
-    //     );
-    //   }
-    // }
   });
 }
 
@@ -139,11 +113,21 @@ export function _attachOnClearErrorEvents(
 
 //#region Linking Utilities
 
+/**
+ * Better performance in place of model/field data sync integrity
+ */
+function _linkFieldValues<ModelType extends Object>(
+  field: FieldConfig,
+  model: ModelType
+): void {
+  model[field.name] = get(field.value);
+}
+
 // Link values from FIELDS toMODEL or MODEL to FIELDS
-export function _linkValues(
+export function _linkValues<ModelType extends Object>(
   fromFieldsToModel: boolean,
   fields: FieldConfig[],
-  model: any
+  model: ModelType
 ): void {
   // Still the fastest way i've seen to loop in JS.
   let i = 0,
@@ -190,21 +174,69 @@ export function _linkErrors(
   });
 }
 
+export function _hanldeValueLinking<T extends Object>(
+  link_fields_to_model: LinkOnEvent,
+  all_fields_or_just_one: LinkValuesOnEvent,
+  model: T,
+  fields: FieldConfig[],
+  field?: FieldConfig
+): void {
+  const checkAllFieldLink = () => {
+    if (all_fields_or_just_one === "all" || !field) {
+      _linkValues(true, fields, model);
+    } else if (all_fields_or_just_one === "field") {
+      _linkFieldValues(field, model);
+    }
+  };
+  /**
+   * Link the input from the field to the model.
+   * We aren't linking (only) the field value.
+   * We link all values just in case the field change propigates other field changes.
+   */
+  if (link_fields_to_model === "always") {
+    checkAllFieldLink();
+  } else if (link_fields_to_model === "valid") {
+    checkAllFieldLink();
+  }
+}
+
 //#endregion
 
 //#region Validation Helpers
+
+function _handleValidationCallbacks(
+  when: "before" | "after",
+  callbacks?: ValidationCallback[]
+) {
+  if (callbacks) {
+    callbacks.forEach((cb) => {
+      if (cb.when === when) {
+        () => cb.callback();
+      }
+    });
+  }
+}
 
 /**
  * This is used to add functions and callbacks to the OnEvent
  * handler. Functions can be added in a plugin-style manner now.
  */
-export function _usePlugins(funcs: any | any[]) {
+ export function _executeFunctions(funcs: Callback | Callback[]) {
   if (Array.isArray(funcs)) {
     funcs.forEach((func) => {
-      () => func();
+      // () => func();
+      func();
     });
   } else {
-    () => funcs();
+    funcs();
+    // () => funcs();
+  }
+}
+
+function _executeIfTrue(is_true: boolean, cb: Callback) {
+  if (is_true) {
+    // () => cb();
+    cb();
   }
 }
 
@@ -212,49 +244,62 @@ export function _usePlugins(funcs: any | any[]) {
  * Hanlde the events that will fire for each field.
  * Corresponds to the form.on_events field.
  *
- * TODO: Add plugin area, hoist-er
- * TODO: Decouple class-validator!
  */
-export function _handleOnEvent<T extends Object>(
+export function _handleValidationEvent<T extends Object>(
   form: Form<T>,
   required_fields: string[],
   stateful_items: string[],
   initial_state_str: string,
   field_names: string[],
-  field: FieldConfig
-): Promise<void> {
-  _usePlugins([
+  field?: FieldConfig,
+  callbacks?: ValidationCallback[]
+): Promise<ValidationError[]> {
+  _executeFunctions([
     /**
      * Link the input from the field to the model.
      * We aren't linking (only) the field value.
      * We link all values just in case the field change propigates other field changes.
      */
-    form.link_fields_to_model === LinkOnEvent.Always &&
-      _linkValues(true, form.fields, form.model),
-    _setValueChanges(form.value_changes, field.name, get(field.value)),
-    _hideFields(form.hidden_fields, field_names, form.fields),
-    _disableFields(form.disabled_fields, field_names, form.fields),
+    () =>
+      _hanldeValueLinking(
+        form.link_fields_to_model,
+        form.performance_options.link_all_values_on_event,
+        form.model,
+        form.fields,
+        field
+      ),
+    () =>
+      _executeIfTrue(
+        Boolean(field) && form.performance_options.enable_change_detection,
+        () => _setValueChanges(form.value_changes, field)
+      ),
+    () => _handleValidationCallbacks("before", callbacks),
   ]);
 
-  return _validateField(form, field, required_fields).then(() => {
-    _hasChanged(form, stateful_items, initial_state_str);
-  });
-}
-
-/**
- * TODO: Decouple class-validator as to allow plugin based validation
- *
- */
-export function _validateField<T extends Object>(
-  form: Form<T>,
-  field: FieldConfig,
-  required_fields: string[]
-): Promise<void> {
-  return validate(form.model, form.validation_options).then(
-    (errors: ValidationError[]) => {
-      return _handleValidation(form, errors, required_fields, field);
-    }
-  );
+  return validate(form.model, form.validation_options)
+    .then((errors: ValidationError[]) => {
+      return _handleFormValidation(form, errors, required_fields, field);
+    })
+    .then((errors: ValidationError[]) => {
+      _executeFunctions([
+        () =>
+          _executeIfTrue(
+            form.performance_options.enable_hidden_fields_detection,
+            () => _hideFields(form.hidden_fields, field_names, form.fields)
+          ),
+        () =>
+          _executeIfTrue(
+            form.performance_options.enable_disabled_fields_detection,
+            () => _disableFields(form.disabled_fields, field_names, form.fields)
+          ),
+        () =>
+          _executeIfTrue(form.performance_options.enable_change_detection, () =>
+            _hasStateChanged(form, stateful_items, initial_state_str)
+          ),
+        () => _handleValidationCallbacks("after", callbacks),
+      ]);
+      return errors;
+    });
 }
 
 /**
@@ -264,18 +309,20 @@ export function _validateField<T extends Object>(
  * Link values from fields to model if
  * form.link_fields_to_model === LinkOnEvent.Valid is true.
  */
-export async function _handleValidation<T extends Object>(
+export async function _handleFormValidation<T extends Object>(
   form: Form<T>,
   errors: ValidationError[],
   required_fields: string[],
   field?: FieldConfig
-): Promise<void> {
+): Promise<ValidationError[]> {
   // There are errors!
-  if (errors.length > 0) {
+  if (errors && errors.length > 0) {
+    // console.log(errors);
+
     form.errors = errors;
 
     // Are we validating the whole form or just the fields?
-    if (field) {
+    if (field && field !== null) {
       // Link errors to field (to show validation errors)
       _linkFieldErrors(errors, field, "property");
     } else {
@@ -289,16 +336,22 @@ export async function _handleValidation<T extends Object>(
     } else {
       form.valid.set(false);
     }
+    return errors;
   } else {
     // We can't get here unless the errors we see are for non-required fields
 
     // If the config tells us to link the values only when the form
     // is valid, then link them here.
-    form.link_fields_to_model === LinkOnEvent.Valid &&
-      _linkValues(true, form.fields, form.model);
-
-    form.valid.set(true); // Form is valid!
+    _hanldeValueLinking(
+      form.link_fields_to_model,
+      form.performance_options.link_all_values_on_event,
+      form.model,
+      form.fields,
+      field
+    );
     form.clearErrors(); // Clear form errors
+    form.valid.set(true); // Form is valid!
+    return errors;
   }
 }
 
@@ -322,9 +375,12 @@ export function _requiredFieldsValid(
   // check if they're for a required field
   const errs = errors.map((e) => e.property);
   for (; len > i; ++i) {
-    if (errs.includes(required_fields[i])) {
+    if (errs.indexOf(required_fields[i]) !== -1) {
       return false;
     }
+    // if (errs.includes(required_fields[i])) {
+    //   return false;
+    // }
   }
   return true;
 }
@@ -353,7 +409,7 @@ export function _getStateSnapshot<T extends Object>(
  *
  * I've tested it with > 1000 fields in a single class with very slight input lag.
  */
-export function _hasChanged<T extends Object>(
+export function _hasStateChanged<T extends Object>(
   form: Form<T>,
   stateful_items: string[],
   initial_state_str: string
@@ -544,44 +600,5 @@ export function _disableField(name: string, fields: FieldConfig[]) {
   f.disabled = true;
   f.attributes["disabled"] = true;
 }
-
-/**
- * * Use this if you're trying to update the layout after initialization.
- * Similar to this.setOrder()
- *
- * Like this:
- * const layout = ["description", "status", "email", "name"];
- * const newState = sget(formState).buildStoredLayout(formState, layout);
- * formState.updateState({ ...newState });
- */
-// buildStoredLayout = (
-//   formState: Writable<any>,
-//   order: string[]
-// ): Writable<any> => {
-//   let fields = [];
-//   let leftovers = [];
-//   // Update the order
-//   formState.update((state) => (state.field_order = order));
-//   // Get the Form state
-//   const state = get(formState);
-//   state.field_order.forEach((item) => {
-//     state.fields.forEach((field) => {
-//       if (
-//         field.name === item ||
-//         (field.group && field.group.name === item) ||
-//         (field.step && `${field.step.index}` === item)
-//       ) {
-//         fields.push(field);
-//       } else if (
-//         leftovers.indexOf(field) === -1 &&
-//         state.field_order.indexOf(field.name) === -1
-//       ) {
-//         leftovers.push(field);
-//       }
-//     });
-//   });
-//   state.fields = [...fields, ...leftovers];
-//   return state;
-// };
 
 //#endregion

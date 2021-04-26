@@ -19,8 +19,9 @@ export interface FieldStep {
 export declare class FieldConfig {
     constructor(init: Partial<FieldConfig>);
     /**
-     * ! DO NOT SET NAME
-     * ! IT IS SET AUTOMATICALLY IN FORM.TS
+     * Only set "name" if you are using FieldConfig apart from
+     * your object/model.
+     * I.e. you are using plain JSON rather than a TS class.
      */
     readonly name: string;
     node: HTMLElement;

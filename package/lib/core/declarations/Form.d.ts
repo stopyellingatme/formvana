@@ -1,8 +1,7 @@
 import { ValidatorOptions } from "class-validator/types";
-import { ValidationError } from "class-validator";
 import { Writable } from "svelte/store";
 import { FieldConfig } from ".";
-import { OnEvents, LinkOnEvent, RefData } from "./types";
+import { OnEvents, LinkOnEvent, RefData, PerformanceOptions, ValidationError, ValidationCallback } from "./types";
 /**
  * Formvana - Form Class
  * Form is NOT valid, initially.
@@ -28,24 +27,26 @@ import { OnEvents, LinkOnEvent, RefData } from "./types";
  * with default html form layout & fields.
  *
  * Performance is blazing with < 500 fields.
- * Can render up to 2000 inputs in one class, but don't do that.
+ * Can render up to 2000 inputs in per class/fields.
  * Just break it up into 100 or so fields per form (max 250) if its a huge form.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
  * TODO: Decouple class-validator as to allow validation to be plugin based
  * TODO: Create easy component/pattern for field groups and stepper/wizzard
  * TODO: Create plugin base for form template styling
+ *
+ * TODO: Allow fields, model and validator to be passed in separately.
+ *  - This will allow for a more "dynamic" form building experience
  */
-export declare class Form<FormModelType extends object> {
-    constructor(model: FormModelType, init?: Partial<Form<FormModelType>>);
+export declare class Form<ModelType extends Object> {
+    constructor(model: ModelType, init?: Partial<Form<ModelType>>);
     /**
      * This is your form Model/Schema.
-     * TODO: Definite candidate for Mapped Type
      *
      * (If you didn't set the model in the constructor)
      * When model is set, call buildFields() to build the fields.
      */
-    model: FormModelType;
+    model: ModelType;
     /**
      * Fields are built from the model's metadata using reflection.
      * If model is set, call buildFields().
@@ -63,6 +64,8 @@ export declare class Form<FormModelType extends object> {
     refs: RefData;
     /**
      * TODO: Decouple class-validator/allow other validators!
+     * TODO: Change this to a custom type that takes the type of validator
+     * TODO: and the validators options. This will help decouple
      *
      * Validation options come from class-validator ValidatorOptions.
      *
@@ -140,6 +143,15 @@ export declare class Form<FormModelType extends object> {
      */
     private required_fields;
     /**
+     * High Performance options!
+     * Use these if you're trying to handle upwards of 1000+ inputs within a given model.
+     *
+     * link_all_values_on_event - we usually link all field values to the model on
+     * each event call. If set to false, we only link the field affected in the OnEvent
+     * which saves us iterating over each field and linking it to the model.
+     */
+    performance_options: Partial<PerformanceOptions>;
+    /**
      * Build the field configs via this.model using metadata-reflection.
      */
     private buildFields;
@@ -148,17 +160,17 @@ export declare class Form<FormModelType extends object> {
      *
      * Use on the element that will be interacted with.
      * e.g. <input/> -- <button/> -- <select/> -- etc.
-     * Check lib/svelte/defaults for more examples.
+     * Check examples folder for more details.
      *
      * * This hooks up the event listeners!
      *
      * This is for Svelte's "use:FUNCTION" feature.
      * The "use" directive passes the HTML Node as a parameter
-     * to the given function (e.g. use:useField(node: HTMLNode)).
-     *
-     * TODO: Create new Type that has/adds/includes node.name
+     * to the given function (e.g. use:useField(node: HTMLElement)).
      */
-    useField: (node: HTMLElement) => void;
+    useField: (node: HTMLElement & {
+        name: string;
+    }) => void;
     /**
      * Load new data into the form and build the fields.
      * Useful if you fetched data and need to update the form values.
@@ -172,7 +184,7 @@ export declare class Form<FormModelType extends object> {
      *
      * Check example.form.ts for an example use case.
      */
-    loadData: <T extends FormModelType>(data: T, re_init?: boolean, update_initial_state?: boolean) => Form<FormModelType>;
+    loadData: <T extends ModelType>(data: T, re_init?: boolean, update_initial_state?: boolean) => Form<ModelType>;
     /**
      * Just pass in the reference data and let the field configs do the rest.
      *
@@ -180,24 +192,28 @@ export declare class Form<FormModelType extends object> {
      */
     attachRefData: (refs?: RefData) => void;
     /**
-     * TODO: Optionaly, attach the _handleOnEvents function?
+     * Can attach event listeners to one or more fields.
+     *
+     * TODO: Optionaly, attach the _handleValidationEvents function?
      */
-    addEventListenerToFields: (event: keyof HTMLElementEventMap, callback: Function, field_names: string | string[]) => void;
+    addEventListenerToFields: (event: keyof HTMLElementEventMap, callback: ((...args: any) => void) | (() => void), field_names: string | string[]) => void;
     /**
      * Well, validate the form!
      * Clear the errors first, then do it, obviously.
+     * Can also link fields values to model.
+     * Can also hide or disable fields before validation.
      */
-    validate: () => Promise<ValidationError[]>;
+    validate: (callbacks?: ValidationCallback[]) => Promise<ValidationError[]>;
     validateAsync: () => Promise<void>;
     /**
      * If want to (in)validate a specific field for any reason.
      */
-    validateField: (field_name: string, message?: string) => void;
+    validateField: (field_name: string, withMessage?: string) => void;
     get: (field_name: string) => FieldConfig;
     /**
      * Generate a Svelte Store from the current "this".
      */
-    storify: () => Writable<Form<FormModelType>>;
+    storify: () => Writable<Form<ModelType>>;
     clearErrors: () => void;
     /**
      *! Make sure to call this when the component is unloaded/destroyed

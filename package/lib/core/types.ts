@@ -1,9 +1,68 @@
-/**
- * TODO: Define strict types for FieldConfig
- */
 
-// export type FormModel<T> = T extends object ? T : undefined;
+export type ValidationErrorType = {
+  target?: Object; // Object that was validated.
+  property: string; // Object's property that didn't pass validation.
+  value?: any; // Value that didn't pass a validation.
+  constraints?: {
+    // Constraints that failed validation with error messages.
+    [type: string]: string;
+  };
+  children?: ValidationErrorType[];
+};
 
+export class ValidationError {
+  /**
+   * @param errors essentially Record<string #1, string #2>
+   * with #1 being the name of the error constraint
+   * and #2 being the error message
+   * @param model_property_key, which model field are we linking this to?
+   * @param options, anything else part of the ValidationErrorType
+   */
+  constructor(
+    model_property_key?: string,
+    errors?: { [type: string]: string },
+    options?: Partial<ValidationErrorType>
+  ) {
+    this.property = model_property_key;
+    if (errors) {
+      this.constraints = errors;
+    }
+    if (options) {
+      Object.keys(this).forEach((key) => {
+        if (options[key]) this[key] = options[key];
+      });
+    }
+  }
+
+  target?: Object; // Object that was validated.
+  property: string; // Object's property that didn't pass validation.
+  value?: any; // Value that didn't pass a validation.
+  constraints?: {
+    // Constraints that failed validation with error messages.
+    [type: string]: string;
+  };
+  children?: ValidationErrorType[];
+}
+
+export type Callback = ((...args: any) => any) | (() => any);
+
+export type ValidationCallback = {
+  callback: Callback;
+  /**
+   * When should the callback fire?
+   * "before" or "after" validation?
+   */
+  when: "before" | "after";
+};
+
+export type LinkValuesOnEvent = "all" | "field";
+
+export type PerformanceOptions = {
+  link_all_values_on_event: LinkValuesOnEvent;
+  enable_hidden_fields_detection: boolean;
+  enable_disabled_fields_detection: boolean;
+  enable_change_detection: boolean;
+};
 /**
  * Determines which events to validate/clear validation, on.
  * And, you can bring your own event listeners just by adding one on
@@ -51,10 +110,11 @@ export class OnEvents {
  * Should we link the values always?
  * Or only if the form is valid?
  */
-export enum LinkOnEvent {
-  Always,
-  Valid,
-}
+// export enum LinkOnEvent {
+//   Always,
+//   Valid,
+// }
+export type LinkOnEvent = "always" | "valid";
 
 /**
  * Data format for the reference data items
