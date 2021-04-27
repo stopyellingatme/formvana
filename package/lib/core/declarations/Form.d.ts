@@ -1,7 +1,7 @@
 import { ValidatorOptions } from "class-validator/types";
 import { Writable } from "svelte/store";
 import { FieldConfig } from ".";
-import { OnEvents, LinkOnEvent, RefData, PerformanceOptions, ValidationError, ValidationCallback } from "./types";
+import { OnEvents, LinkOnEvent, RefData, PerformanceOptions, ValidationError, ValidationCallback, ValidatorFunction } from "./types";
 /**
  * Formvana - Form Class
  * Form is NOT valid, initially.
@@ -72,7 +72,8 @@ export declare class Form<ModelType extends Object> {
      * Biggest perf increase comes from setting validationError.target = false
      * (so the whole model is not attached to each error message)
      */
-    readonly validation_options: ValidatorOptions;
+    readonly validation_options: Partial<ValidatorOptions>;
+    validator: ValidatorFunction;
     /**
      * The errors are of type ValidationError which comes from class-validator.
      * Errors are usually attached to the fields which the error is for.
@@ -152,9 +153,12 @@ export declare class Form<ModelType extends Object> {
      */
     performance_options: Partial<PerformanceOptions>;
     /**
-     * Build the field configs via this.model using metadata-reflection.
+     * Builds the fields from the model.
+     * Builds the field configs via this.model using metadata-reflection.
+     *
+     * TODO: Allow JSON model and schema validation/setup
      */
-    private buildFields;
+    buildFields: (model?: ModelType) => void;
     /**
      * ATTACH TO SAME ELEMENT AS FIELD.NAME!
      *
@@ -196,7 +200,7 @@ export declare class Form<ModelType extends Object> {
      *
      * TODO: Optionaly, attach the _handleValidationEvents function?
      */
-    addEventListenerToFields: (event: keyof HTMLElementEventMap, callback: ((...args: any) => void) | (() => void), field_names: string | string[]) => void;
+    addEventListenerToFields: (event: keyof HTMLElementEventMap, callback: ((...args: unknown[]) => void) | (() => void), field_names: string | string[]) => void;
     /**
      * Well, validate the form!
      * Clear the errors first, then do it, obviously.
@@ -204,11 +208,11 @@ export declare class Form<ModelType extends Object> {
      * Can also hide or disable fields before validation.
      */
     validate: (callbacks?: ValidationCallback[]) => Promise<ValidationError[]>;
-    validateAsync: () => Promise<void>;
+    validateAsync: (callbacks?: ValidationCallback[]) => Promise<ValidationError[]>;
     /**
      * If want to (in)validate a specific field for any reason.
      */
-    validateField: (field_name: string, withMessage?: string) => void;
+    validateField: (field_name: string, withMessage?: string, callbacks?: ValidationCallback[]) => void;
     get: (field_name: string) => FieldConfig;
     /**
      * Generate a Svelte Store from the current "this".

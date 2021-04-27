@@ -1,6 +1,7 @@
 import { get } from "svelte/store";
-import { Form, OnEvents, RefDataItem } from "@formvana";
+import { Form, OnEvents, RefDataItem, ValidationCallback } from "@formvana";
 import { ExampleModel } from "../../models/ExampleClass";
+import { validate } from "class-validator";
 //@ts-ignore
 import ExampleTemplate from "../../templates/ExampleTemplate.svelte";
 
@@ -27,14 +28,14 @@ const ref_data: Record<string, RefDataItem[]> = {
 
 function initStore() {
   // Just gonna set up the form real quick...
-  let form = new Form(new ExampleModel(), {
+  let form = new Form(new ExampleModel(), validate, {
     template: ExampleTemplate,
     on_events: new OnEvents({ focus: false }),
     refs: ref_data,
     hidden_fields: ["description_99", "status_97"],
     performance_options: {
-      link_all_values_on_event: "field",
-      enable_change_detection: true
+      link_all_values_on_event: "all",
+      enable_change_detection: true,
     },
   });
 
@@ -66,11 +67,27 @@ export const init = () => {
   setTimeout(() => {
     get(formState).loading.set(false);
     // get(formState).valid.set(true);
-    get(formState).validate();
+    const callbacks: ValidationCallback[] = [
+      {
+        callback: () => {
+          console.log("Weeehoo!");
+        },
+        when: "after",
+      },
+      {
+        callback: () => {
+          // console.log("Weeehoo, again!!!");
+          get(formState).get("name_100").value.set("some value jfkdsalfjdsk");
+          get(formState).validate();
+        },
+        when: "before",
+      },
+    ];
+    get(formState).validate(callbacks);
   }, 1000);
 
   setTimeout(() => {
-  get(formState).updateInitialState();
+    get(formState).updateInitialState();
   }, 3000);
 
   // get(formState).value_changes.subscribe((val) => {

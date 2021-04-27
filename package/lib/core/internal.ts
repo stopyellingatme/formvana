@@ -1,11 +1,10 @@
-import { validate } from "class-validator";
 import { get, writable, Writable } from "svelte/store";
 import { FieldConfig } from "./FieldConfig";
 import { Form } from "./Form";
 import {
   Callback,
-  LinkOnEvent,
-  LinkValuesOnEvent,
+  // LinkOnEvent,
+  // LinkValuesOnEvent,
   OnEvents,
   ValidationCallback,
   ValidationError,
@@ -164,7 +163,7 @@ export function _linkFieldErrors(
   }
 }
 
-export function _linkErrors(
+export function _linkAllErrors(
   errors: ValidationError[],
   fields: FieldConfig[]
 ): void {
@@ -175,17 +174,14 @@ export function _linkErrors(
 }
 
 export function _hanldeValueLinking<T extends Object>(
-  link_fields_to_model: LinkOnEvent,
-  all_fields_or_just_one: LinkValuesOnEvent,
-  model: T,
-  fields: FieldConfig[],
+  form: Form<T>,
   field?: FieldConfig
 ): void {
   const checkAllFieldLink = () => {
-    if (all_fields_or_just_one === "all" || !field) {
-      _linkValues(true, fields, model);
-    } else if (all_fields_or_just_one === "field") {
-      _linkFieldValues(field, model);
+    if (form.performance_options.link_all_values_on_event === "all" || !field) {
+      _linkValues(true, form.fields, form.model);
+    } else if (form.performance_options.link_all_values_on_event === "field") {
+      _linkFieldValues(field, form.model);
     }
   };
   /**
@@ -193,9 +189,9 @@ export function _hanldeValueLinking<T extends Object>(
    * We aren't linking (only) the field value.
    * We link all values just in case the field change propigates other field changes.
    */
-  if (link_fields_to_model === "always") {
+  if (form.link_fields_to_model === "always") {
     checkAllFieldLink();
-  } else if (link_fields_to_model === "valid") {
+  } else if (form.link_fields_to_model === "valid") {
     checkAllFieldLink();
   }
 }
@@ -205,13 +201,13 @@ export function _hanldeValueLinking<T extends Object>(
 //#region Validation Helpers
 
 function _handleValidationCallbacks(
-  when: "before" | "after",
+  when_to_call: "before" | "after",
   callbacks?: ValidationCallback[]
 ) {
   if (callbacks) {
     callbacks.forEach((cb) => {
-      if (cb.when === when) {
-        () => cb.callback();
+      if (cb.when === when_to_call) {
+        cb.callback();
       }
     });
   }
@@ -221,23 +217,18 @@ function _handleValidationCallbacks(
  * This is used to add functions and callbacks to the OnEvent
  * handler. Functions can be added in a plugin-style manner now.
  */
- export function _executeFunctions(funcs: Callback | Callback[]) {
-  if (Array.isArray(funcs)) {
-    funcs.forEach((func) => {
-      // () => func();
-      func();
+export function _executeCallbacks(callbacks: Callback | Callback[]) {
+  if (Array.isArray(callbacks)) {
+    callbacks.forEach((cb) => {
+      cb();
     });
   } else {
-    funcs();
-    // () => funcs();
+    callbacks();
   }
 }
 
 function _executeIfTrue(is_true: boolean, cb: Callback) {
-  if (is_true) {
-    // () => cb();
-    cb();
-  }
+  if (is_true) cb();
 }
 
 /**
@@ -254,52 +245,57 @@ export function _handleValidationEvent<T extends Object>(
   field?: FieldConfig,
   callbacks?: ValidationCallback[]
 ): Promise<ValidationError[]> {
-  _executeFunctions([
+  _executeCallbacks([
     /**
      * Link the input from the field to the model.
      * We aren't linking (only) the field value.
      * We link all values just in case the field change propigates other field changes.
      */
-    () =>
-      _hanldeValueLinking(
-        form.link_fields_to_model,
-        form.performance_options.link_all_values_on_event,
-        form.model,
-        form.fields,
-        field
-      ),
+    () => _hanldeValueLinking(form, field),
+
     () =>
       _executeIfTrue(
         Boolean(field) && form.performance_options.enable_change_detection,
         () => _setValueChanges(form.value_changes, field)
       ),
+
     () => _handleValidationCallbacks("before", callbacks),
   ]);
 
-  return validate(form.model, form.validation_options)
-    .then((errors: ValidationError[]) => {
-      return _handleFormValidation(form, errors, required_fields, field);
-    })
-    .then((errors: ValidationError[]) => {
-      _executeFunctions([
-        () =>
-          _executeIfTrue(
-            form.performance_options.enable_hidden_fields_detection,
-            () => _hideFields(form.hidden_fields, field_names, form.fields)
-          ),
-        () =>
-          _executeIfTrue(
-            form.performance_options.enable_disabled_fields_detection,
-            () => _disableFields(form.disabled_fields, field_names, form.fields)
-          ),
-        () =>
-          _executeIfTrue(form.performance_options.enable_change_detection, () =>
-            _hasStateChanged(form, stateful_items, initial_state_str)
-          ),
-        () => _handleValidationCallbacks("after", callbacks),
-      ]);
-      return errors;
-    });
+  // return validate(form.model, form.validation_options)
+  return (
+    form
+      .validator(form.model, form.validation_options)
+      // .then((errors: ValidationError[]) => {
+      //   return _handleFormValidation(form, errors, required_fields, field);
+      // })
+      .then((errors: ValidationError[]) => {
+        _executeCallbacks([
+          () => _handleFormValidation(form, errors, required_fields, field),
+          () =>
+            _executeIfTrue(
+              form.performance_options.enable_hidden_fields_detection,
+              () => _hideFields(form.hidden_fields, field_names, form.fields)
+            ),
+
+          () =>
+            _executeIfTrue(
+              form.performance_options.enable_disabled_fields_detection,
+              () =>
+                _disableFields(form.disabled_fields, field_names, form.fields)
+            ),
+
+          () =>
+            _executeIfTrue(
+              form.performance_options.enable_change_detection,
+              () => _hasStateChanged(form, stateful_items, initial_state_str)
+            ),
+
+          () => _handleValidationCallbacks("after", callbacks),
+        ]);
+        return errors;
+      })
+  );
 }
 
 /**
@@ -327,7 +323,7 @@ export async function _handleFormValidation<T extends Object>(
       _linkFieldErrors(errors, field, "property");
     } else {
       // This is validatino for the whole form!
-      _linkErrors(errors, form.fields);
+      _linkAllErrors(errors, form.fields);
     }
 
     // All required fields are valid?
@@ -342,13 +338,7 @@ export async function _handleFormValidation<T extends Object>(
 
     // If the config tells us to link the values only when the form
     // is valid, then link them here.
-    _hanldeValueLinking(
-      form.link_fields_to_model,
-      form.performance_options.link_all_values_on_event,
-      form.model,
-      form.fields,
-      field
-    );
+    _hanldeValueLinking(form, field);
     form.clearErrors(); // Clear form errors
     form.valid.set(true); // Form is valid!
     return errors;
@@ -487,7 +477,7 @@ export function _resetState<T extends Object>(
       });
       // If this.errors is not empty then attach the errors to the fields
       if (form.errors && form.errors.length > 0) {
-        _linkErrors(form.errors, form.fields);
+        _linkAllErrors(form.errors, form.fields);
       }
     } else if (key === "model") {
       /**
@@ -517,6 +507,7 @@ export function _resetState<T extends Object>(
       form[key] = JSON.parse(JSON.stringify(initial_state[key]));
     }
   });
+  form.changed.set(false);
 }
 
 //#endregion

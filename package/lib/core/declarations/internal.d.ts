@@ -1,7 +1,7 @@
 import { Writable } from "svelte/store";
 import { FieldConfig } from "./FieldConfig";
 import { Form } from "./Form";
-import { LinkOnEvent, LinkValuesOnEvent, OnEvents, ValidationCallback, ValidationError } from "./types";
+import { Callback, OnEvents, ValidationCallback, ValidationError } from "./types";
 export declare function _get(name: string, fields: FieldConfig[]): FieldConfig;
 /**
  *
@@ -19,18 +19,17 @@ export declare function _linkValues<ModelType extends Object>(fromFieldsToModel:
  * TODO: Disconnect class-validator dependency from all functions
  */
 export declare function _linkFieldErrors(errors: ValidationError[], field: FieldConfig, filter_term: keyof ValidationError): void;
-export declare function _linkErrors(errors: ValidationError[], fields: FieldConfig[]): void;
-export declare function _hanldeValueLinking<T extends Object>(link_fields_to_model: LinkOnEvent, link_all_values_on_event: LinkValuesOnEvent, model: T, fields: FieldConfig[], field?: FieldConfig): void;
+export declare function _linkAllErrors(errors: ValidationError[], fields: FieldConfig[]): void;
+export declare function _hanldeValueLinking<T extends Object>(form: Form<T>, field?: FieldConfig): void;
 /**
  * This is used to add functions and callbacks to the OnEvent
  * handler. Functions can be added in a plugin-style manner now.
  */
-export declare function _executeFunctions(funcs: any | any[]): void;
+export declare function _executeCallbacks(callbacks: Callback | Callback[]): void;
 /**
  * Hanlde the events that will fire for each field.
  * Corresponds to the form.on_events field.
  *
- * TODO: Add plugin area, hoist-er
  */
 export declare function _handleValidationEvent<T extends Object>(form: Form<T>, required_fields: string[], stateful_items: string[], initial_state_str: string, field_names: string[], field?: FieldConfig, callbacks?: ValidationCallback[]): Promise<ValidationError[]>;
 /**

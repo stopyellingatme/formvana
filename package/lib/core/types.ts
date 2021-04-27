@@ -1,3 +1,4 @@
+export type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
 
 export type ValidationErrorType = {
   target?: Object; // Object that was validated.

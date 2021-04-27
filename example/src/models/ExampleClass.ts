@@ -1347,7 +1347,7 @@ export class ExampleModel {
       selector: "input",
       type: "text",
       label: "Name 100",
-      required: true,
+      required: false,
       classes: "col-span-4 sm:col-span-2",
       attributes: { placeholder: "Name 100" },
     }

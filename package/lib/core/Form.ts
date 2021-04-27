@@ -1,5 +1,5 @@
 import { ValidatorOptions } from "class-validator/types";
-// import { validateOrReject } from "class-validator";
+// import { validate  } from "class-validator";
 import { get, writable, Writable } from "svelte/store";
 import { FieldConfig } from ".";
 import {
@@ -9,6 +9,7 @@ import {
   PerformanceOptions,
   ValidationError,
   ValidationCallback,
+  ValidatorFunction,
 } from "./types";
 import {
   _buildFormFields,
@@ -17,7 +18,7 @@ import {
   _attachEventListeners,
   _attachOnClearErrorEvents,
   _linkFieldErrors,
-  _linkErrors,
+  _linkAllErrors,
   _linkValues,
   _requiredFieldsValid,
   _getStateSnapshot,
@@ -30,7 +31,8 @@ import {
   _resetState,
   _handleFormValidation,
   _handleValidationEvent,
-  _executeFunctions,
+  _executeCallbacks,
+  _hanldeValueLinking,
 } from "./internal";
 
 /**
@@ -70,7 +72,11 @@ import {
  *  - This will allow for a more "dynamic" form building experience
  */
 export class Form<ModelType extends Object> {
-  constructor(model: ModelType, init?: Partial<Form<ModelType>>) {
+  constructor(
+    model: ModelType,
+    validator?: ValidatorFunction,
+    init?: Partial<Form<ModelType>>
+  ) {
     if (init) {
       Object.keys(this).forEach((key) => {
         if (init[key]) {
@@ -84,6 +90,13 @@ export class Form<ModelType extends Object> {
       this.buildFields();
     } else {
       throw new Error("Model is not valid. Please pass in a valid model.");
+    }
+    if (validator) {
+      this.validator = validator;
+    } else {
+      throw new Error(
+        "Please add a validator with ReturnType<Promise<ValidationError[]>>"
+      );
     }
     // If they passed in a field order, set the order.
     if (this.field_order && this.field_order.length > 0) {
@@ -150,7 +163,7 @@ export class Form<ModelType extends Object> {
    * Biggest perf increase comes from setting validationError.target = false
    * (so the whole model is not attached to each error message)
    */
-  readonly validation_options: ValidatorOptions = {
+  readonly validation_options: Partial<ValidatorOptions> = {
     skipMissingProperties: false,
     whitelist: false,
     forbidNonWhitelisted: false,
@@ -163,6 +176,8 @@ export class Form<ModelType extends Object> {
     forbidUnknownValues: true,
     stopAtFirstError: false,
   };
+
+  validator: ValidatorFunction;
 
   /**
    * The errors are of type ValidationError which comes from class-validator.
@@ -290,9 +305,12 @@ export class Form<ModelType extends Object> {
   //#region - Form Setup
 
   /**
-   * Build the field configs via this.model using metadata-reflection.
+   * Builds the fields from the model.
+   * Builds the field configs via this.model using metadata-reflection.
+   *
+   * TODO: Allow JSON model and schema validation/setup
    */
-  private buildFields = (model = this.model): void => {
+  buildFields = (model = this.model): void => {
     this.fields = _buildFormFields(model);
     // Set the field names for faster searching
     //(instead of mapping the names (potentially) each keystoke)
@@ -391,7 +409,7 @@ export class Form<ModelType extends Object> {
    */
   addEventListenerToFields = (
     event: keyof HTMLElementEventMap,
-    callback: ((...args: any) => void) | (() => void),
+    callback: ((...args: unknown[]) => void) | (() => void),
     field_names: string | string[]
   ): void => {
     if (Array.isArray(field_names)) {
@@ -424,52 +442,30 @@ export class Form<ModelType extends Object> {
       null,
       callbacks
     );
-    // _executeFunctions([
-    //   this.clearErrors(),
-    //   // Link the input from the field to the model.
-    //   this.link_fields_to_model === LinkOnEvent.Always &&
-    //     _linkValues(true, this.fields, this.model),
-    //   _hideFields(this.hidden_fields, this.field_names, this.fields),
-    //   _disableFields(this.disabled_fields, this.field_names, this.fields),
-    //   () => {
-    //     if (useAs === "plugin") {
-    //       () => withCb();
-    //     }
-    //   },
-    // ]);
-
-    // Return class-validator validate() function.
-    // Validate the model with given validation config.
-    // return validate(this.model, this.validation_options).then(
-    //   (errors: ValidationError[]) => {
-    //     _handleFormValidation(this, errors, this.required_fields);
-    //     return errors;
-    //   }
-    // );
   };
 
-  validateAsync = async (): Promise<void> => {
-    // _executeFunctions([
-    //   this.clearErrors(),
-    //   // Link the input from the field to the model.
-    //   this.link_fields_to_model === "always" &&
-    //     _linkValues(true, this.fields, this.model),
-    //   _hideFields(this.hidden_fields, this.field_names, this.fields),
-    //   _disableFields(this.disabled_fields, this.field_names, this.fields),
-    // ]);
-    // try {
-    //   return await validateOrReject(this.model, this.validation_options);
-    // } catch (errors) {
-    //   _handleFormValidation(this, errors, this.required_fields);
-    //   // console.log("Errors: ", errors);
-    //   return errors;
-    // }
+  validateAsync = async (
+    callbacks?: ValidationCallback[]
+  ): Promise<ValidationError[]> => {
+    return await _handleValidationEvent(
+      this,
+      this.required_fields,
+      this.stateful_items,
+      this.initial_state_str,
+      this.field_names,
+      null,
+      callbacks
+    );
   };
 
   /**
    * If want to (in)validate a specific field for any reason.
    */
-  validateField = (field_name: string, withMessage?: string): void => {
+  validateField = (
+    field_name: string,
+    withMessage?: string,
+    callbacks?: ValidationCallback[]
+  ): void => {
     const field = _get(field_name, this.fields);
     if (!withMessage) {
       _handleValidationEvent(
@@ -478,7 +474,8 @@ export class Form<ModelType extends Object> {
         this.stateful_items,
         this.initial_state_str,
         this.field_names,
-        field
+        field,
+        callbacks
       );
     } else {
       const err = new ValidationError(
@@ -487,7 +484,7 @@ export class Form<ModelType extends Object> {
         { value: get(field.value) }
       );
       this.errors.push(err);
-      _linkErrors(this.errors, this.fields);
+      _linkAllErrors(this.errors, this.fields);
     }
   };
 

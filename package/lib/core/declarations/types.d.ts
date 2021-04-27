@@ -1,3 +1,4 @@
+export declare type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
 export declare type ValidationErrorType = {
     target?: Object;
     property: string;
@@ -26,8 +27,9 @@ export declare class ValidationError {
     };
     children?: ValidationErrorType[];
 }
+export declare type Callback = ((...args: any) => any) | (() => any);
 export declare type ValidationCallback = {
-    callback: ((...args: any) => void) | (() => void);
+    callback: Callback;
     /**
      * When should the callback fire?
      * "before" or "after" validation?

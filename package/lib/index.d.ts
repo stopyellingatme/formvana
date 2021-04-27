@@ -79,6 +79,7 @@ declare class FieldConfig {
     clear: () => void;
     setInitialValue: (value: any) => void;
 }
+type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
 type ValidationErrorType = {
     target?: Object; // Object that was validated.
     property: string; // Object's property that didn't pass validation.
@@ -216,7 +217,7 @@ type RefData = Record<string, RefDataItem[]>;
  *  - This will allow for a more "dynamic" form building experience
  */
 declare class Form<ModelType extends Object> {
-    constructor(model: ModelType, init?: Partial<Form<ModelType>>);
+    constructor(model: ModelType, validator?: ValidatorFunction, init?: Partial<Form<ModelType>>);
     //#region ** Fields **
     //#region Core Functionality Fields
     /**
@@ -251,7 +252,8 @@ declare class Form<ModelType extends Object> {
      * Biggest perf increase comes from setting validationError.target = false
      * (so the whole model is not attached to each error message)
      */
-    readonly validation_options: ValidatorOptions;
+    readonly validation_options: Partial<ValidatorOptions>;
+    validator: ValidatorFunction;
     /**
      * The errors are of type ValidationError which comes from class-validator.
      * Errors are usually attached to the fields which the error is for.
@@ -342,9 +344,12 @@ declare class Form<ModelType extends Object> {
     //#region ** Form API **
     //#region - Form Setup
     /**
-     * Build the field configs via this.model using metadata-reflection.
+     * Builds the fields from the model.
+     * Builds the field configs via this.model using metadata-reflection.
+     *
+     * TODO: Allow JSON model and schema validation/setup
      */
-    private buildFields;
+    buildFields: (model?: ModelType) => void;
     /**
      * ATTACH TO SAME ELEMENT AS FIELD.NAME!
      *
@@ -386,7 +391,7 @@ declare class Form<ModelType extends Object> {
      *
      * TODO: Optionaly, attach the _handleValidationEvents function?
      */
-    addEventListenerToFields: (event: keyof HTMLElementEventMap, callback: ((...args: any) => void) | (() => void), field_names: string | string[]) => void;
+    addEventListenerToFields: (event: keyof HTMLElementEventMap, callback: ((...args: unknown[]) => void) | (() => void), field_names: string | string[]) => void;
     //#endregion
     //#region - Validation
     /**
@@ -396,11 +401,11 @@ declare class Form<ModelType extends Object> {
      * Can also hide or disable fields before validation.
      */
     validate: (callbacks?: ValidationCallback[]) => Promise<ValidationError$0[]>;
-    validateAsync: () => Promise<void>;
+    validateAsync: (callbacks?: ValidationCallback[]) => Promise<ValidationError$0[]>;
     /**
      * If want to (in)validate a specific field for any reason.
      */
-    validateField: (field_name: string, withMessage?: string) => void;
+    validateField: (field_name: string, withMessage?: string, callbacks?: ValidationCallback[]) => void;
     //#endregion
     //#region - Utility Methods
     // Get Field by name
@@ -469,18 +474,17 @@ declare function _linkValues<ModelType extends Object>(fromFieldsToModel: boolea
 declare function _linkFieldErrors(errors: ValidationError$0[], field: FieldConfig, filter_term: keyof ValidationError$0 // TODO: Create special validation error Type
 // TODO: Create special validation error Type
 ): void;
-declare function _linkErrors(errors: ValidationError$0[], fields: FieldConfig[]): void;
-declare function _hanldeValueLinking<T extends Object>(link_fields_to_model: LinkOnEvent, all_fields_or_just_one: LinkValuesOnEvent, model: T, fields: FieldConfig[], field?: FieldConfig): void;
+declare function _linkAllErrors(errors: ValidationError$0[], fields: FieldConfig[]): void;
+declare function _hanldeValueLinking<T extends Object>(form: Form<T>, field?: FieldConfig): void;
 /**
  * This is used to add functions and callbacks to the OnEvent
  * handler. Functions can be added in a plugin-style manner now.
  */
-declare function _executeFunctions(funcs: Callback | Callback[]): void;
+declare function _executeCallbacks(callbacks: Callback | Callback[]): void;
 /**
  * Hanlde the events that will fire for each field.
  * Corresponds to the form.on_events field.
  *
- * TODO: Add plugin area, hoist-er
  */
 declare function _handleValidationEvent<T extends Object>(form: Form<T>, required_fields: string[], stateful_items: string[], initial_state_str: string, field_names: string[], field?: FieldConfig, callbacks?: ValidationCallback[]): Promise<ValidationError$0[]>;
 /**
@@ -530,5 +534,5 @@ declare function _hideFields(hidden_fields: string[], field_names: string[], fie
 declare function _hideField(name: string, fields: FieldConfig[]): void;
 declare function _disableFields(disabled_fields: string[], field_names: string[], fields: FieldConfig[]): void;
 declare function _disableField(name: string, fields: FieldConfig[]): void;
-export { FieldGroup, FieldStep, FieldConfig, Form, field, _get, _buildFormFields, _getRequiredFieldNames, _setValueChanges, _attachEventListeners, _attachOnClearErrorEvents, _linkValues, _linkFieldErrors, _linkErrors, _hanldeValueLinking, _executeFunctions, _handleValidationEvent, _handleFormValidation, _requiredFieldsValid, _getStateSnapshot, _hasStateChanged, _clearState, _setInitialState, _resetState, _createOrder, _hideFields, _hideField, _disableFields, _disableField, ValidationErrorType, ValidationError$0 as ValidationError, Callback, ValidationCallback, LinkValuesOnEvent, PerformanceOptions, OnEvents, LinkOnEvent, RefDataItem, RefData };
+export { FieldGroup, FieldStep, FieldConfig, Form, field, _get, _buildFormFields, _getRequiredFieldNames, _setValueChanges, _attachEventListeners, _attachOnClearErrorEvents, _linkValues, _linkFieldErrors, _linkAllErrors, _hanldeValueLinking, _executeCallbacks, _handleValidationEvent, _handleFormValidation, _requiredFieldsValid, _getStateSnapshot, _hasStateChanged, _clearState, _setInitialState, _resetState, _createOrder, _hideFields, _hideField, _disableFields, _disableField, ValidatorFunction, ValidationErrorType, ValidationError$0 as ValidationError, Callback, ValidationCallback, LinkValuesOnEvent, PerformanceOptions, OnEvents, LinkOnEvent, RefDataItem, RefData };
 //# sourceMappingURL=index.d.ts.map
