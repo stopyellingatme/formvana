@@ -60,10 +60,17 @@ export function _getRequiredFieldNames(fields: FieldConfig[]): string[] {
   return required_field_names;
 }
 
+/**
+ * Helper function for value_change emitter.
+ * Write the form's value changes to form.value_changes.
+ *
+ * @param changes incoming value changes
+ * @param field field emitting the changes
+ */
 export function _setValueChanges(
   changes: Writable<Record<string, any>>,
   field: FieldConfig
-) {
+): void {
   const _changes = get(changes);
 
   // The change is on the same field
@@ -80,10 +87,14 @@ export function _setValueChanges(
 
 //#region HTML Event Helpers
 
+/**
+ * Attach the OnEvents events to each form.field.
+ * Parent: form.useField(...)
+ */
 export function _attachEventListeners(
   field: FieldConfig,
   on_events: OnEvents,
-  callback: Function
+  callback: Callback
 ): void {
   Object.entries(on_events).forEach(([eventName, shouldListen]) => {
     // If shouldListen true, then add the event listener
@@ -96,7 +107,7 @@ export function _attachEventListeners(
 export function _attachOnClearErrorEvents(
   node: HTMLElement,
   clear_errors_on_events: OnEvents,
-  callback?: Function
+  callback?: Callback
 ): void {
   Object.entries(clear_errors_on_events).forEach(
     ([eventName, shouldListen]) => {
@@ -106,6 +117,32 @@ export function _attachOnClearErrorEvents(
       }
     }
   );
+}
+
+export function _addCallbackToField(
+  field: FieldConfig,
+  event: keyof HTMLElementEventMap,
+  callbacks: ValidationCallback[] | Callback,
+  with_validation_event: boolean = true
+) {
+  if (with_validation_event && Array.isArray(callbacks)) {
+    field.node.addEventListener(
+      event,
+      (e) =>
+        _handleValidationEvent(
+          this,
+          this.required_fields,
+          this.stateful_items,
+          this.initial_state_str,
+          this.field_names,
+          null,
+          callbacks
+        ),
+      false
+    );
+  } else if (!Array.isArray(callbacks)) {
+    field.node.addEventListener(event, (e) => callbacks(e), false);
+  }
 }
 
 //#endregion
@@ -152,7 +189,7 @@ export function _linkValues<ModelType extends Object>(
 export function _linkFieldErrors(
   errors: ValidationError[],
   field: FieldConfig,
-  filter_term: keyof ValidationError // TODO: Create special validation error Type
+  filter_term: keyof ValidationError
 ): void {
   const error = errors.filter((e) => e[filter_term] === field.name);
   // Check if there's an error for the field
@@ -178,9 +215,9 @@ export function _hanldeValueLinking<T extends Object>(
   field?: FieldConfig
 ): void {
   const checkAllFieldLink = () => {
-    if (form.performance_options.link_all_values_on_event === "all" || !field) {
+    if (form.perf_options.link_all_values_on_event === "all" || !field) {
       _linkValues(true, form.fields, form.model);
-    } else if (form.performance_options.link_all_values_on_event === "field") {
+    } else if (form.perf_options.link_all_values_on_event === "field") {
       _linkFieldValues(field, form.model);
     }
   };
@@ -204,13 +241,12 @@ function _handleValidationCallbacks(
   when_to_call: "before" | "after",
   callbacks?: ValidationCallback[]
 ) {
-  if (callbacks) {
+  if (callbacks)
     callbacks.forEach((cb) => {
       if (cb.when === when_to_call) {
         cb.callback();
       }
     });
-  }
 }
 
 /**
@@ -255,47 +291,38 @@ export function _handleValidationEvent<T extends Object>(
 
     () =>
       _executeIfTrue(
-        Boolean(field) && form.performance_options.enable_change_detection,
+        Boolean(field) && form.perf_options.enable_change_detection,
         () => _setValueChanges(form.value_changes, field)
       ),
 
     () => _handleValidationCallbacks("before", callbacks),
   ]);
 
-  // return validate(form.model, form.validation_options)
-  return (
-    form
-      .validator(form.model, form.validation_options)
-      // .then((errors: ValidationError[]) => {
-      //   return _handleFormValidation(form, errors, required_fields, field);
-      // })
-      .then((errors: ValidationError[]) => {
-        _executeCallbacks([
-          () => _handleFormValidation(form, errors, required_fields, field),
-          () =>
-            _executeIfTrue(
-              form.performance_options.enable_hidden_fields_detection,
-              () => _hideFields(form.hidden_fields, field_names, form.fields)
-            ),
+  return form.validation_options
+    .validator(form.model, form.validation_options)
+    .then((errors: ValidationError[]) => {
+      _executeCallbacks([
+        () => _handleFormValidation(form, errors, required_fields, field),
+        () =>
+          _executeIfTrue(form.perf_options.enable_hidden_fields_detection, () =>
+            _hideFields(form.hidden_fields, field_names, form.fields)
+          ),
 
-          () =>
-            _executeIfTrue(
-              form.performance_options.enable_disabled_fields_detection,
-              () =>
-                _disableFields(form.disabled_fields, field_names, form.fields)
-            ),
+        () =>
+          _executeIfTrue(
+            form.perf_options.enable_disabled_fields_detection,
+            () => _disableFields(form.disabled_fields, field_names, form.fields)
+          ),
 
-          () =>
-            _executeIfTrue(
-              form.performance_options.enable_change_detection,
-              () => _hasStateChanged(form, stateful_items, initial_state_str)
-            ),
+        () =>
+          _executeIfTrue(form.perf_options.enable_change_detection, () =>
+            _hasStateChanged(form, stateful_items, initial_state_str)
+          ),
 
-          () => _handleValidationCallbacks("after", callbacks),
-        ]);
-        return errors;
-      })
-  );
+        () => _handleValidationCallbacks("after", callbacks),
+      ]);
+      return errors;
+    });
 }
 
 /**
@@ -313,14 +340,12 @@ export async function _handleFormValidation<T extends Object>(
 ): Promise<ValidationError[]> {
   // There are errors!
   if (errors && errors.length > 0) {
-    // console.log(errors);
-
     form.errors = errors;
 
     // Are we validating the whole form or just the fields?
-    if (field && field !== null) {
+    if (field) {
       // Link errors to field (to show validation errors)
-      _linkFieldErrors(errors, field, "property");
+      _linkFieldErrors(errors, field, form.validation_options.errorToFieldLink);
     } else {
       // This is validatino for the whole form!
       _linkAllErrors(errors, form.fields);
@@ -332,7 +357,6 @@ export async function _handleFormValidation<T extends Object>(
     } else {
       form.valid.set(false);
     }
-    return errors;
   } else {
     // We can't get here unless the errors we see are for non-required fields
 
@@ -341,8 +365,8 @@ export async function _handleFormValidation<T extends Object>(
     _hanldeValueLinking(form, field);
     form.clearErrors(); // Clear form errors
     form.valid.set(true); // Form is valid!
-    return errors;
   }
+  return errors;
 }
 
 /**
@@ -368,9 +392,6 @@ export function _requiredFieldsValid(
     if (errs.indexOf(required_fields[i]) !== -1) {
       return false;
     }
-    // if (errs.includes(required_fields[i])) {
-    //   return false;
-    // }
   }
   return true;
 }
@@ -412,17 +433,17 @@ export function _hasStateChanged<T extends Object>(
 }
 
 // Clears everything before being destoryed.
-export function _clearState<T extends Object>(
-  form: Form<T>,
-  initial_state: any,
-  required_fields: string[]
-): void {
-  form.model = undefined;
-  initial_state = {};
-  required_fields = [];
-  form.refs = null;
-  form.template = null;
-}
+// export function _clearState<T extends Object>(
+//   form: Form<T>,
+//   initial_state: object,
+//   required_fields: string[]
+// ): void {
+//   form.model = undefined;
+//   initial_state = {};
+//   required_fields = [];
+//   form.refs = null;
+//   form.template = null;
+// }
 
 /**
  * Grab a snapshot of several items that generally define the state of the form
@@ -433,13 +454,13 @@ export function _setInitialState<T extends Object>(
   stateful_items: string[],
   initial_state: any,
   initial_state_str: string
-): void {
+): string {
   /**
    * This is the best method for reliable deep-ish cloning that I've found.
    * If you know a BETTER way, be my guest. No extra dependencies please.
    */
   stateful_items.forEach((key) => {
-    if (key === "valid" || key === "touched" || key === "changed") {
+    if (key === "valid" || key === "touched") {
       get(form[key])
         ? (initial_state[key] = writable(true))
         : (initial_state[key] = writable(false));
@@ -450,6 +471,7 @@ export function _setInitialState<T extends Object>(
     }
     initial_state_str = JSON.stringify(initial_state);
   });
+  return initial_state_str;
 }
 
 /**
@@ -462,7 +484,7 @@ export function _resetState<T extends Object>(
   initial_state: any
 ): void {
   stateful_items.forEach((key) => {
-    if (key === "valid" || key === "touched" || key === "changed") {
+    if (key === "valid" || key === "touched") {
       // Check the inital_state's key
       get(initial_state[key]) ? form[key].set(true) : form[key].set(false);
     } else if (key === "errors") {
@@ -547,9 +569,10 @@ export function _createOrder(
 }
 
 export function _hideFields(
-  hidden_fields: string[],
-  field_names: string[],
-  fields: FieldConfig[]
+  hidden_fields: Array<FieldConfig["name"]>,
+  field_names: Array<FieldConfig["name"]>,
+  fields: FieldConfig[],
+  hidden: boolean = true
 ) {
   let i = 0,
     len = hidden_fields.length;
@@ -559,20 +582,25 @@ export function _hideFields(
       field_index = field_names.indexOf(field);
 
     if (field_index !== -1) {
-      _hideField(field_names[field_index], fields);
+      _hideField(field_names[field_index], fields, hidden);
     }
   }
 }
 
-export function _hideField(name: string, fields: FieldConfig[]) {
+export function _hideField(
+  name: string,
+  fields: FieldConfig[],
+  hidden: boolean = true
+) {
   const f = _get(name, fields);
-  f.hidden = true;
+  f.hidden = hidden;
 }
 
 export function _disableFields(
-  disabled_fields: string[],
-  field_names: string[],
-  fields: FieldConfig[]
+  disabled_fields: Array<FieldConfig["name"]>,
+  field_names: Array<FieldConfig["name"]>,
+  fields: FieldConfig[],
+  disabled: boolean = true
 ) {
   let i = 0,
     len = disabled_fields.length;
@@ -581,15 +609,19 @@ export function _disableFields(
     const field = disabled_fields[i],
       field_index = field_names.indexOf(field);
     if (field_index !== -1) {
-      _disableField(field_names[field_index], fields);
+      _disableField(field_names[field_index], fields, disabled);
     }
   }
 }
 
-export function _disableField(name: string, fields: FieldConfig[]) {
+export function _disableField(
+  name: string,
+  fields: FieldConfig[],
+  disabled: boolean = true
+) {
   const f = _get(name, fields);
-  f.disabled = true;
-  f.attributes["disabled"] = true;
+  f.disabled = disabled;
+  f.attributes["disabled"] = disabled;
 }
 
 //#endregion

@@ -1,5 +1,3 @@
-import { ValidatorOptions } from "class-validator/types";
-// import { validate  } from "class-validator";
 import { get, writable, Writable } from "svelte/store";
 import { FieldConfig } from ".";
 import {
@@ -10,6 +8,8 @@ import {
   ValidationError,
   ValidationCallback,
   ValidatorFunction,
+  Callback,
+  ValidationOptions,
 } from "./types";
 import {
   _buildFormFields,
@@ -26,14 +26,16 @@ import {
   _hideFields,
   _disableFields,
   _createOrder,
-  _clearState,
+  // _clearState,
   _setInitialState,
   _resetState,
   _handleFormValidation,
   _handleValidationEvent,
   _executeCallbacks,
   _hanldeValueLinking,
+  _addCallbackToField,
 } from "./internal";
+import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
 
 /**
  * Formvana - Form Class
@@ -47,7 +49,6 @@ import {
  * We do our best to initialize this thing with good, sane defaults without
  * adding too many restrictions.
  *
- *
  * Recommended Use:
  *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
  *  - Set the model (if you didn't in the first step)
@@ -56,15 +57,12 @@ import {
  *  - Now you're ready to use the form!
  *  - Pass it into the DynamicForm component and let the form generate itself!
  *
- * Note: You will probably have to use form and field templates as this lib only comes
- * with default html form layout & fields.
- *
  * Performance is blazing with < 500 fields.
  * Can render up to 2000 inputs in per class/fields.
  * Just break it up into 100 or so fields per form (max 250) if its a huge form.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
- * TODO: Decouple class-validator as to allow validation to be plugin based
+ * TODO: Create FormManager interface for dealing with FormGroup and FormStepper classes
  * TODO: Create easy component/pattern for field groups and stepper/wizzard
  * TODO: Create plugin base for form template styling
  *
@@ -78,10 +76,8 @@ export class Form<ModelType extends Object> {
     init?: Partial<Form<ModelType>>
   ) {
     if (init) {
-      Object.keys(this).forEach((key) => {
-        if (init[key]) {
-          this[key] = init[key];
-        }
+      Object.keys(init).forEach((key) => {
+        this[key] = init[key];
       });
     }
     // If there's a model, set the inital state's and build the fields
@@ -92,7 +88,7 @@ export class Form<ModelType extends Object> {
       throw new Error("Model is not valid. Please pass in a valid model.");
     }
     if (validator) {
-      this.validator = validator;
+      this.validation_options.validator = validator;
     } else {
       throw new Error(
         "Please add a validator with ReturnType<Promise<ValidationError[]>>"
@@ -130,9 +126,9 @@ export class Form<ModelType extends Object> {
 
   /**
    * This is your form Model/Schema.
+   * It's used to build the form.fields.
    *
-   * (If you didn't set the model in the constructor)
-   * When model is set, call buildFields() to build the fields.
+   * The meat and potatos, some would say.
    */
   model: ModelType;
 
@@ -151,38 +147,37 @@ export class Form<ModelType extends Object> {
    *
    * * Fields & reference data are linked via field.ref_key
    */
-  refs: RefData = {};
+  refs?: RefData;
 
   /**
-   * TODO: Decouple class-validator/allow other validators!
-   * TODO: Change this to a custom type that takes the type of validator
-   * TODO: and the validators options. This will help decouple
+   * Validation Options contain the logic and config for validating
+   * the form as well as linking errors to fields.
    *
-   * Validation options come from class-validator ValidatorOptions.
-   *
-   * Biggest perf increase comes from setting validationError.target = false
-   * (so the whole model is not attached to each error message)
+   * Other, more fine grained options are in validation_options.options
    */
-  readonly validation_options: Partial<ValidatorOptions> = {
-    skipMissingProperties: false,
-    whitelist: false,
-    forbidNonWhitelisted: false,
-    dismissDefaultMessages: false,
-    groups: [],
-    validationError: {
-      target: false,
-      value: false,
+  readonly validation_options: Partial<ValidationOptions> = {
+    validator: undefined,
+    options: {
+      skipMissingProperties: false,
+      dismissDefaultMessages: false,
+      validationError: {
+        target: false,
+        value: false,
+      },
+      forbidUnknownValues: true,
+      stopAtFirstError: false,
     },
-    forbidUnknownValues: true,
-    stopAtFirstError: false,
+    errorToFieldLink: "property",
   };
 
-  validator: ValidatorFunction;
-
   /**
-   * The errors are of type ValidationError which comes from class-validator.
-   * Errors are usually attached to the fields which the error is for.
+   * The errors are of type ValidationError.
+   * Errors are attached to their corresponding fields.
    * This pattern adds flexibility at the cost of a little complexity.
+   *
+   * When a single field is validated, the whole model is validated. We just don't
+   * show all the errors to the user. This way, we know if the form is still invalid,
+   * even if we aren't showing the user any errors (like, pre-submit-button press).
    */
   errors: ValidationError[] = [];
 
@@ -209,8 +204,8 @@ export class Form<ModelType extends Object> {
   /**
    * Use the NAME of the field (field.name) to disable/hide the field.
    */
-  hidden_fields: string[] = [];
-  disabled_fields: string[] = [];
+  hidden_fields?: Array<FieldConfig["name"]>;
+  disabled_fields?: Array<FieldConfig["name"]>;
 
   /**
    * Which events should the form do things on?
@@ -228,13 +223,6 @@ export class Form<ModelType extends Object> {
   //#region Field Styling
 
   /**
-   * Determines the ordering of this.fields.
-   * Simply an array of field names (or group names or stepper names)
-   * in the order to be displayed
-   */
-  field_order: string[] = [];
-
-  /**
    * Form Template Layout
    *
    * Render the form into a custom svelte template!
@@ -244,27 +232,36 @@ export class Form<ModelType extends Object> {
    * Note: add ` types": ["svelte"] ` to tsconfig compilerOptions
    * to remove TS import error of .svelte files (for your template)
    */
-  template: any = null;
+  template?:
+    | string
+    | typeof SvelteComponentDev
+    | typeof SvelteComponent
+    | typeof SvelteComponent;
+
+  /**
+   * Determines the ordering of this.fields.
+   * Simply an array of field names (or group names or stepper names)
+   * in the order to be displayed
+   */
+  field_order: Array<FieldConfig["name"]> = [];
 
   //#endregion
 
   //#region Internal Fields
 
   // Used to make checking for disabled/hidden fields faster
-  private field_names: string[] = [];
+  private field_names: Array<FieldConfig["name"]> = [];
   /**
    * This is the model's initial state.
    * Shove the stateful_items into the inital state for a decent snapshot.
    */
-  private initial_state: any = {};
+  private initial_state: object = {};
   private initial_state_str: string = "";
-  private stateful_items = [
+  private stateful_items: Array<keyof Form<ModelType>> = [
     "valid",
     "touched",
-    "changed",
-    "changes",
+    "value_changes",
     "errors",
-    "required_fields",
     "refs",
     "field_order",
     "model",
@@ -279,17 +276,17 @@ export class Form<ModelType extends Object> {
    * valid. This is the mechanism to help keep track of that.
    * Keep track of the fields so we can validate faster.
    */
-  private required_fields: string[] = [];
+  private required_fields: Array<FieldConfig["name"]> = [];
 
   /**
-   * High Performance options!
+   * Performance options!
    * Use these if you're trying to handle upwards of 1000+ inputs within a given model.
    *
    * link_all_values_on_event - we usually link all field values to the model on
    * each event call. If set to false, we only link the field affected in the OnEvent
    * which saves us iterating over each field and linking it to the model.
    */
-  performance_options: Partial<PerformanceOptions> = {
+  perf_options: Partial<PerformanceOptions> = {
     link_all_values_on_event: "all",
     enable_hidden_fields_detection: true,
     enable_disabled_fields_detection: true,
@@ -401,27 +398,6 @@ export class Form<ModelType extends Object> {
       });
     }
   };
-
-  /**
-   * Can attach event listeners to one or more fields.
-   *
-   * TODO: Optionaly, attach the _handleValidationEvents function?
-   */
-  addEventListenerToFields = (
-    event: keyof HTMLElementEventMap,
-    callback: ((...args: unknown[]) => void) | (() => void),
-    field_names: string | string[]
-  ): void => {
-    if (Array.isArray(field_names)) {
-      const fields = field_names.map((f) => _get(f, this.fields));
-      fields.forEach((f) => {
-        f.node.addEventListener(event, (e) => callback(e), false);
-      });
-    } else {
-      const field = _get(field_names, this.fields);
-      field.node.addEventListener(event, (e) => callback(e), false);
-    }
-  };
   //#endregion
 
   //#region - Validation
@@ -488,6 +464,44 @@ export class Form<ModelType extends Object> {
     }
   };
 
+  /**
+   * Can attach event listeners to one or more fields.
+   */
+  addEventListenerToFields = (
+    event: keyof HTMLElementEventMap,
+    callback: Callback,
+    field_names: string | string[]
+  ): void => {
+    if (Array.isArray(field_names)) {
+      const fields = field_names.map((f) => _get(f, this.fields));
+      fields.forEach((f) => {
+        _addCallbackToField(f, event, callback, false);
+      });
+    } else {
+      const field = _get(field_names, this.fields);
+      _addCallbackToField(field, event, callback, false);
+    }
+  };
+
+  /**
+   * Add your own callbacks to the normal _handleValidationEvent method.
+   */
+  addValidationCallbackToFields = (
+    event: keyof HTMLElementEventMap,
+    callbacks: ValidationCallback[],
+    field_names: string | string[]
+  ): void => {
+    if (Array.isArray(field_names)) {
+      const fields = field_names.map((f) => _get(f, this.fields));
+      fields.forEach((f) => {
+        _addCallbackToField(f, event, callbacks);
+      });
+    } else {
+      const field = _get(field_names, this.fields);
+      _addCallbackToField(field, event, callbacks);
+    }
+  };
+
   //#endregion
 
   //#region - Utility Methods
@@ -543,7 +557,7 @@ export class Form<ModelType extends Object> {
       });
     }
     // Reset everything else.
-    _clearState(this, this.initial_state, this.required_fields);
+    // _clearState(this, this.initial_state, this.required_fields);
   };
 
   //#endregion
@@ -597,6 +611,23 @@ export class Form<ModelType extends Object> {
   };
 
   /**
+   * Show a field or fields
+   * @param names? string | string[]
+   */
+  showFields = (names?: string | string[]) => {
+    if (names) {
+      if (Array.isArray(names)) {
+        names.forEach((name) => {
+          this.hidden_fields.splice(this.hidden_fields.indexOf(name), 1);
+        });
+      } else {
+        this.hidden_fields.splice(this.hidden_fields.indexOf(names), 1);
+      }
+    }
+    _hideFields(this.hidden_fields, this.field_names, this.fields, false);
+  };
+
+  /**
    * Disable a field or fields
    * @param names? string | string[]
    */
@@ -609,6 +640,23 @@ export class Form<ModelType extends Object> {
       }
     }
     _disableFields(this.disabled_fields, this.field_names, this.fields);
+  };
+
+  /**
+   * Enable a field or fields
+   * @param names? string | string[]
+   */
+  enableFields = (names?: string | string[]) => {
+    if (names) {
+      if (Array.isArray(names)) {
+        names.forEach((name) => {
+          this.disabled_fields.splice(this.disabled_fields.indexOf(name), 1);
+        });
+      } else {
+        this.disabled_fields.splice(this.disabled_fields.indexOf(names), 1);
+      }
+    }
+    _disableFields(this.disabled_fields, this.field_names, this.fields, false);
   };
 
   //#endregion

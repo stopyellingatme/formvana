@@ -1,7 +1,6 @@
-import { ValidatorOptions } from "class-validator/types";
 import { Writable } from "svelte/store";
 import { FieldConfig } from ".";
-import { OnEvents, LinkOnEvent, RefData, PerformanceOptions, ValidationError, ValidationCallback, ValidatorFunction } from "./types";
+import { OnEvents, LinkOnEvent, RefData, PerformanceOptions, ValidationError, ValidationCallback, ValidatorFunction, ValidatorOptions, Callback } from "./types";
 /**
  * Formvana - Form Class
  * Form is NOT valid, initially.
@@ -14,7 +13,6 @@ import { OnEvents, LinkOnEvent, RefData, PerformanceOptions, ValidationError, Va
  * We do our best to initialize this thing with good, sane defaults without
  * adding too many restrictions.
  *
- *
  * Recommended Use:
  *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
  *  - Set the model (if you didn't in the first step)
@@ -23,15 +21,12 @@ import { OnEvents, LinkOnEvent, RefData, PerformanceOptions, ValidationError, Va
  *  - Now you're ready to use the form!
  *  - Pass it into the DynamicForm component and let the form generate itself!
  *
- * Note: You will probably have to use form and field templates as this lib only comes
- * with default html form layout & fields.
- *
  * Performance is blazing with < 500 fields.
  * Can render up to 2000 inputs in per class/fields.
  * Just break it up into 100 or so fields per form (max 250) if its a huge form.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
- * TODO: Decouple class-validator as to allow validation to be plugin based
+ * TODO: Create FormManager interface for dealing with FormGroup and FormStepper classes
  * TODO: Create easy component/pattern for field groups and stepper/wizzard
  * TODO: Create plugin base for form template styling
  *
@@ -39,7 +34,7 @@ import { OnEvents, LinkOnEvent, RefData, PerformanceOptions, ValidationError, Va
  *  - This will allow for a more "dynamic" form building experience
  */
 export declare class Form<ModelType extends Object> {
-    constructor(model: ModelType, init?: Partial<Form<ModelType>>);
+    constructor(model: ModelType, validator?: ValidatorFunction, init?: Partial<Form<ModelType>>);
     /**
      * This is your form Model/Schema.
      *
@@ -63,7 +58,6 @@ export declare class Form<ModelType extends Object> {
      */
     refs: RefData;
     /**
-     * TODO: Decouple class-validator/allow other validators!
      * TODO: Change this to a custom type that takes the type of validator
      * TODO: and the validators options. This will help decouple
      *
@@ -72,12 +66,25 @@ export declare class Form<ModelType extends Object> {
      * Biggest perf increase comes from setting validationError.target = false
      * (so the whole model is not attached to each error message)
      */
-    readonly validation_options: Partial<ValidatorOptions>;
+    readonly validation_options: Partial<ValidatorOptions & object>;
+    /**
+     * This is the (validation) function that will be called when validating.
+     * You can use any validation library you like, as long as this function
+     * returns Promise<ValidationError[]>
+     */
     validator: ValidatorFunction;
     /**
-     * The errors are of type ValidationError which comes from class-validator.
-     * Errors are usually attached to the fields which the error is for.
+     * Name of the property which links errors to fields.
+     * Error.property_or_name_or_whatever must match field.name.
+     * ValidationError[name] must match field.name.
+     */
+    errorToFieldLink: keyof ValidationError;
+    /**
+     * The errors are of type ValidationError.
+     * Errors are attached to their corresponding fields.
      * This pattern adds flexibility at the cost of a little complexity.
+     *
+     * @example the form is not valid while showing a sinlge validation error.
      */
     errors: ValidationError[];
     /**
@@ -126,7 +133,7 @@ export declare class Form<ModelType extends Object> {
      * Note: add ` types": ["svelte"] ` to tsconfig compilerOptions
      * to remove TS import error of .svelte files (for your template)
      */
-    template: any;
+    template?: unknown;
     private field_names;
     /**
      * This is the model's initial state.
@@ -144,14 +151,14 @@ export declare class Form<ModelType extends Object> {
      */
     private required_fields;
     /**
-     * High Performance options!
+     * Performance options!
      * Use these if you're trying to handle upwards of 1000+ inputs within a given model.
      *
      * link_all_values_on_event - we usually link all field values to the model on
      * each event call. If set to false, we only link the field affected in the OnEvent
      * which saves us iterating over each field and linking it to the model.
      */
-    performance_options: Partial<PerformanceOptions>;
+    perf_options: Partial<PerformanceOptions>;
     /**
      * Builds the fields from the model.
      * Builds the field configs via this.model using metadata-reflection.
@@ -200,7 +207,11 @@ export declare class Form<ModelType extends Object> {
      *
      * TODO: Optionaly, attach the _handleValidationEvents function?
      */
-    addEventListenerToFields: (event: keyof HTMLElementEventMap, callback: ((...args: unknown[]) => void) | (() => void), field_names: string | string[]) => void;
+    addEventListenerToFields: (event: keyof HTMLElementEventMap, callback: Callback, field_names: string | string[]) => void;
+    /**
+     * Add your own callbacks to the normal _handleValidationEvent method.
+     */
+    addValidationCallbackToFields: (event: keyof HTMLElementEventMap, callbacks: ValidationCallback[], field_names: string | string[]) => void;
     /**
      * Well, validate the form!
      * Clear the errors first, then do it, obviously.
@@ -239,8 +250,18 @@ export declare class Form<ModelType extends Object> {
      */
     hideFields: (names?: string | string[]) => void;
     /**
+     * Show a field or fields
+     * @param names? string | string[]
+     */
+    showFields: (names?: string | string[]) => void;
+    /**
      * Disable a field or fields
      * @param names? string | string[]
      */
     disableFields: (names?: string | string[]) => void;
+    /**
+     * Enable a field or fields
+     * @param names? string | string[]
+     */
+    enableFields: (names?: string | string[]) => void;
 }

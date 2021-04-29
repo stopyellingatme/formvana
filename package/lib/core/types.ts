@@ -1,4 +1,31 @@
-export type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
+import { Form } from ".";
+
+/**
+ * Base interface for managing multiple instances of Form
+ * classes.
+ *
+ * TODO: Class for FormGroup and FormStepper
+ */
+export interface FormManager {
+  forms: Form<typeof Form>[];
+
+  
+}
+
+//#region Validation
+
+export type ValidationCallback = {
+  callback: Callback;
+  /**
+   * When should the callback fire?
+   * "before" or "after" validation?
+   */
+  when: "before" | "after";
+};
+
+export type ValidatorFunction = (
+  ...args: unknown[]
+) => Promise<ValidationError[]>;
 
 export type ValidationErrorType = {
   target?: Object; // Object that was validated.
@@ -45,25 +72,102 @@ export class ValidationError {
   children?: ValidationErrorType[];
 }
 
-export type Callback = ((...args: any) => any) | (() => any);
-
-export type ValidationCallback = {
-  callback: Callback;
+export interface ValidationOptions {
   /**
-   * When should the callback fire?
-   * "before" or "after" validation?
+   * This is the (validation) function that will be called when validating.
+   * You can use any validation library you like, as long as this function
+   * returns Promise<ValidationError[]>
    */
-  when: "before" | "after";
-};
+  validator: ValidatorFunction | undefined;
+  /**
+   * Validation options come from class-validator ValidatorOptions.
+   *
+   * Biggest perf increase comes from setting validationError.target = false
+   * (so the whole model is not attached to each error message)
+   */
+  options?: Partial<ValidatorOptions>;
+  /**
+   * Name of the property which links errors to fields.
+   * Error.property_or_name_or_whatever must match field.name.
+   * ValidationError[name] must match field.name.
+   */
+  errorToFieldLink: keyof ValidationError;
+}
 
-export type LinkValuesOnEvent = "all" | "field";
+/**
+ * Options passed to validator during validation.
+ */
+export interface ValidatorOptions extends Record<string, unknown> {
+  /**
+   * If set to true then class-validator will print extra warning messages to the console when something is not right.
+   */
+  enableDebugMessages?: boolean;
+  /**
+   * If set to true then validator will skip validation of all properties that are undefined in the validating object.
+   */
+  skipUndefinedProperties?: boolean;
+  /**
+   * If set to true then validator will skip validation of all properties that are null in the validating object.
+   */
+  skipNullProperties?: boolean;
+  /**
+   * If set to true then validator will skip validation of all properties that are null or undefined in the validating object.
+   */
+  skipMissingProperties?: boolean;
+  /**
+   * If set to true validator will strip validated object of any properties that do not have any decorators.
+   *
+   * Tip: if no other decorator is suitable for your property use @Allow decorator.
+   */
+  whitelist?: boolean;
+  /**
+   * If set to true, instead of stripping non-whitelisted properties validator will throw an error
+   */
+  forbidNonWhitelisted?: boolean;
+  /**
+   * Groups to be used during validation of the object.
+   */
+  groups?: string[];
+  /**
+   * Set default for `always` option of decorators. Default can be overridden in decorator options.
+   */
+  always?: boolean;
+  /**
+   * If [groups]{@link ValidatorOptions#groups} is not given or is empty,
+   * ignore decorators with at least one group.
+   */
+  strictGroups?: boolean;
+  /**
+   * If set to true, the validation will not use default messages.
+   * Error message always will be undefined if its not explicitly set.
+   */
+  dismissDefaultMessages?: boolean;
+  /**
+   * ValidationError special options.
+   */
+  validationError?: {
+    /**
+     * Indicates if target should be exposed in ValidationError.
+     */
+    target?: boolean;
+    /**
+     * Indicates if validated value should be exposed in ValidationError.
+     */
+    value?: boolean;
+  };
+  /**
+   * Settings true will cause fail validation of unknown objects.
+   */
+  forbidUnknownValues?: boolean;
+  /**
+   * When set to true, validation of the given property will stop after encountering the first error. Defaults to false.
+   */
+  stopAtFirstError?: boolean;
+}
 
-export type PerformanceOptions = {
-  link_all_values_on_event: LinkValuesOnEvent;
-  enable_hidden_fields_detection: boolean;
-  enable_disabled_fields_detection: boolean;
-  enable_change_detection: boolean;
-};
+//#endregion
+
+//#region Events
 /**
  * Determines which events to validate/clear validation, on.
  * And, you can bring your own event listeners just by adding one on
@@ -74,7 +178,7 @@ export type PerformanceOptions = {
  * It's brazen, but you're a smart kid.
  * Use it wisely.
  *
- * TODO: Possilbe candidate for Mapped Type
+ * Should be keyof HTMLElementEventMap
  */
 export class OnEvents {
   constructor(init?: Partial<OnEvents>, disableAll: boolean = false) {
@@ -111,17 +215,18 @@ export class OnEvents {
  * Should we link the values always?
  * Or only if the form is valid?
  */
-// export enum LinkOnEvent {
-//   Always,
-//   Valid,
-// }
 export type LinkOnEvent = "always" | "valid";
+
+export type LinkValuesOnEvent = "all" | "field";
+
+//#endregion
+
+//#region Misc
+export type Callback = ((...args: unknown[]) => unknown) | (() => unknown);
 
 /**
  * Data format for the reference data items
  * Form.refs are of type Record<string, RefDataItem[]>
- *
- * TODO: Possilbe candidate for Mapped Type
  */
 export interface RefDataItem {
   label: string;
@@ -130,3 +235,11 @@ export interface RefDataItem {
 }
 
 export type RefData = Record<string, RefDataItem[]>;
+
+export type PerformanceOptions = {
+  link_all_values_on_event: LinkValuesOnEvent;
+  enable_hidden_fields_detection: boolean;
+  enable_disabled_fields_detection: boolean;
+  enable_change_detection: boolean;
+};
+//#endregion

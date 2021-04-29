@@ -1,11 +1,11 @@
 import { get } from "svelte/store";
-import { Form, OnEvents, RefDataItem, ValidationCallback } from "@formvana";
+import { Form, OnEvents, RefData, ValidationCallback } from "@formvana";
 import { ExampleModel } from "../../models/ExampleClass";
 import { validate } from "class-validator";
 //@ts-ignore
 import ExampleTemplate from "../../templates/ExampleTemplate.svelte";
 
-const ref_data: Record<string, RefDataItem[]> = {
+const ref_data: RefData = {
   statuses: [
     {
       label: "ACTIVE",
@@ -33,10 +33,10 @@ function initStore() {
     on_events: new OnEvents({ focus: false }),
     refs: ref_data,
     hidden_fields: ["description_99", "status_97"],
-    performance_options: {
-      link_all_values_on_event: "all",
-      enable_change_detection: true,
-    },
+    // perf_options: {
+    //   link_all_values_on_event: "all",
+    //   enable_change_detection: true,
+    // },
   });
 
   // And add it to the store...
@@ -66,7 +66,9 @@ export const init = () => {
 
   setTimeout(() => {
     get(formState).loading.set(false);
-    // get(formState).valid.set(true);
+  }, 1000);
+
+  setTimeout(() => {
     const callbacks: ValidationCallback[] = [
       {
         callback: () => {
@@ -76,7 +78,6 @@ export const init = () => {
       },
       {
         callback: () => {
-          // console.log("Weeehoo, again!!!");
           get(formState).get("name_100").value.set("some value jfkdsalfjdsk");
           get(formState).validate();
         },
@@ -84,7 +85,7 @@ export const init = () => {
       },
     ];
     get(formState).validate(callbacks);
-  }, 1000);
+  }, 2000);
 
   setTimeout(() => {
     get(formState).updateInitialState();

@@ -4,8 +4,8 @@
   "repository": "https://github.com/stopyellingatme/formvana",
   "description": "Searching for Form Nirvana with Typescript and Svelte.",
   "scripts": {
+    "dev": "vite --config vite.config.js serve public",
     "build": "rollup -c",
-    "dev": "rollup -cw",
     "start": "sirv ./public",
     "test": "node test.js"
   },
@@ -32,7 +32,8 @@
     "svelte-preprocess": "^4.6.9",
     "tailwindcss": "^2.0.3",
     "tslib": "^2.1.0",
-    "typescript": "^3.4.3"
+    "typescript": "^3.4.3",
+    "vite": "^2.2.3"
   },
   "dependencies": {
     "sirv-cli": "^1.0.11"
