@@ -8,26 +8,22 @@ import { Form } from ".";
  */
 export interface FormManager {
   forms: Form<typeof Form>[];
-
-  
 }
 
 //#region Validation
 
-export type ValidationCallback = {
+export interface ValidationCallback {
   callback: Callback;
   /**
    * When should the callback fire?
    * "before" or "after" validation?
    */
   when: "before" | "after";
-};
+}
 
-export type ValidatorFunction = (
-  ...args: unknown[]
-) => Promise<ValidationError[]>;
+export type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
 
-export type ValidationErrorType = {
+export interface ValidationErrorType {
   target?: Object; // Object that was validated.
   property: string; // Object's property that didn't pass validation.
   value?: any; // Value that didn't pass a validation.
@@ -36,7 +32,7 @@ export type ValidationErrorType = {
     [type: string]: string;
   };
   children?: ValidationErrorType[];
-};
+}
 
 export class ValidationError {
   /**
@@ -91,11 +87,12 @@ export interface ValidationOptions {
    * Error.property_or_name_or_whatever must match field.name.
    * ValidationError[name] must match field.name.
    */
-  errorToFieldLink: keyof ValidationError;
+  field_error_link_name: keyof ValidationError;
 }
 
 /**
  * Options passed to validator during validation.
+ * Note: this interface used by class-validator
  */
 export interface ValidatorOptions extends Record<string, unknown> {
   /**
@@ -222,7 +219,7 @@ export type LinkValuesOnEvent = "all" | "field";
 //#endregion
 
 //#region Misc
-export type Callback = ((...args: unknown[]) => unknown) | (() => unknown);
+export type Callback = ((...args: any[]) => any) | (() => any);
 
 /**
  * Data format for the reference data items

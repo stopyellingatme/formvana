@@ -90,16 +90,16 @@ interface FormManager {
     forms: Form<typeof Form>[];
 }
 //#region Validation
-type ValidationCallback = {
+interface ValidationCallback {
     callback: Callback;
     /**
      * When should the callback fire?
      * "before" or "after" validation?
      */
     when: "before" | "after";
-};
-type ValidatorFunction = (...args: unknown[]) => Promise<ValidationError[]>;
-type ValidationErrorType = {
+}
+type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
+interface ValidationErrorType {
     target?: Object; // Object that was validated.
     property: string; // Object's property that didn't pass validation.
     value?: any; // Value that didn't pass a validation.
@@ -108,7 +108,7 @@ type ValidationErrorType = {
         [type: string]: string;
     };
     children?: ValidationErrorType[];
-};
+}
 declare class ValidationError$0 {
     /**
      * @param errors essentially Record<string #1, string #2>
@@ -148,10 +148,11 @@ interface ValidationOptions {
      * Error.property_or_name_or_whatever must match field.name.
      * ValidationError[name] must match field.name.
      */
-    errorToFieldLink: keyof ValidationError$0;
+    field_error_link_name: keyof ValidationError$0;
 }
 /**
  * Options passed to validator during validation.
+ * Note: this interface used by class-validator
  */
 interface ValidatorOptions extends Record<string, unknown> {
     /**
@@ -263,7 +264,7 @@ type LinkOnEvent = "always" | "valid";
 type LinkValuesOnEvent = "all" | "field";
 //#endregion
 //#region Misc
-type Callback = ((...args: unknown[]) => unknown) | (() => unknown);
+type Callback = ((...args: any[]) => any) | (() => any);
 /**
  * Data format for the reference data items
  * Form.refs are of type Record<string, RefDataItem[]>
@@ -629,18 +630,6 @@ declare function _getStateSnapshot<T extends Object>(form: Form<T>, stateful_ite
  * I've tested it with > 1000 fields in a single class with very slight input lag.
  */
 declare function _hasStateChanged<T extends Object>(form: Form<T>, stateful_items: string[], initial_state_str: string): void;
-// Clears everything before being destoryed.
-// export function _clearState<T extends Object>(
-//   form: Form<T>,
-//   initial_state: object,
-//   required_fields: string[]
-// ): void {
-//   form.model = undefined;
-//   initial_state = {};
-//   required_fields = [];
-//   form.refs = null;
-//   form.template = null;
-// }
 /**
  * Grab a snapshot of several items that generally define the state of the form
  * and serialize them into a format that's easy-ish to check/deserialize (for resetting)
@@ -657,9 +646,10 @@ declare function _resetState<T extends Object>(form: Form<T>, stateful_items: st
  * Using this.field_order, rearrange the order of the fields.
  */
 declare function _createOrder(field_order: string[], fields: FieldConfig[]): FieldConfig[];
-declare function _hideFields(hidden_fields: Array<FieldConfig["name"]>, field_names: Array<FieldConfig["name"]>, fields: FieldConfig[], hidden?: boolean): void;
-declare function _hideField(name: string, fields: FieldConfig[], hidden?: boolean): void;
-declare function _disableFields(disabled_fields: Array<FieldConfig["name"]>, field_names: Array<FieldConfig["name"]>, fields: FieldConfig[], disabled?: boolean): void;
-declare function _disableField(name: string, fields: FieldConfig[], disabled?: boolean): void;
-export { FieldGroup, FieldStep, FieldConfig, Form, field, _get, _buildFormFields, _getRequiredFieldNames, _setValueChanges, _attachEventListeners, _attachOnClearErrorEvents, _addCallbackToField, _linkValues, _linkFieldErrors, _linkAllErrors, _hanldeValueLinking, _executeCallbacks, _handleValidationEvent, _handleFormValidation, _requiredFieldsValid, _getStateSnapshot, _hasStateChanged, _setInitialState, _resetState, _createOrder, _hideFields, _hideField, _disableFields, _disableField, FormManager, ValidationCallback, ValidatorFunction, ValidationErrorType, ValidationError$0 as ValidationError, ValidationOptions, ValidatorOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, Callback, RefDataItem, RefData, PerformanceOptions };
+declare function _setFieldAttribute(name: string, fields: FieldConfig[], attributes: Partial<FieldConfig>): void;
+declare function _negateField(affected_fields: Array<FieldConfig["name"]>, field_names: Array<FieldConfig["name"]>, fields: FieldConfig[], negation: {
+    type: "disable" | "hide";
+    value: boolean;
+}): void;
+export { FieldGroup, FieldStep, FieldConfig, Form, field, _get, _buildFormFields, _getRequiredFieldNames, _setValueChanges, _attachEventListeners, _attachOnClearErrorEvents, _addCallbackToField, _linkValues, _linkFieldErrors, _linkAllErrors, _hanldeValueLinking, _executeCallbacks, _handleValidationEvent, _handleFormValidation, _requiredFieldsValid, _getStateSnapshot, _hasStateChanged, _setInitialState, _resetState, _createOrder, _setFieldAttribute, _negateField, FormManager, ValidationCallback, ValidatorFunction, ValidationErrorType, ValidationError$0 as ValidationError, ValidationOptions, ValidatorOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, Callback, RefDataItem, RefData, PerformanceOptions };
 //# sourceMappingURL=index.d.ts.map

@@ -32,7 +32,8 @@ function initStore() {
     template: ExampleTemplate,
     on_events: new OnEvents({ focus: false }),
     refs: ref_data,
-    hidden_fields: ["description_99", "status_97"],
+    // hidden_fields: ["description_99", "status_97"],
+    disabled_fields: ["email_96", "email_94"],
     // perf_options: {
     //   link_all_values_on_event: "all",
     //   enable_change_detection: true,

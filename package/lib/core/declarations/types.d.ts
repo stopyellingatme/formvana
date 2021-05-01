@@ -1,4 +1,22 @@
-export declare type ValidatorFunction = (...args: unknown[]) => Promise<ValidationError[]>;
+import { Form } from ".";
+/**
+ * Base interface for managing multiple instances of Form
+ * classes.
+ *
+ * TODO: Class for FormGroup and FormStepper
+ */
+export interface FormManager {
+    forms: Form<typeof Form>[];
+}
+export declare type ValidationCallback = {
+    callback: Callback;
+    /**
+     * When should the callback fire?
+     * "before" or "after" validation?
+     */
+    when: "before" | "after";
+};
+export declare type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
 export declare type ValidationErrorType = {
     target?: Object;
     property: string;
@@ -27,70 +45,27 @@ export declare class ValidationError {
     };
     children?: ValidationErrorType[];
 }
-export declare type Callback = ((...args: unknown[]) => unknown) | (() => unknown);
-export declare type ValidationCallback = {
-    callback: Callback;
+export interface ValidationOptions {
     /**
-     * When should the callback fire?
-     * "before" or "after" validation?
+     * This is the (validation) function that will be called when validating.
+     * You can use any validation library you like, as long as this function
+     * returns Promise<ValidationError[]>
      */
-    when: "before" | "after";
-};
-export declare type LinkValuesOnEvent = "all" | "field";
-export declare type PerformanceOptions = {
-    link_all_values_on_event: LinkValuesOnEvent;
-    enable_hidden_fields_detection: boolean;
-    enable_disabled_fields_detection: boolean;
-    enable_change_detection: boolean;
-};
-/**
- * Determines which events to validate/clear validation, on.
- * And, you can bring your own event listeners just by adding one on
- * the init.
- * Enabled By Default: blue, change, focus, input, submit
- *
- * Also has the good ole Object.assign in the constructor.
- * It's brazen, but you're a smart kid.
- * Use it wisely.
- *
- * TODO: Possilbe candidate for Mapped Type
- */
-export declare class OnEvents {
-    constructor(init?: Partial<OnEvents>, disableAll?: boolean);
-    blur: boolean;
-    change: boolean;
-    click: boolean;
-    dblclick: boolean;
-    focus: boolean;
-    input: boolean;
-    keydown: boolean;
-    keypress: boolean;
-    keyup: boolean;
-    mount: boolean;
-    mousedown: boolean;
-    mouseenter: boolean;
-    mouseleave: boolean;
-    mousemove: boolean;
-    mouseout: boolean;
-    mouseover: boolean;
-    mouseup: boolean;
-    submit: boolean;
+    validator: ValidatorFunction | undefined;
+    /**
+     * Validation options come from class-validator ValidatorOptions.
+     *
+     * Biggest perf increase comes from setting validationError.target = false
+     * (so the whole model is not attached to each error message)
+     */
+    options?: Partial<ValidatorOptions>;
+    /**
+     * Name of the property which links errors to fields.
+     * Error.property_or_name_or_whatever must match field.name.
+     * ValidationError[name] must match field.name.
+     */
+    errorToFieldLink: keyof ValidationError;
 }
-/**
- * Should we link the values always?
- * Or only if the form is valid?
- */
-export declare type LinkOnEvent = "always" | "valid";
-/**
- * Data format for the reference data items
- * Form.refs are of type Record<string, RefDataItem[]>
- */
-export interface RefDataItem {
-    label: string;
-    value: any;
-    data?: any;
-}
-export declare type RefData = Record<string, RefDataItem[]>;
 /**
  * Options passed to validator during validation.
  */
@@ -161,3 +136,59 @@ export interface ValidatorOptions extends Record<string, unknown> {
      */
     stopAtFirstError?: boolean;
 }
+/**
+ * Determines which events to validate/clear validation, on.
+ * And, you can bring your own event listeners just by adding one on
+ * the init.
+ * Enabled By Default: blue, change, focus, input, submit
+ *
+ * Also has the good ole Object.assign in the constructor.
+ * It's brazen, but you're a smart kid.
+ * Use it wisely.
+ *
+ * Should be keyof HTMLElementEventMap
+ */
+export declare class OnEvents {
+    constructor(init?: Partial<OnEvents>, disableAll?: boolean);
+    blur: boolean;
+    change: boolean;
+    click: boolean;
+    dblclick: boolean;
+    focus: boolean;
+    input: boolean;
+    keydown: boolean;
+    keypress: boolean;
+    keyup: boolean;
+    mount: boolean;
+    mousedown: boolean;
+    mouseenter: boolean;
+    mouseleave: boolean;
+    mousemove: boolean;
+    mouseout: boolean;
+    mouseover: boolean;
+    mouseup: boolean;
+    submit: boolean;
+}
+/**
+ * Should we link the values always?
+ * Or only if the form is valid?
+ */
+export declare type LinkOnEvent = "always" | "valid";
+export declare type LinkValuesOnEvent = "all" | "field";
+export declare type Callback = ((...args: any[]) => any) | (() => any);
+/**
+ * Data format for the reference data items
+ * Form.refs are of type Record<string, RefDataItem[]>
+ */
+export interface RefDataItem {
+    label: string;
+    value: any;
+    data?: any;
+}
+export declare type RefData = Record<string, RefDataItem[]>;
+export declare type PerformanceOptions = {
+    link_all_values_on_event: LinkValuesOnEvent;
+    enable_hidden_fields_detection: boolean;
+    enable_disabled_fields_detection: boolean;
+    enable_change_detection: boolean;
+};

@@ -24,6 +24,7 @@ export declare function _setValueChanges(changes: Writable<Record<string, any>>,
  */
 export declare function _attachEventListeners(field: FieldConfig, on_events: OnEvents, callback: Callback): void;
 export declare function _attachOnClearErrorEvents(node: HTMLElement, clear_errors_on_events: OnEvents, callback?: Callback): void;
+export declare function _addCallbackToField(field: FieldConfig, event: keyof HTMLElementEventMap, callbacks: ValidationCallback[] | Callback, with_validation_event?: boolean): void;
 export declare function _linkValues<ModelType extends Object>(fromFieldsToModel: boolean, fields: FieldConfig[], model: ModelType): void;
 /**
  * Currently this depends on class-validator.
@@ -65,12 +66,11 @@ export declare function _getStateSnapshot<T extends Object>(form: Form<T>, state
  * I've tested it with > 1000 fields in a single class with very slight input lag.
  */
 export declare function _hasStateChanged<T extends Object>(form: Form<T>, stateful_items: string[], initial_state_str: string): void;
-export declare function _clearState<T extends Object>(form: Form<T>, initial_state: object, required_fields: string[]): void;
 /**
  * Grab a snapshot of several items that generally define the state of the form
  * and serialize them into a format that's easy-ish to check/deserialize (for resetting)
  */
-export declare function _setInitialState<T extends Object>(form: Form<T>, stateful_items: string[], initial_state: any, initial_state_str: string): void;
+export declare function _setInitialState<T extends Object>(form: Form<T>, stateful_items: string[], initial_state: any, initial_state_str: string): string;
 /**
  * This one's kinda harry.
  * But it resets the form to it's initial state.
@@ -80,7 +80,7 @@ export declare function _resetState<T extends Object>(form: Form<T>, stateful_it
  * Using this.field_order, rearrange the order of the fields.
  */
 export declare function _createOrder(field_order: string[], fields: FieldConfig[]): FieldConfig[];
-export declare function _hideFields(hidden_fields: string[], field_names: string[], fields: FieldConfig[], hidden?: boolean): void;
+export declare function _hideFields(hidden_fields: Array<FieldConfig["name"]>, field_names: Array<FieldConfig["name"]>, fields: FieldConfig[], hidden?: boolean): void;
 export declare function _hideField(name: string, fields: FieldConfig[], hidden?: boolean): void;
-export declare function _disableFields(disabled_fields: string[], field_names: string[], fields: FieldConfig[], disabled?: boolean): void;
+export declare function _disableFields(disabled_fields: Array<FieldConfig["name"]>, field_names: Array<FieldConfig["name"]>, fields: FieldConfig[], disabled?: boolean): void;
 export declare function _disableField(name: string, fields: FieldConfig[], disabled?: boolean): void;

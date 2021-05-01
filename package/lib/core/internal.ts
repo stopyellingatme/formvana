@@ -239,9 +239,9 @@ export function _hanldeValueLinking<T extends Object>(
 
 function _handleValidationCallbacks(
   when_to_call: "before" | "after",
-  callbacks?: ValidationCallback[]
-) {
-  if (callbacks)
+  callbacks: ValidationCallback[]
+): void {
+  if (callbacks && callbacks.length > 0)
     callbacks.forEach((cb) => {
       if (cb.when === when_to_call) {
         cb.callback();
@@ -253,7 +253,7 @@ function _handleValidationCallbacks(
  * This is used to add functions and callbacks to the OnEvent
  * handler. Functions can be added in a plugin-style manner now.
  */
-export function _executeCallbacks(callbacks: Callback | Callback[]) {
+export function _executeCallbacks(callbacks: Callback | Callback[]): void {
   if (Array.isArray(callbacks)) {
     callbacks.forEach((cb) => {
       cb();
@@ -263,7 +263,7 @@ export function _executeCallbacks(callbacks: Callback | Callback[]) {
   }
 }
 
-function _executeIfTrue(is_true: boolean, cb: Callback) {
+function _executeIfTrue(is_true: boolean, cb: Callback): void {
   if (is_true) cb();
 }
 
@@ -305,13 +305,22 @@ export function _handleValidationEvent<T extends Object>(
         () => _handleFormValidation(form, errors, required_fields, field),
         () =>
           _executeIfTrue(form.perf_options.enable_hidden_fields_detection, () =>
-            _hideFields(form.hidden_fields, field_names, form.fields)
+            // _hideFields(form.hidden_fields, field_names, form.fields)
+            _negateField(form.hidden_fields, field_names, form.fields, {
+              type: "hide",
+              value: true,
+            })
           ),
 
         () =>
           _executeIfTrue(
             form.perf_options.enable_disabled_fields_detection,
-            () => _disableFields(form.disabled_fields, field_names, form.fields)
+            () =>
+              // _disableFields(form.disabled_fields, field_names, form.fields)
+              _negateField(form.disabled_fields, field_names, form.fields, {
+                type: "disable",
+                value: true,
+              })
           ),
 
         () =>
@@ -345,7 +354,11 @@ export async function _handleFormValidation<T extends Object>(
     // Are we validating the whole form or just the fields?
     if (field) {
       // Link errors to field (to show validation errors)
-      _linkFieldErrors(errors, field, form.validation_options.errorToFieldLink);
+      _linkFieldErrors(
+        errors,
+        field,
+        form.validation_options.field_error_link_name
+      );
     } else {
       // This is validatino for the whole form!
       _linkAllErrors(errors, form.fields);
@@ -432,19 +445,6 @@ export function _hasStateChanged<T extends Object>(
   form.changed.set(true);
 }
 
-// Clears everything before being destoryed.
-// export function _clearState<T extends Object>(
-//   form: Form<T>,
-//   initial_state: object,
-//   required_fields: string[]
-// ): void {
-//   form.model = undefined;
-//   initial_state = {};
-//   required_fields = [];
-//   form.refs = null;
-//   form.template = null;
-// }
-
 /**
  * Grab a snapshot of several items that generally define the state of the form
  * and serialize them into a format that's easy-ish to check/deserialize (for resetting)
@@ -464,9 +464,9 @@ export function _setInitialState<T extends Object>(
       get(form[key])
         ? (initial_state[key] = writable(true))
         : (initial_state[key] = writable(false));
-    } else if (key === "changes") {
+    } else if (key === "value_changes") {
       initial_state[key] = writable(get(form.value_changes));
-    } else {
+    } else if (Boolean(form[key])) {
       initial_state[key] = JSON.parse(JSON.stringify(form[key]));
     }
     initial_state_str = JSON.stringify(initial_state);
@@ -518,14 +518,14 @@ export function _resetState<T extends Object>(
         form[key][mkey] = model_state[mkey];
       });
       _linkValues(false, form.fields, form.model);
-    } else if (key === "changes") {
+    } else if (key === "value_changes") {
       // Reset form value changes!
       if (get(initial_state[key]) === {}) {
         form.value_changes.set({});
       } else {
         form.value_changes.set(get(initial_state[key]));
       }
-    } else {
+    } else if (Boolean(form[key])) {
       form[key] = JSON.parse(JSON.stringify(initial_state[key]));
     }
   });
@@ -549,11 +549,7 @@ export function _createOrder(
   field_order.forEach((name) => {
     const field = _get(name, fields);
     // If the field.name and the order name match...
-    if (
-      field.name === name ||
-      (field.group && field.group.name === name) ||
-      (field.step && `${field.step.index}` === name)
-    ) {
+    if (field.name === name) {
       // Then push it to the fields array
       newLayout.push(field);
     } else if (
@@ -568,60 +564,56 @@ export function _createOrder(
   return fields;
 }
 
-export function _hideFields(
-  hidden_fields: Array<FieldConfig["name"]>,
-  field_names: Array<FieldConfig["name"]>,
-  fields: FieldConfig[],
-  hidden: boolean = true
-) {
-  let i = 0,
-    len = hidden_fields.length;
-  if (len === 0) return;
-  for (; len > i; ++i) {
-    const field = hidden_fields[i],
-      field_index = field_names.indexOf(field);
-
-    if (field_index !== -1) {
-      _hideField(field_names[field_index], fields, hidden);
-    }
-  }
-}
-
-export function _hideField(
+export function _setFieldAttribute(
   name: string,
   fields: FieldConfig[],
-  hidden: boolean = true
-) {
+  attributes: Partial<FieldConfig>
+): void {
   const f = _get(name, fields);
-  f.hidden = hidden;
+  Object.entries(attributes).forEach(([key, value]) => {
+    if (typeof value === "object") {
+      Object.entries(value).forEach(([_key, _val]) => {
+        f.attributes[_key] = _val;
+      });
+    } else {
+      f[key] = value;
+    }
+  });
 }
 
-export function _disableFields(
-  disabled_fields: Array<FieldConfig["name"]>,
+export function _negateField(
+  affected_fields: Array<FieldConfig["name"]>,
   field_names: Array<FieldConfig["name"]>,
   fields: FieldConfig[],
-  disabled: boolean = true
+  negation: { type: "disable" | "hide"; value: boolean }
 ) {
-  let i = 0,
-    len = disabled_fields.length;
-  if (len === 0) return;
-  for (; len > i; ++i) {
-    const field = disabled_fields[i],
-      field_index = field_names.indexOf(field);
-    if (field_index !== -1) {
-      _disableField(field_names[field_index], fields, disabled);
+  if (
+    affected_fields &&
+    affected_fields.length > 0 &&
+    fields &&
+    fields.length > 0
+  ) {
+    let i = 0,
+      len = affected_fields.length;
+    if (len === 0) return;
+    for (; len > i; ++i) {
+      const field = affected_fields[i],
+        field_index = field_names.indexOf(field);
+
+      if (field_index !== -1) {
+        if (negation.type === "disable") {
+          _setFieldAttribute(field_names[field_index], fields, {
+            disabled: negation.value,
+            attributes: { disabled: negation.value },
+          });
+        } else if (negation.type === "hide") {
+          _setFieldAttribute(field_names[field_index], fields, {
+            hidden: negation.value,
+          });
+        }
+      }
     }
   }
-}
-
-export function _disableField(
-  name: string,
-  fields: FieldConfig[],
-  disabled: boolean = true
-) {
-  const f = _get(name, fields);
-  f.disabled = disabled;
-  f.attributes["disabled"] = disabled;
 }
 
 //#endregion

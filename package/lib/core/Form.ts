@@ -23,10 +23,7 @@ import {
   _requiredFieldsValid,
   _getStateSnapshot,
   _hasStateChanged,
-  _hideFields,
-  _disableFields,
   _createOrder,
-  // _clearState,
   _setInitialState,
   _resetState,
   _handleFormValidation,
@@ -34,6 +31,7 @@ import {
   _executeCallbacks,
   _hanldeValueLinking,
   _addCallbackToField,
+  _negateField,
 } from "./internal";
 import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
 
@@ -95,21 +93,23 @@ export class Form<ModelType extends Object> {
       );
     }
     // If they passed in a field order, set the order.
-    if (this.field_order && this.field_order.length > 0) {
+    if (this.field_order && this.field_order.length > 0)
       this.setOrder(this.field_order);
-    }
+
     // Well well, reference data. Better attach that to the fields.
-    if (this.refs) {
-      this.attachRefData();
-    }
+    if (this.refs) this.attachRefData();
 
-    if (this.disabled_fields && this.disabled_fields.length > 0) {
-      _disableFields(this.disabled_fields, this.field_names, this.fields);
-    }
+    if (this.disabled_fields && this.disabled_fields.length > 0)
+      _negateField(this.disabled_fields, this.field_names, this.fields, {
+        type: "disable",
+        value: true,
+      });
 
-    if (this.hidden_fields && this.hidden_fields.length > 0) {
-      _hideFields(this.hidden_fields, this.field_names, this.fields);
-    }
+    if (this.hidden_fields && this.hidden_fields.length > 0)
+      _negateField(this.hidden_fields, this.field_names, this.fields, {
+        type: "hide",
+        value: true,
+      });
 
     // Wait until everything is initalized then set the inital state.
     _setInitialState(
@@ -167,7 +167,7 @@ export class Form<ModelType extends Object> {
       forbidUnknownValues: true,
       stopAtFirstError: false,
     },
-    errorToFieldLink: "property",
+    field_error_link_name: "property",
   };
 
   /**
@@ -389,6 +389,7 @@ export class Form<ModelType extends Object> {
   attachRefData = (refs?: RefData): void => {
     const fields_with_ref_keys = this.fields.filter((f) => f.ref_key);
     if (refs) {
+      this.refs = refs;
       fields_with_ref_keys.forEach((field) => {
         if (field.ref_key) field.options = refs[field.ref_key];
       });
@@ -556,8 +557,6 @@ export class Form<ModelType extends Object> {
         });
       });
     }
-    // Reset everything else.
-    // _clearState(this, this.initial_state, this.required_fields);
   };
 
   //#endregion
@@ -591,8 +590,10 @@ export class Form<ModelType extends Object> {
    * Leftover fields are appended to bottom of form.
    */
   setOrder = (order: string[]): void => {
-    this.field_order = order;
-    this.fields = _createOrder(this.field_order, this.fields);
+    if (order && order.length > 0) {
+      this.field_order = order;
+      this.fields = _createOrder(this.field_order, this.fields);
+    }
   };
 
   /**
@@ -607,7 +608,10 @@ export class Form<ModelType extends Object> {
         this.hidden_fields.push(names);
       }
     }
-    _hideFields(this.hidden_fields, this.field_names, this.fields);
+    _negateField(this.hidden_fields, this.field_names, this.fields, {
+      type: "hide",
+      value: true,
+    });
   };
 
   /**
@@ -624,7 +628,10 @@ export class Form<ModelType extends Object> {
         this.hidden_fields.splice(this.hidden_fields.indexOf(names), 1);
       }
     }
-    _hideFields(this.hidden_fields, this.field_names, this.fields, false);
+    _negateField(this.hidden_fields, this.field_names, this.fields, {
+      type: "hide",
+      value: false,
+    });
   };
 
   /**
@@ -639,7 +646,10 @@ export class Form<ModelType extends Object> {
         this.disabled_fields.push(names);
       }
     }
-    _disableFields(this.disabled_fields, this.field_names, this.fields);
+    _negateField(this.disabled_fields, this.field_names, this.fields, {
+      type: "disable",
+      value: true,
+    });
   };
 
   /**
@@ -656,7 +666,10 @@ export class Form<ModelType extends Object> {
         this.disabled_fields.splice(this.disabled_fields.indexOf(names), 1);
       }
     }
-    _disableFields(this.disabled_fields, this.field_names, this.fields, false);
+    _negateField(this.disabled_fields, this.field_names, this.fields, {
+      type: "disable",
+      value: false,
+    });
   };
 
   //#endregion

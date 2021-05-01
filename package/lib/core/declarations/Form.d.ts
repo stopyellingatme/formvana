@@ -1,6 +1,7 @@
 import { Writable } from "svelte/store";
 import { FieldConfig } from ".";
-import { OnEvents, LinkOnEvent, RefData, PerformanceOptions, ValidationError, ValidationCallback, ValidatorFunction, ValidatorOptions, Callback } from "./types";
+import { OnEvents, LinkOnEvent, RefData, PerformanceOptions, ValidationError, ValidationCallback, ValidatorFunction, Callback, ValidationOptions } from "./types";
+import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
 /**
  * Formvana - Form Class
  * Form is NOT valid, initially.
@@ -37,9 +38,9 @@ export declare class Form<ModelType extends Object> {
     constructor(model: ModelType, validator?: ValidatorFunction, init?: Partial<Form<ModelType>>);
     /**
      * This is your form Model/Schema.
+     * It's used to build the form.fields.
      *
-     * (If you didn't set the model in the constructor)
-     * When model is set, call buildFields() to build the fields.
+     * The meat and potatos, some would say.
      */
     model: ModelType;
     /**
@@ -56,35 +57,22 @@ export declare class Form<ModelType extends Object> {
      *
      * * Fields & reference data are linked via field.ref_key
      */
-    refs: RefData;
+    refs?: RefData;
     /**
-     * TODO: Change this to a custom type that takes the type of validator
-     * TODO: and the validators options. This will help decouple
+     * Validation Options contain the logic and config for validating
+     * the form as well as linking errors to fields.
      *
-     * Validation options come from class-validator ValidatorOptions.
-     *
-     * Biggest perf increase comes from setting validationError.target = false
-     * (so the whole model is not attached to each error message)
+     * Other, more fine grained options are in validation_options.options
      */
-    readonly validation_options: Partial<ValidatorOptions & object>;
-    /**
-     * This is the (validation) function that will be called when validating.
-     * You can use any validation library you like, as long as this function
-     * returns Promise<ValidationError[]>
-     */
-    validator: ValidatorFunction;
-    /**
-     * Name of the property which links errors to fields.
-     * Error.property_or_name_or_whatever must match field.name.
-     * ValidationError[name] must match field.name.
-     */
-    errorToFieldLink: keyof ValidationError;
+    readonly validation_options: Partial<ValidationOptions>;
     /**
      * The errors are of type ValidationError.
      * Errors are attached to their corresponding fields.
      * This pattern adds flexibility at the cost of a little complexity.
      *
-     * @example the form is not valid while showing a sinlge validation error.
+     * When a single field is validated, the whole model is validated. We just don't
+     * show all the errors to the user. This way, we know if the form is still invalid,
+     * even if we aren't showing the user any errors (like, pre-submit-button press).
      */
     errors: ValidationError[];
     /**
@@ -108,8 +96,8 @@ export declare class Form<ModelType extends Object> {
     /**
      * Use the NAME of the field (field.name) to disable/hide the field.
      */
-    hidden_fields: string[];
-    disabled_fields: string[];
+    hidden_fields?: Array<FieldConfig["name"]>;
+    disabled_fields?: Array<FieldConfig["name"]>;
     /**
      * Which events should the form do things on?
      * (validate, link values, hide/disable fields)
@@ -117,12 +105,6 @@ export declare class Form<ModelType extends Object> {
     readonly on_events: OnEvents;
     readonly clear_errors_on_events: OnEvents;
     readonly link_fields_to_model: LinkOnEvent;
-    /**
-     * Determines the ordering of this.fields.
-     * Simply an array of field names (or group names or stepper names)
-     * in the order to be displayed
-     */
-    field_order: string[];
     /**
      * Form Template Layout
      *
@@ -133,7 +115,13 @@ export declare class Form<ModelType extends Object> {
      * Note: add ` types": ["svelte"] ` to tsconfig compilerOptions
      * to remove TS import error of .svelte files (for your template)
      */
-    template?: unknown;
+    template?: string | typeof SvelteComponentDev | typeof SvelteComponent | typeof SvelteComponent;
+    /**
+     * Determines the ordering of this.fields.
+     * Simply an array of field names (or group names or stepper names)
+     * in the order to be displayed
+     */
+    field_order: Array<FieldConfig["name"]>;
     private field_names;
     /**
      * This is the model's initial state.
@@ -203,16 +191,6 @@ export declare class Form<ModelType extends Object> {
      */
     attachRefData: (refs?: RefData) => void;
     /**
-     * Can attach event listeners to one or more fields.
-     *
-     * TODO: Optionaly, attach the _handleValidationEvents function?
-     */
-    addEventListenerToFields: (event: keyof HTMLElementEventMap, callback: Callback, field_names: string | string[]) => void;
-    /**
-     * Add your own callbacks to the normal _handleValidationEvent method.
-     */
-    addValidationCallbackToFields: (event: keyof HTMLElementEventMap, callbacks: ValidationCallback[], field_names: string | string[]) => void;
-    /**
      * Well, validate the form!
      * Clear the errors first, then do it, obviously.
      * Can also link fields values to model.
@@ -224,6 +202,14 @@ export declare class Form<ModelType extends Object> {
      * If want to (in)validate a specific field for any reason.
      */
     validateField: (field_name: string, withMessage?: string, callbacks?: ValidationCallback[]) => void;
+    /**
+     * Can attach event listeners to one or more fields.
+     */
+    addEventListenerToFields: (event: keyof HTMLElementEventMap, callback: Callback, field_names: string | string[]) => void;
+    /**
+     * Add your own callbacks to the normal _handleValidationEvent method.
+     */
+    addValidationCallbackToFields: (event: keyof HTMLElementEventMap, callbacks: ValidationCallback[], field_names: string | string[]) => void;
     get: (field_name: string) => FieldConfig;
     /**
      * Generate a Svelte Store from the current "this".

@@ -6,7 +6,8 @@
   "description": "Searching for Form Nirvana with Typescript and Svelte.",
   "scripts": {
     "build": "bolt ws run build",
-    "dev": "cd example && vite --config vite.config.js serve public",
+    "devite": "cd example && npm run build && vite --config vite.config.js serve public",
+    "dev": "cd example && npm run devv",
     "gen:test": "node test.js",
     "gen:decorators": "tsc --declaration ./package/lib/core/index.ts --outDir ./package/lib/core/declarations --emitDeclarationOnly true",
     "package": "cd package && npm run build && cd .. && node output.js && npm run dev"
