@@ -10,6 +10,7 @@ import {
   ValidatorFunction,
   Callback,
   ValidationOptions,
+  InitialFormState,
 } from "./types";
 import {
   _buildFormFields,
@@ -21,7 +22,6 @@ import {
   _linkAllErrors,
   _linkValues,
   _requiredFieldsValid,
-  _getStateSnapshot,
   _hasStateChanged,
   _createOrder,
   _setInitialState,
@@ -70,13 +70,11 @@ import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
 export class Form<ModelType extends Object> {
   constructor(
     model: ModelType,
-    validator?: ValidatorFunction,
+    validation_options: Partial<ValidationOptions>,
     init?: Partial<Form<ModelType>>
   ) {
     if (init) {
-      Object.keys(init).forEach((key) => {
-        this[key] = init[key];
-      });
+      Object.assign(this, init);
     }
     // If there's a model, set the inital state's and build the fields
     if (model) {
@@ -85,8 +83,9 @@ export class Form<ModelType extends Object> {
     } else {
       throw new Error("Model is not valid. Please pass in a valid model.");
     }
-    if (validator) {
-      this.validation_options.validator = validator;
+    if (validation_options) {
+      Object.assign(this.validation_options, validation_options);
+      // this.validation_options.validator = validation_options.validator;
     } else {
       throw new Error(
         "Please add a validator with ReturnType<Promise<ValidationError[]>>"
@@ -114,9 +113,7 @@ export class Form<ModelType extends Object> {
     // Wait until everything is initalized then set the inital state.
     _setInitialState(
       this,
-      this.stateful_items,
       this.initial_state,
-      this.initial_state_str
     );
   }
 
@@ -155,7 +152,7 @@ export class Form<ModelType extends Object> {
    *
    * Other, more fine grained options are in validation_options.options
    */
-  readonly validation_options: Partial<ValidationOptions> = {
+  validation_options: Partial<ValidationOptions> = {
     validator: undefined,
     options: {
       skipMissingProperties: false,
@@ -211,12 +208,12 @@ export class Form<ModelType extends Object> {
    * Which events should the form do things on?
    * (validate, link values, hide/disable fields)
    */
-  readonly on_events: OnEvents = new OnEvents();
+  on_events: OnEvents = new OnEvents();
   // Which events should we clear the field errors on?
-  readonly clear_errors_on_events: OnEvents = new OnEvents({}, true);
+  clear_errors_on_events: OnEvents = new OnEvents({}, true);
 
   // When to link this.field values to this.model values
-  readonly link_fields_to_model: LinkOnEvent = "always";
+  link_fields_to_model: LinkOnEvent = "always";
 
   //#endregion
 
@@ -243,7 +240,7 @@ export class Form<ModelType extends Object> {
    * Simply an array of field names (or group names or stepper names)
    * in the order to be displayed
    */
-  field_order: Array<FieldConfig["name"]> = [];
+  private field_order: Array<FieldConfig["name"]> = [];
 
   //#endregion
 
@@ -255,19 +252,10 @@ export class Form<ModelType extends Object> {
    * This is the model's initial state.
    * Shove the stateful_items into the inital state for a decent snapshot.
    */
-  private initial_state: object = {};
-  private initial_state_str: string = "";
-  private stateful_items: Array<keyof Form<ModelType>> = [
-    "valid",
-    "touched",
-    "value_changes",
-    "errors",
-    "refs",
-    "field_order",
-    "model",
-    "hidden_fields",
-    "disabled_fields",
-  ];
+  private initial_state: InitialFormState<ModelType> = {
+    model: undefined,
+    errors: undefined,
+  };
 
   /**
    * We keep track of required fields because we let class-validator handle everything
@@ -337,8 +325,6 @@ export class Form<ModelType extends Object> {
       _handleValidationEvent(
         this,
         this.required_fields,
-        this.stateful_items,
-        this.initial_state_str,
         this.field_names,
         field
       )
@@ -370,9 +356,10 @@ export class Form<ModelType extends Object> {
       this.model = data;
       this.buildFields();
     } else {
-      Object.keys(this.model).forEach((key) => {
+      let key: keyof ModelType;
+      for (key in this.model) {
         this.model[key] = data[key];
-      });
+      }
       _linkValues(false, this.fields, this.model);
     }
 
@@ -395,7 +382,8 @@ export class Form<ModelType extends Object> {
       });
     } else if (this.refs) {
       fields_with_ref_keys.forEach((field) => {
-        if (field.ref_key) field.options = this.refs[field.ref_key];
+        if (field.ref_key && this.refs)
+          field.options = this.refs[field.ref_key];
       });
     }
   };
@@ -409,28 +397,26 @@ export class Form<ModelType extends Object> {
    * Can also link fields values to model.
    * Can also hide or disable fields before validation.
    */
-  validate = (callbacks?: ValidationCallback[]): Promise<ValidationError[]> => {
+  validate = (
+    callbacks?: ValidationCallback[]
+  ): Promise<ValidationError[]> | undefined => {
     return _handleValidationEvent(
       this,
       this.required_fields,
-      this.stateful_items,
-      this.initial_state_str,
       this.field_names,
-      null,
+      undefined,
       callbacks
     );
   };
 
   validateAsync = async (
     callbacks?: ValidationCallback[]
-  ): Promise<ValidationError[]> => {
+  ): Promise<ValidationError[] | undefined> => {
     return await _handleValidationEvent(
       this,
       this.required_fields,
-      this.stateful_items,
-      this.initial_state_str,
       this.field_names,
-      null,
+      undefined,
       callbacks
     );
   };
@@ -448,8 +434,6 @@ export class Form<ModelType extends Object> {
       _handleValidationEvent(
         this,
         this.required_fields,
-        this.stateful_items,
-        this.initial_state_str,
         this.field_names,
         field,
         callbacks
@@ -476,11 +460,27 @@ export class Form<ModelType extends Object> {
     if (Array.isArray(field_names)) {
       const fields = field_names.map((f) => _get(f, this.fields));
       fields.forEach((f) => {
-        _addCallbackToField(f, event, callback, false);
+        _addCallbackToField(
+          this,
+          f,
+          event,
+          callback,
+          false,
+          this.required_fields,
+          this.field_names
+        );
       });
     } else {
       const field = _get(field_names, this.fields);
-      _addCallbackToField(field, event, callback, false);
+      _addCallbackToField(
+        this,
+        field,
+        event,
+        callback,
+        false,
+        this.required_fields,
+        this.field_names
+      );
     }
   };
 
@@ -495,11 +495,27 @@ export class Form<ModelType extends Object> {
     if (Array.isArray(field_names)) {
       const fields = field_names.map((f) => _get(f, this.fields));
       fields.forEach((f) => {
-        _addCallbackToField(f, event, callbacks);
+        _addCallbackToField(
+          this,
+          f,
+          event,
+          callbacks,
+          true,
+          this.required_fields,
+          this.field_names
+        );
       });
     } else {
       const field = _get(field_names, this.fields);
-      _addCallbackToField(field, event, callbacks);
+      _addCallbackToField(
+        this,
+        field,
+        event,
+        callbacks,
+        true,
+        this.required_fields,
+        this.field_names
+      );
     }
   };
 
@@ -538,22 +554,22 @@ export class Form<ModelType extends Object> {
       this.fields.forEach((f) => {
         // Remove all the event listeners!
         Object.keys(this.on_events).forEach((key) => {
-          f.node.removeEventListener(key, (ev) => {
-            (e: Event) =>
-              _handleValidationEvent(
-                this,
-                this.required_fields,
-                this.stateful_items,
-                this.initial_state_str,
-                this.field_names,
-                f
-              );
-          });
+          f.node &&
+            f.node.removeEventListener(key, (ev) => {
+              (e: Event) =>
+                _handleValidationEvent(
+                  this,
+                  this.required_fields,
+                  this.field_names,
+                  f
+                );
+            });
         });
         Object.keys(this.clear_errors_on_events).forEach((key) => {
-          f.node.removeEventListener(key, (e) => {
-            f.errors.set(null);
-          });
+          f.node &&
+            f.node.removeEventListener(key, (e) => {
+              f.errors.set(null);
+            });
         });
       });
     }
@@ -565,16 +581,14 @@ export class Form<ModelType extends Object> {
 
   // Resets to the inital state of the form.
   reset = (): void => {
-    _resetState(this, this.stateful_items, this.initial_state);
+    _resetState(this, this.initial_state);
   };
 
   // Well, this updates the initial state of the form.
   updateInitialState = (): void => {
     _setInitialState(
       this,
-      this.stateful_items,
-      this.initial_state,
-      this.initial_state_str
+      this.initial_state
     );
     this.changed.set(false);
   };
@@ -601,17 +615,18 @@ export class Form<ModelType extends Object> {
    * @param names? string | string[]
    */
   hideFields = (names?: string | string[]) => {
-    if (names) {
+    if (names && this.hidden_fields) {
       if (Array.isArray(names)) {
         this.hidden_fields.push(...names);
       } else {
         this.hidden_fields.push(names);
       }
     }
-    _negateField(this.hidden_fields, this.field_names, this.fields, {
-      type: "hide",
-      value: true,
-    });
+    if (this.hidden_fields)
+      _negateField(this.hidden_fields, this.field_names, this.fields, {
+        type: "hide",
+        value: true,
+      });
   };
 
   /**
@@ -619,19 +634,21 @@ export class Form<ModelType extends Object> {
    * @param names? string | string[]
    */
   showFields = (names?: string | string[]) => {
-    if (names) {
+    if (names && this.hidden_fields) {
       if (Array.isArray(names)) {
         names.forEach((name) => {
-          this.hidden_fields.splice(this.hidden_fields.indexOf(name), 1);
+          if (this.hidden_fields)
+            this.hidden_fields.splice(this.hidden_fields.indexOf(name), 1);
         });
       } else {
         this.hidden_fields.splice(this.hidden_fields.indexOf(names), 1);
       }
     }
-    _negateField(this.hidden_fields, this.field_names, this.fields, {
-      type: "hide",
-      value: false,
-    });
+    if (this.hidden_fields)
+      _negateField(this.hidden_fields, this.field_names, this.fields, {
+        type: "hide",
+        value: false,
+      });
   };
 
   /**
@@ -639,17 +656,18 @@ export class Form<ModelType extends Object> {
    * @param names? string | string[]
    */
   disableFields = (names?: string | string[]) => {
-    if (names) {
+    if (names && this.disabled_fields) {
       if (Array.isArray(names)) {
         this.disabled_fields.push(...names);
       } else {
         this.disabled_fields.push(names);
       }
     }
-    _negateField(this.disabled_fields, this.field_names, this.fields, {
-      type: "disable",
-      value: true,
-    });
+    if (this.disabled_fields)
+      _negateField(this.disabled_fields, this.field_names, this.fields, {
+        type: "disable",
+        value: true,
+      });
   };
 
   /**
@@ -657,19 +675,21 @@ export class Form<ModelType extends Object> {
    * @param names? string | string[]
    */
   enableFields = (names?: string | string[]) => {
-    if (names) {
+    if (names && this.disabled_fields) {
       if (Array.isArray(names)) {
         names.forEach((name) => {
-          this.disabled_fields.splice(this.disabled_fields.indexOf(name), 1);
+          if (this.disabled_fields)
+            this.disabled_fields.splice(this.disabled_fields.indexOf(name), 1);
         });
       } else {
         this.disabled_fields.splice(this.disabled_fields.indexOf(names), 1);
       }
     }
-    _negateField(this.disabled_fields, this.field_names, this.fields, {
-      type: "disable",
-      value: false,
-    });
+    if (this.disabled_fields)
+      _negateField(this.disabled_fields, this.field_names, this.fields, {
+        type: "disable",
+        value: false,
+      });
   };
 
   //#endregion

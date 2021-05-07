@@ -1,6 +1,6 @@
-import { ValidationError } from "class-validator";
 import { SvelteComponent } from "svelte";
 import { Writable } from "svelte/store";
+import { ValidationError } from "./types";
 export interface FieldGroup {
     name: string;
     label?: string;
@@ -17,14 +17,14 @@ export interface FieldStep {
  * an easy-to-use format to work with.
  */
 export declare class FieldConfig {
-    constructor(init: Partial<FieldConfig>);
+    constructor(name: string, init: Partial<FieldConfig>);
     /**
      * Only set "name" if you are using FieldConfig apart from
      * your object/model.
      * I.e. you are using plain JSON rather than a TS class.
      */
     readonly name: string;
-    node: HTMLElement;
+    node: HTMLElement | undefined;
     /**
      * el can be either String or Svelte Component.
      * This allows us a more flexible dynamic field generator.

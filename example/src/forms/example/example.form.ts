@@ -28,17 +28,21 @@ const ref_data: RefData = {
 
 function initStore() {
   // Just gonna set up the form real quick...
-  let form = new Form(new ExampleModel(), validate, {
-    template: ExampleTemplate,
-    on_events: new OnEvents({ focus: false }),
-    refs: ref_data,
-    // hidden_fields: ["description_99", "status_97"],
-    disabled_fields: ["email_96", "email_94"],
-    // perf_options: {
-    //   link_all_values_on_event: "all",
-    //   enable_change_detection: true,
-    // },
-  });
+  let form = new Form(
+    new ExampleModel(),
+    { validator: validate },
+    {
+      template: ExampleTemplate,
+      on_events: new OnEvents({ focus: false }),
+      refs: ref_data,
+      // hidden_fields: ["description_99", "status_97"],
+      disabled_fields: ["email_96", "email_94"],
+      // perf_options: {
+      //   link_all_values_on_event: "all",
+      //   enable_change_detection: true,
+      // },
+    }
+  );
 
   // And add it to the store...
   const { subscribe, update } = form.storify();
@@ -90,6 +94,9 @@ export const init = () => {
 
   setTimeout(() => {
     get(formState).updateInitialState();
+
+    console.log(get(formState));
+    
   }, 3000);
 
   // get(formState).value_changes.subscribe((val) => {

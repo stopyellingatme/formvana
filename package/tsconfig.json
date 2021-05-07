@@ -2,7 +2,7 @@
     "compilerOptions": {
         "target": "ES2018",
         "moduleResolution": "node",
-        "noUnusedLocals": true,
+        "noUnusedLocals": false,
         "strict": false,
         "esModuleInterop": true,
         "declaration": true,

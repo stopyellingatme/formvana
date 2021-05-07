@@ -1,6 +1,6 @@
-import { ValidationError } from "class-validator";
 import { SvelteComponent } from "svelte";
 import { writable, Writable } from "svelte/store";
+import { ValidationError } from "./types";
 
 export interface FieldGroup {
   name: string;
@@ -20,7 +20,14 @@ export interface FieldStep {
  * an easy-to-use format to work with.
  */
 export class FieldConfig {
-  constructor(init: Partial<FieldConfig>) {
+  constructor(name: string, init: Partial<FieldConfig>) {
+    if (name) {
+      this.name = name;
+    } else {
+      throw new Error(
+        "{name: string} is required for FieldConfig intialization."
+      );
+    }
     // I know, Object.assign... lots of freedom there.
     Object.assign(this, init);
 
@@ -84,7 +91,7 @@ export class FieldConfig {
   readonly name: string;
 
   // Used to add and remove event listeners
-  node: HTMLElement;
+  node: HTMLElement | undefined;
 
   /**
    * el can be either String or Svelte Component.

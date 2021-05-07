@@ -1,85 +1,23 @@
-import { ValidationError } from "class-validator";
+// import { ValidationError } from "class-validator";
 import { SvelteComponent } from "svelte";
 import { Writable } from "svelte/store";
 import { SvelteComponentDev } from "svelte/internal";
 import { SvelteComponent as SvelteComponent$0 } from "svelte/internal";
-interface FieldGroup {
-    name: string;
-    label?: string;
-}
-interface FieldStep {
-    index: number;
-    label?: string;
-}
 /**
- * FieldConfig is used to help with the form auto generation functionality.
- *
- * This is not meant to be a complete HTML Input/Select/etc replacement.
- * It is simply a vehicle to help give the form generator
- * an easy-to-use format to work with.
+ * I'm using strings here for easier comparison.
  */
-declare class FieldConfig {
-    constructor(init: Partial<FieldConfig>);
-    /**
-     * Only set "name" if you are using FieldConfig apart from
-     * your object/model.
-     * I.e. you are using plain JSON rather than a TS class.
-     */
-    readonly name: string;
-    // Used to add and remove event listeners
-    node: HTMLElement;
-    /**
-     * el can be either String or Svelte Component.
-     * This allows us a more flexible dynamic field generator.
-     * Using a template also allows you to style each input as needed.
-     */
-    selector?: string;
-    template?: SvelteComponent;
-    label?: string;
-    type: string; // Defaults to text, for now
-    required: boolean;
-    value: Writable<any>;
-    /**
-     * You can use these to apply styles.
-     * However, using a template/component is recommended.
-     *
-     */
-    styles?: string;
-    classes?: string;
-    /**
-     * Used if there is a set of "options" to choose from.
-     */
-    options?: any[];
-    ref_key?: string; // Reference data key
-    disabled: boolean;
-    hidden: boolean;
-    /**
-     * Validation Errors!
-     * We're mainly looking for the class-validator "constraints"
-     * One ValidationError object can have multiple errors (constraints)
-     */
-    errors: Writable<ValidationError | null>;
-    /**
-     * * JSON of things like:
-     * -- disabled
-     * -- id="something"
-     * -- type="text || email || password || whatever"
-     * -- class='input class'
-     * -- title='input title'
-     * -- multiple
-     * -- etc.
-     * -- anything you want!
-     */
-    attributes: object;
-    hint?: string; // Mainly for textarea, or whatever
-    group?: FieldGroup;
-    step?: FieldStep;
-    private initial_value;
-    clearValue: () => void;
-    clearErrors: () => void;
-    clear: () => void;
-    setInitialValue: (value: any) => void;
+type InitialFormState<ModelType extends Object> = {
+    model: ModelType | undefined;
+    errors: ValidationError[] | undefined;
+};
+type ObjectKeys<T> = T extends object ? (keyof T)[] : T extends number ? [
+] : T extends Array<any> | string ? string[] : never;
+interface ObjectConstructor {
+    keys<T>(o: T): ObjectKeys<T>;
 }
+// export interface ModelType<T extends Object & ObjectConstructor> {
+//   keys<T>(o: T): ObjectKeys<T>;
+// };
 /**
  * Base interface for managing multiple instances of Form
  * classes.
@@ -109,7 +47,7 @@ interface ValidationErrorType {
     };
     children?: ValidationErrorType[];
 }
-declare class ValidationError$0 {
+declare class ValidationError {
     /**
      * @param errors essentially Record<string #1, string #2>
      * with #1 being the name of the error constraint
@@ -121,7 +59,7 @@ declare class ValidationError$0 {
         [type: string]: string;
     }, options?: Partial<ValidationErrorType>);
     target?: Object; // Object that was validated.
-    property: string; // Object's property that didn't pass validation.
+    property?: string; // Object's property that didn't pass validation.
     value?: any; // Value that didn't pass a validation.
     constraints?: {
         // Constraints that failed validation with error messages.
@@ -148,7 +86,7 @@ interface ValidationOptions {
      * Error.property_or_name_or_whatever must match field.name.
      * ValidationError[name] must match field.name.
      */
-    field_error_link_name: keyof ValidationError$0;
+    field_error_link_name: keyof ValidationError;
 }
 /**
  * Options passed to validator during validation.
@@ -281,6 +219,83 @@ type PerformanceOptions = {
     enable_disabled_fields_detection: boolean;
     enable_change_detection: boolean;
 };
+interface FieldGroup {
+    name: string;
+    label?: string;
+}
+interface FieldStep {
+    index: number;
+    label?: string;
+}
+/**
+ * FieldConfig is used to help with the form auto generation functionality.
+ *
+ * This is not meant to be a complete HTML Input/Select/etc replacement.
+ * It is simply a vehicle to help give the form generator
+ * an easy-to-use format to work with.
+ */
+declare class FieldConfig {
+    constructor(name: string, init: Partial<FieldConfig>);
+    /**
+     * Only set "name" if you are using FieldConfig apart from
+     * your object/model.
+     * I.e. you are using plain JSON rather than a TS class.
+     */
+    readonly name: string;
+    // Used to add and remove event listeners
+    node: HTMLElement | undefined;
+    /**
+     * el can be either String or Svelte Component.
+     * This allows us a more flexible dynamic field generator.
+     * Using a template also allows you to style each input as needed.
+     */
+    selector?: string;
+    template?: SvelteComponent;
+    label?: string;
+    type: string; // Defaults to text, for now
+    required: boolean;
+    value: Writable<any>;
+    /**
+     * You can use these to apply styles.
+     * However, using a template/component is recommended.
+     *
+     */
+    styles?: string;
+    classes?: string;
+    /**
+     * Used if there is a set of "options" to choose from.
+     */
+    options?: any[];
+    ref_key?: string; // Reference data key
+    disabled: boolean;
+    hidden: boolean;
+    /**
+     * Validation Errors!
+     * We're mainly looking for the class-validator "constraints"
+     * One ValidationError object can have multiple errors (constraints)
+     */
+    errors: Writable<ValidationError | null>;
+    /**
+     * * JSON of things like:
+     * -- disabled
+     * -- id="something"
+     * -- type="text || email || password || whatever"
+     * -- class='input class'
+     * -- title='input title'
+     * -- multiple
+     * -- etc.
+     * -- anything you want!
+     */
+    attributes: object;
+    hint?: string; // Mainly for textarea, or whatever
+    group?: FieldGroup;
+    step?: FieldStep;
+    private initial_value;
+    clearValue: () => void;
+    clearErrors: () => void;
+    clear: () => void;
+    setInitialValue: (value: any) => void;
+}
 /**
  * Formvana - Form Class
  * Form is NOT valid, initially.
@@ -314,7 +329,7 @@ type PerformanceOptions = {
  *  - This will allow for a more "dynamic" form building experience
  */
 declare class Form<ModelType extends Object> {
-    constructor(model: ModelType, validator?: ValidatorFunction, init?: Partial<Form<ModelType>>);
+    constructor(model: ModelType, validation_options: Partial<ValidationOptions>, init?: Partial<Form<ModelType>>);
     //#region ** Fields **
     //#region Core Functionality Fields
     /**
@@ -345,7 +360,7 @@ declare class Form<ModelType extends Object> {
      *
      * Other, more fine grained options are in validation_options.options
      */
-    readonly validation_options: Partial<ValidationOptions>;
+    validation_options: Partial<ValidationOptions>;
     /**
      * The errors are of type ValidationError.
      * Errors are attached to their corresponding fields.
@@ -355,7 +370,7 @@ declare class Form<ModelType extends Object> {
      * show all the errors to the user. This way, we know if the form is still invalid,
      * even if we aren't showing the user any errors (like, pre-submit-button press).
      */
-    errors: ValidationError$0[];
+    errors: ValidationError[];
     /**
      * These next properties are all pretty self-explanatory.
      *
@@ -383,11 +398,11 @@ declare class Form<ModelType extends Object> {
      * Which events should the form do things on?
      * (validate, link values, hide/disable fields)
      */
-    readonly on_events: OnEvents;
+    on_events: OnEvents;
     // Which events should we clear the field errors on?
-    readonly clear_errors_on_events: OnEvents;
+    clear_errors_on_events: OnEvents;
     // When to link this.field values to this.model values
-    readonly link_fields_to_model: LinkOnEvent;
+    link_fields_to_model: LinkOnEvent;
     //#endregion
     //#region Field Styling
     /**
@@ -415,9 +430,19 @@ declare class Form<ModelType extends Object> {
      * This is the model's initial state.
      * Shove the stateful_items into the inital state for a decent snapshot.
      */
-    private initial_state;
-    private initial_state_str;
-    private stateful_items;
+    initial_state: InitialFormState<ModelType>;
+    // private initial_state_str: string = "";
+    // private stateful_items: Array<keyof Form<ModelType>> = [
+    //   "valid",
+    //   "touched",
+    //   "value_changes",
+    //   "errors",
+    //   "refs",
+    //   "field_order",
+    //   "model",
+    //   "hidden_fields",
+    //   "disabled_fields",
+    // ];
     /**
      * We keep track of required fields because we let class-validator handle everything
      * except *required* (field.required)
@@ -490,8 +515,8 @@ declare class Form<ModelType extends Object> {
      * Can also link fields values to model.
      * Can also hide or disable fields before validation.
      */
-    validate: (callbacks?: ValidationCallback[]) => Promise<ValidationError$0[]>;
-    validateAsync: (callbacks?: ValidationCallback[]) => Promise<ValidationError$0[]>;
+    validate: (callbacks?: ValidationCallback[]) => Promise<ValidationError[]> | undefined;
+    validateAsync: (callbacks?: ValidationCallback[]) => Promise<ValidationError[] | undefined>;
     /**
      * If want to (in)validate a specific field for any reason.
      */
@@ -583,16 +608,19 @@ declare function _setValueChanges(changes: Writable<Record<string, any>>, field:
  * Parent: form.useField(...)
  */
 declare function _attachEventListeners(field: FieldConfig, on_events: OnEvents, callback: Callback): void;
-declare function _attachOnClearErrorEvents(node: HTMLElement, clear_errors_on_events: OnEvents, callback?: Callback): void;
-declare function _addCallbackToField(field: FieldConfig, event: keyof HTMLElementEventMap, callbacks: ValidationCallback[] | Callback, with_validation_event?: boolean): void;
+declare function _attachOnClearErrorEvents(node: HTMLElement, clear_errors_on_events: OnEvents, callback: Callback): void;
+declare function _addCallbackToField<T>(form: Form<T>, field: FieldConfig, event: keyof HTMLElementEventMap, callbacks: ValidationCallback[] | Callback, with_validation_event: boolean, required_fields: string[], 
+// stateful_items: string[],
+// initial_state_str: string,
+field_names: string[]): void;
 // Link values from FIELDS toMODEL or MODEL to FIELDS
 declare function _linkValues<ModelType extends Object>(fromFieldsToModel: boolean, fields: FieldConfig[], model: ModelType): void;
 /**
  * Currently this depends on class-validator.
  * TODO: Disconnect class-validator dependency from all functions
  */
-declare function _linkFieldErrors(errors: ValidationError$0[], field: FieldConfig, filter_term: keyof ValidationError$0): void;
-declare function _linkAllErrors(errors: ValidationError$0[], fields: FieldConfig[]): void;
+declare function _linkFieldErrors(errors: ValidationError[], field: FieldConfig, filter_term: keyof ValidationError): void;
+declare function _linkAllErrors(errors: ValidationError[], fields: FieldConfig[]): void;
 declare function _hanldeValueLinking<T extends Object>(form: Form<T>, field?: FieldConfig): void;
 /**
  * This is used to add functions and callbacks to the OnEvent
@@ -604,7 +632,10 @@ declare function _executeCallbacks(callbacks: Callback | Callback[]): void;
  * Corresponds to the form.on_events field.
  *
  */
-declare function _handleValidationEvent<T extends Object>(form: Form<T>, required_fields: string[], stateful_items: string[], initial_state_str: string, field_names: string[], field?: FieldConfig, callbacks?: ValidationCallback[]): Promise<ValidationError$0[]>;
+declare function _handleValidationEvent<T extends Object>(form: Form<T>, required_fields: string[], 
+// stateful_items: string[],
+// initial_state_str: string,
+field_names: string[], field?: FieldConfig, callbacks?: ValidationCallback[]): Promise<ValidationError[]> | undefined;
 /**
  * Handle all the things associated with validation!
  * Link the errors to the fields.
@@ -612,14 +643,14 @@ declare function _handleValidationEvent<T extends Object>(form: Form<T>, require
  * Link values from fields to model if
  * form.link_fields_to_model === LinkOnEvent.Valid is true.
  */
-declare function _handleFormValidation<T extends Object>(form: Form<T>, errors: ValidationError$0[], required_fields: string[], field?: FieldConfig): Promise<ValidationError$0[]>;
+declare function _handleFormValidation<T extends Object>(form: Form<T>, errors: ValidationError[], required_fields: string[], field?: FieldConfig): Promise<ValidationError[]>;
 /**
  * TODO: Clean up this arfv implementation. Seems too clunky.
  *
  * Check if there are any required fields in the errors.
  * If there are no required fields in the errors, the form is valid
  */
-declare function _requiredFieldsValid(errors: ValidationError$0[], required_fields: string[]): boolean;
+declare function _requiredFieldsValid(errors: ValidationError[], required_fields: string[]): boolean;
 //#endregion
 //#region - Form State
 // Returns a string of the current state
@@ -629,17 +660,19 @@ declare function _getStateSnapshot<T extends Object>(form: Form<T>, stateful_ite
  *
  * I've tested it with > 1000 fields in a single class with very slight input lag.
  */
-declare function _hasStateChanged<T extends Object>(form: Form<T>, stateful_items: string[], initial_state_str: string): void;
+declare function _hasStateChanged<T extends Object>(
+// form: Form<T>,
+value_changes: Writable<Record<string, any>>, changed: Writable<boolean>): void;
 /**
  * Grab a snapshot of several items that generally define the state of the form
  * and serialize them into a format that's easy-ish to check/deserialize (for resetting)
  */
-declare function _setInitialState<T extends Object>(form: Form<T>, stateful_items: string[], initial_state: any, initial_state_str: string): string;
+declare function _setInitialState<T extends Object>(form: Form<T>, initial_state: InitialFormState<T>): InitialFormState<T>;
 /**
  * This one's kinda harry.
  * But it resets the form to it's initial state.
  */
-declare function _resetState<T extends Object>(form: Form<T>, stateful_items: string[], initial_state: any): void;
+declare function _resetState<T extends Object>(form: Form<T>, initial_state: InitialFormState<T>): void;
 //#endregion
 //#region - Styling
 /**
@@ -651,5 +684,5 @@ declare function _negateField(affected_fields: Array<FieldConfig["name"]>, field
     type: "disable" | "hide";
     value: boolean;
 }): void;
-export { FieldGroup, FieldStep, FieldConfig, Form, field, _get, _buildFormFields, _getRequiredFieldNames, _setValueChanges, _attachEventListeners, _attachOnClearErrorEvents, _addCallbackToField, _linkValues, _linkFieldErrors, _linkAllErrors, _hanldeValueLinking, _executeCallbacks, _handleValidationEvent, _handleFormValidation, _requiredFieldsValid, _getStateSnapshot, _hasStateChanged, _setInitialState, _resetState, _createOrder, _setFieldAttribute, _negateField, FormManager, ValidationCallback, ValidatorFunction, ValidationErrorType, ValidationError$0 as ValidationError, ValidationOptions, ValidatorOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, Callback, RefDataItem, RefData, PerformanceOptions };
+export { FieldGroup, FieldStep, FieldConfig, Form, field, _get, _buildFormFields, _getRequiredFieldNames, _setValueChanges, _attachEventListeners, _attachOnClearErrorEvents, _addCallbackToField, _linkValues, _linkFieldErrors, _linkAllErrors, _hanldeValueLinking, _executeCallbacks, _handleValidationEvent, _handleFormValidation, _requiredFieldsValid, _getStateSnapshot, _hasStateChanged, _setInitialState, _resetState, _createOrder, _setFieldAttribute, _negateField, InitialFormState, ObjectKeys, ObjectConstructor, FormManager, ValidationCallback, ValidatorFunction, ValidationErrorType, ValidationError, ValidationOptions, ValidatorOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, Callback, RefDataItem, RefData, PerformanceOptions };
 //# sourceMappingURL=index.d.ts.map

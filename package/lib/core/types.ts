@@ -1,6 +1,30 @@
 import { Form } from ".";
 
 /**
+ * I'm using strings here for easier comparison.
+ */
+export type InitialFormState<ModelType extends Object> = {
+  model: ModelType | undefined;
+  errors: ValidationError[] | undefined;
+};
+
+export type ObjectKeys<T> = T extends object
+  ? (keyof T)[]
+  : T extends number
+  ? []
+  : T extends Array<any> | string
+  ? string[]
+  : never;
+
+export interface ObjectConstructor {
+  keys<T>(o: T): ObjectKeys<T>;
+}
+
+// export interface ModelType<T extends Object & ObjectConstructor> {
+//   keys<T>(o: T): ObjectKeys<T>;
+// };
+
+/**
  * Base interface for managing multiple instances of Form
  * classes.
  *
@@ -47,19 +71,23 @@ export class ValidationError {
     errors?: { [type: string]: string },
     options?: Partial<ValidationErrorType>
   ) {
-    this.property = model_property_key;
+    if (model_property_key) this.property = model_property_key;
     if (errors) {
       this.constraints = errors;
     }
     if (options) {
-      Object.keys(this).forEach((key) => {
-        if (options[key]) this[key] = options[key];
-      });
+      let k: keyof typeof options;
+      for (k in options) {
+        this[k] = options[k];
+      }
+      // Object.keys(this).forEach((key) => {
+      //   this[key] = options[key];
+      // });
     }
   }
 
   target?: Object; // Object that was validated.
-  property: string; // Object's property that didn't pass validation.
+  property?: string; // Object's property that didn't pass validation.
   value?: any; // Value that didn't pass a validation.
   constraints?: {
     // Constraints that failed validation with error messages.

@@ -3,11 +3,11 @@ import { FieldConfig } from "./FieldConfig";
 import { Form } from "./Form";
 import {
   Callback,
-  // LinkOnEvent,
-  // LinkValuesOnEvent,
   OnEvents,
   ValidationCallback,
   ValidationError,
+  ObjectKeys,
+  InitialFormState,
 } from "./types";
 
 //#region Utility Functions
@@ -22,25 +22,21 @@ export function _get(name: string, fields: FieldConfig[]): FieldConfig {
  * Build the field configs from this.model using metadata-reflection.
  * More comments inside...
  */
-export function _buildFormFields(
-  model: any,
+export function _buildFormFields<T extends Object>(
+  model: T,
   // Grab the editableProperties from the @field decorator
   props: string[] = Reflect.getMetadata("editableProperties", model)
 ): FieldConfig[] {
-  // Grab the editableProperties from the @field decorator
-  // let props: string[] = Reflect.getMetadata("editableProperties", model);
-
-  // Map the @field fields to the form.fields array.
+  // Map the @field fields to the form.fields 
   const fields = props.map((prop: string) => {
-    // Get the FieldConfig using metadata reflection
-    const field: FieldConfig = new FieldConfig({
+    // Get the @FieldConfig using metadata reflection
+    const field: FieldConfig = new FieldConfig(prop, {
       ...Reflect.getMetadata("fieldConfig", model, prop),
-      name: prop,
     });
 
     // If the model has a value, attach it to the field config
     // 0, "", [], etc. are set in the constructor based on type.
-    if (model[prop]) {
+    if (model[prop as keyof T]) {
       field.setInitialValue(model[prop]);
     }
 
@@ -99,7 +95,12 @@ export function _attachEventListeners(
   Object.entries(on_events).forEach(([eventName, shouldListen]) => {
     // If shouldListen true, then add the event listener
     if (shouldListen) {
-      field.node.addEventListener(eventName, (e: Event) => callback(e), false);
+      field.node &&
+        field.node.addEventListener(
+          eventName,
+          (e: Event) => callback(e),
+          false
+        );
     }
   });
 }
@@ -107,7 +108,7 @@ export function _attachEventListeners(
 export function _attachOnClearErrorEvents(
   node: HTMLElement,
   clear_errors_on_events: OnEvents,
-  callback?: Callback
+  callback: Callback
 ): void {
   Object.entries(clear_errors_on_events).forEach(
     ([eventName, shouldListen]) => {
@@ -119,29 +120,32 @@ export function _attachOnClearErrorEvents(
   );
 }
 
-export function _addCallbackToField(
+export function _addCallbackToField<T>(
+  form: Form<T>,
   field: FieldConfig,
   event: keyof HTMLElementEventMap,
   callbacks: ValidationCallback[] | Callback,
-  with_validation_event: boolean = true
+  with_validation_event: boolean = true,
+  required_fields: string[],
+  field_names: string[]
 ) {
   if (with_validation_event && Array.isArray(callbacks)) {
-    field.node.addEventListener(
-      event,
-      (e) =>
-        _handleValidationEvent(
-          this,
-          this.required_fields,
-          this.stateful_items,
-          this.initial_state_str,
-          this.field_names,
-          null,
-          callbacks
-        ),
-      false
-    );
+    field.node &&
+      field.node.addEventListener(
+        event,
+        (e) =>
+          _handleValidationEvent(
+            form,
+            required_fields,
+            field_names,
+            undefined,
+            callbacks
+          ),
+        false
+      );
   } else if (!Array.isArray(callbacks)) {
-    field.node.addEventListener(event, (e) => callbacks(e), false);
+    field.node &&
+      field.node.addEventListener(event, (e) => callbacks(e), false);
   }
 }
 
@@ -156,7 +160,12 @@ function _linkFieldValues<ModelType extends Object>(
   field: FieldConfig,
   model: ModelType
 ): void {
-  model[field.name] = get(field.value);
+  // let k: keyof ModelType;
+  // for (k in model) {
+  //   if (k === field.name) model[k] = get(field.value);
+  // }
+
+  model[field.name as keyof ModelType] = get(field.value);
 }
 
 // Link values from FIELDS toMODEL or MODEL to FIELDS
@@ -174,10 +183,10 @@ export function _linkValues<ModelType extends Object>(
       val = fields[i].value;
     if (fromFieldsToModel) {
       // Link field values to the model
-      model[name] = get(val);
+      model[name as keyof ModelType] = get(val);
     } else {
       // Link model values to the fields
-      val.set(model[name]);
+      val.set(model[name as keyof ModelType]);
     }
   }
 }
@@ -205,8 +214,10 @@ export function _linkAllErrors(
   fields: FieldConfig[]
 ): void {
   errors.forEach((err) => {
-    const f = _get(err.property, fields);
-    f.errors.set(err);
+    if (err && err.property) {
+      const f = _get(err.property, fields);
+      f.errors.set(err);
+    }
   });
 }
 
@@ -275,63 +286,67 @@ function _executeIfTrue(is_true: boolean, cb: Callback): void {
 export function _handleValidationEvent<T extends Object>(
   form: Form<T>,
   required_fields: string[],
-  stateful_items: string[],
-  initial_state_str: string,
+  // stateful_items: string[],
+  // initial_state_str: string,
   field_names: string[],
   field?: FieldConfig,
   callbacks?: ValidationCallback[]
-): Promise<ValidationError[]> {
-  _executeCallbacks([
-    /**
-     * Link the input from the field to the model.
-     * We aren't linking (only) the field value.
-     * We link all values just in case the field change propigates other field changes.
-     */
-    () => _hanldeValueLinking(form, field),
+): Promise<ValidationError[]> | undefined {
+  if (form.validation_options.validator) {
+    _executeCallbacks([
+      /**
+       * Link the input from the field to the model.
+       * We aren't linking (only) the field value.
+       * We link all values just in case the field change propigates other field changes.
+       */
+      () => _hanldeValueLinking(form, field),
 
-    () =>
-      _executeIfTrue(
-        Boolean(field) && form.perf_options.enable_change_detection,
-        () => _setValueChanges(form.value_changes, field)
-      ),
+      () =>
+        _executeIfTrue(
+          field !== undefined && form.perf_options.enable_change_detection,
+          () => _setValueChanges(form.value_changes, field)
+        ),
 
-    () => _handleValidationCallbacks("before", callbacks),
-  ]);
+      () => _handleValidationCallbacks("before", callbacks),
+    ]);
 
-  return form.validation_options
-    .validator(form.model, form.validation_options)
-    .then((errors: ValidationError[]) => {
-      _executeCallbacks([
-        () => _handleFormValidation(form, errors, required_fields, field),
-        () =>
-          _executeIfTrue(form.perf_options.enable_hidden_fields_detection, () =>
-            // _hideFields(form.hidden_fields, field_names, form.fields)
-            _negateField(form.hidden_fields, field_names, form.fields, {
-              type: "hide",
-              value: true,
-            })
-          ),
+    return form.validation_options
+      .validator(form.model, form.validation_options.options)
+      .then((errors: ValidationError[]) => {
+        _executeCallbacks([
+          () => _handleFormValidation(form, errors, required_fields, field),
+          () =>
+            _executeIfTrue(
+              form.perf_options.enable_hidden_fields_detection,
+              () =>
+                // _hideFields(form.hidden_fields, field_names, form.fields)
+                _negateField(form.hidden_fields, field_names, form.fields, {
+                  type: "hide",
+                  value: true,
+                })
+            ),
 
-        () =>
-          _executeIfTrue(
-            form.perf_options.enable_disabled_fields_detection,
-            () =>
-              // _disableFields(form.disabled_fields, field_names, form.fields)
-              _negateField(form.disabled_fields, field_names, form.fields, {
-                type: "disable",
-                value: true,
-              })
-          ),
+          () =>
+            _executeIfTrue(
+              form.perf_options.enable_disabled_fields_detection,
+              () =>
+                // _disableFields(form.disabled_fields, field_names, form.fields)
+                _negateField(form.disabled_fields, field_names, form.fields, {
+                  type: "disable",
+                  value: true,
+                })
+            ),
 
-        () =>
-          _executeIfTrue(form.perf_options.enable_change_detection, () =>
-            _hasStateChanged(form, stateful_items, initial_state_str)
-          ),
+          () =>
+            _executeIfTrue(form.perf_options.enable_change_detection, () =>
+              _hasStateChanged(form.value_changes, form.changed)
+            ),
 
-        () => _handleValidationCallbacks("after", callbacks),
-      ]);
-      return errors;
-    });
+          () => _handleValidationCallbacks("after", callbacks),
+        ]);
+        return errors;
+      });
+  }
 }
 
 /**
@@ -354,11 +369,13 @@ export async function _handleFormValidation<T extends Object>(
     // Are we validating the whole form or just the fields?
     if (field) {
       // Link errors to field (to show validation errors)
-      _linkFieldErrors(
-        errors,
-        field,
-        form.validation_options.field_error_link_name
-      );
+      if (form.validation_options.field_error_link_name) {
+        _linkFieldErrors(
+          errors,
+          field,
+          form.validation_options.field_error_link_name
+        );
+      }
     } else {
       // This is validatino for the whole form!
       _linkAllErrors(errors, form.fields);
@@ -413,36 +430,23 @@ export function _requiredFieldsValid(
 
 //#region - Form State
 
-// Returns a string of the current state
-export function _getStateSnapshot<T extends Object>(
-  form: Form<T>,
-  stateful_items: string[]
-): string {
-  let i = 0,
-    len = stateful_items.length,
-    result = {};
-  for (; len > i; ++i) {
-    const item = stateful_items[i];
-    result[item] = form[item];
-  }
-  return JSON.stringify(result);
-}
-
 /**
  * Is the current form state different than the initial state?
  *
  * I've tested it with > 1000 fields in a single class with very slight input lag.
  */
-export function _hasStateChanged<T extends Object>(
-  form: Form<T>,
-  stateful_items: string[],
-  initial_state_str: string
+// export function _hasStateChanged<T extends Object>(
+export function _hasStateChanged(
+  value_changes: Writable<Record<string, any>>,
+  changed: Writable<boolean>
 ): void {
-  if (_getStateSnapshot(form, stateful_items) === initial_state_str) {
-    form.changed.set(false);
+  const changes = get(value_changes) !== {} ? get(value_changes) : null;
+
+  if (changes && Object.keys(changes).length > 0) {
+    changed.set(true);
     return;
   }
-  form.changed.set(true);
+  changed.set(false);
 }
 
 /**
@@ -451,27 +455,15 @@ export function _hasStateChanged<T extends Object>(
  */
 export function _setInitialState<T extends Object>(
   form: Form<T>,
-  stateful_items: string[],
-  initial_state: any,
-  initial_state_str: string
-): string {
-  /**
-   * This is the best method for reliable deep-ish cloning that I've found.
-   * If you know a BETTER way, be my guest. No extra dependencies please.
-   */
-  stateful_items.forEach((key) => {
-    if (key === "valid" || key === "touched") {
-      get(form[key])
-        ? (initial_state[key] = writable(true))
-        : (initial_state[key] = writable(false));
-    } else if (key === "value_changes") {
-      initial_state[key] = writable(get(form.value_changes));
-    } else if (Boolean(form[key])) {
-      initial_state[key] = JSON.parse(JSON.stringify(form[key]));
-    }
-    initial_state_str = JSON.stringify(initial_state);
-  });
-  return initial_state_str;
+  initial_state: InitialFormState<T>
+): InitialFormState<T> {
+  initial_state.model = Object.assign({}, form.model);
+  if (form.errors && form.errors.length > 0) {
+    initial_state.errors = form.errors.map((e) => e);
+  } else {
+    initial_state.errors = [];
+  }
+  return initial_state;
 }
 
 /**
@@ -480,55 +472,23 @@ export function _setInitialState<T extends Object>(
  */
 export function _resetState<T extends Object>(
   form: Form<T>,
-  stateful_items: string[],
-  initial_state: any
+  initial_state: InitialFormState<T>
 ): void {
-  stateful_items.forEach((key) => {
-    if (key === "valid" || key === "touched") {
-      // Check the inital_state's key
-      get(initial_state[key]) ? form[key].set(true) : form[key].set(false);
-    } else if (key === "errors") {
-      // Clear the errors so we don't have leftovers all over the place
-      form.clearErrors();
-      // Attach errors located in initial_state (to form.errors)
-      form.errors = initial_state.errors.map((e) => {
-        // Create new ValidationError to match the class-validator error type
-        let err = new ValidationError();
-        Object.assign(err, e);
-        return err;
-      });
-      // If this.errors is not empty then attach the errors to the fields
-      if (form.errors && form.errors.length > 0) {
-        _linkAllErrors(form.errors, form.fields);
-      }
-    } else if (key === "model") {
-      /**
-       * We have to disconnect the initial_state's model so that we don't get
-       * burned by reference links.
-       * We also don't want to overwrite the actual model, because it contains
-       * all the metadata for validation, feilds, etc.
-       * So we just copy the inital_state[model] and shove it's values back into
-       * this.model.
-       * That way when we reset the form, we still get validation errors from the
-       * model's decorators.
-       */
-      const model_state = JSON.parse(JSON.stringify(initial_state[key]));
-      Object.keys(form[key]).forEach((mkey) => {
-        // It has a hard time with blank strings.
-        form[key][mkey] = model_state[mkey];
-      });
-      _linkValues(false, form.fields, form.model);
-    } else if (key === "value_changes") {
-      // Reset form value changes!
-      if (get(initial_state[key]) === {}) {
-        form.value_changes.set({});
-      } else {
-        form.value_changes.set(get(initial_state[key]));
-      }
-    } else if (Boolean(form[key])) {
-      form[key] = JSON.parse(JSON.stringify(initial_state[key]));
-    }
-  });
+  form.model = Object.assign({}, initial_state.model);
+
+  if (initial_state.errors && initial_state.errors.length > 0) {
+    form.errors = initial_state.errors.map((e) => e);
+  } else {
+    form.errors = [];
+  }
+
+  if (form.errors && form.errors.length > 0) {
+    _linkAllErrors(form.errors, form.fields);
+  }
+
+  _linkValues(false, form.fields, form.model);
+
+  form.value_changes = writable({});
   form.changed.set(false);
 }
 

@@ -1,6 +1,6 @@
 import { Writable } from "svelte/store";
 import { FieldConfig } from ".";
-import { OnEvents, LinkOnEvent, RefData, PerformanceOptions, ValidationError, ValidationCallback, ValidatorFunction, Callback, ValidationOptions } from "./types";
+import { OnEvents, LinkOnEvent, RefData, PerformanceOptions, ValidationError, ValidationCallback, Callback, ValidationOptions } from "./types";
 import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
 /**
  * Formvana - Form Class
@@ -35,7 +35,7 @@ import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
  *  - This will allow for a more "dynamic" form building experience
  */
 export declare class Form<ModelType extends Object> {
-    constructor(model: ModelType, validator?: ValidatorFunction, init?: Partial<Form<ModelType>>);
+    constructor(model: ModelType, validation_options: Partial<ValidationOptions>, init?: Partial<Form<ModelType>>);
     /**
      * This is your form Model/Schema.
      * It's used to build the form.fields.
@@ -64,7 +64,7 @@ export declare class Form<ModelType extends Object> {
      *
      * Other, more fine grained options are in validation_options.options
      */
-    readonly validation_options: Partial<ValidationOptions>;
+    validation_options: Partial<ValidationOptions>;
     /**
      * The errors are of type ValidationError.
      * Errors are attached to their corresponding fields.
@@ -102,9 +102,9 @@ export declare class Form<ModelType extends Object> {
      * Which events should the form do things on?
      * (validate, link values, hide/disable fields)
      */
-    readonly on_events: OnEvents;
-    readonly clear_errors_on_events: OnEvents;
-    readonly link_fields_to_model: LinkOnEvent;
+    on_events: OnEvents;
+    clear_errors_on_events: OnEvents;
+    link_fields_to_model: LinkOnEvent;
     /**
      * Form Template Layout
      *
@@ -196,8 +196,8 @@ export declare class Form<ModelType extends Object> {
      * Can also link fields values to model.
      * Can also hide or disable fields before validation.
      */
-    validate: (callbacks?: ValidationCallback[]) => Promise<ValidationError[]>;
-    validateAsync: (callbacks?: ValidationCallback[]) => Promise<ValidationError[]>;
+    validate: (callbacks?: ValidationCallback[]) => Promise<ValidationError[]> | undefined;
+    validateAsync: (callbacks?: ValidationCallback[]) => Promise<ValidationError[] | undefined>;
     /**
      * If want to (in)validate a specific field for any reason.
      */

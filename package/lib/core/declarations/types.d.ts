@@ -1,4 +1,8 @@
 import { Form } from ".";
+export declare type ObjectKeys<T> = T extends object ? (keyof T)[] : T extends number ? [] : T extends Array<any> | string ? string[] : never;
+export interface ObjectConstructor {
+    keys<T>(o: T): ObjectKeys<T>;
+}
 /**
  * Base interface for managing multiple instances of Form
  * classes.
@@ -8,16 +12,16 @@ import { Form } from ".";
 export interface FormManager {
     forms: Form<typeof Form>[];
 }
-export declare type ValidationCallback = {
+export interface ValidationCallback {
     callback: Callback;
     /**
      * When should the callback fire?
      * "before" or "after" validation?
      */
     when: "before" | "after";
-};
+}
 export declare type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
-export declare type ValidationErrorType = {
+export interface ValidationErrorType {
     target?: Object;
     property: string;
     value?: any;
@@ -25,7 +29,7 @@ export declare type ValidationErrorType = {
         [type: string]: string;
     };
     children?: ValidationErrorType[];
-};
+}
 export declare class ValidationError {
     /**
      * @param errors essentially Record<string #1, string #2>
@@ -38,7 +42,7 @@ export declare class ValidationError {
         [type: string]: string;
     }, options?: Partial<ValidationErrorType>);
     target?: Object;
-    property: string;
+    property?: string;
     value?: any;
     constraints?: {
         [type: string]: string;
@@ -64,10 +68,11 @@ export interface ValidationOptions {
      * Error.property_or_name_or_whatever must match field.name.
      * ValidationError[name] must match field.name.
      */
-    errorToFieldLink: keyof ValidationError;
+    field_error_link_name: keyof ValidationError;
 }
 /**
  * Options passed to validator during validation.
+ * Note: this interface used by class-validator
  */
 export interface ValidatorOptions extends Record<string, unknown> {
     /**

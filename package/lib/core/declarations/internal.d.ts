@@ -23,8 +23,8 @@ export declare function _setValueChanges(changes: Writable<Record<string, any>>,
  * Parent: form.useField(...)
  */
 export declare function _attachEventListeners(field: FieldConfig, on_events: OnEvents, callback: Callback): void;
-export declare function _attachOnClearErrorEvents(node: HTMLElement, clear_errors_on_events: OnEvents, callback?: Callback): void;
-export declare function _addCallbackToField(field: FieldConfig, event: keyof HTMLElementEventMap, callbacks: ValidationCallback[] | Callback, with_validation_event?: boolean): void;
+export declare function _attachOnClearErrorEvents(node: HTMLElement, clear_errors_on_events: OnEvents, callback: Callback): void;
+export declare function _addCallbackToField<T>(form: Form<T>, field: FieldConfig, event: keyof HTMLElementEventMap, callbacks: ValidationCallback[] | Callback, with_validation_event: boolean, required_fields: string[], stateful_items: string[], initial_state_str: string, field_names: string[]): void;
 export declare function _linkValues<ModelType extends Object>(fromFieldsToModel: boolean, fields: FieldConfig[], model: ModelType): void;
 /**
  * Currently this depends on class-validator.
@@ -43,7 +43,7 @@ export declare function _executeCallbacks(callbacks: Callback | Callback[]): voi
  * Corresponds to the form.on_events field.
  *
  */
-export declare function _handleValidationEvent<T extends Object>(form: Form<T>, required_fields: string[], stateful_items: string[], initial_state_str: string, field_names: string[], field?: FieldConfig, callbacks?: ValidationCallback[]): Promise<ValidationError[]>;
+export declare function _handleValidationEvent<T extends Object>(form: Form<T>, required_fields: string[], stateful_items: string[], initial_state_str: string, field_names: string[], field?: FieldConfig, callbacks?: ValidationCallback[]): Promise<ValidationError[]> | undefined;
 /**
  * Handle all the things associated with validation!
  * Link the errors to the fields.
@@ -80,7 +80,8 @@ export declare function _resetState<T extends Object>(form: Form<T>, stateful_it
  * Using this.field_order, rearrange the order of the fields.
  */
 export declare function _createOrder(field_order: string[], fields: FieldConfig[]): FieldConfig[];
-export declare function _hideFields(hidden_fields: Array<FieldConfig["name"]>, field_names: Array<FieldConfig["name"]>, fields: FieldConfig[], hidden?: boolean): void;
-export declare function _hideField(name: string, fields: FieldConfig[], hidden?: boolean): void;
-export declare function _disableFields(disabled_fields: Array<FieldConfig["name"]>, field_names: Array<FieldConfig["name"]>, fields: FieldConfig[], disabled?: boolean): void;
-export declare function _disableField(name: string, fields: FieldConfig[], disabled?: boolean): void;
+export declare function _setFieldAttribute(name: string, fields: FieldConfig[], attributes: Partial<FieldConfig>): void;
+export declare function _negateField(affected_fields: Array<FieldConfig["name"]>, field_names: Array<FieldConfig["name"]>, fields: FieldConfig[], negation: {
+    type: "disable" | "hide";
+    value: boolean;
+}): void;
