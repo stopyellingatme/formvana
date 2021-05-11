@@ -1,4 +1,4 @@
-import { get } from "svelte/store";
+import { get, Writable } from "svelte/store";
 import { Form, OnEvents, RefData, ValidationCallback } from "@formvana";
 import { ExampleModel } from "../../models/ExampleClass";
 import { validate } from "class-validator";
@@ -26,8 +26,12 @@ const ref_data: RefData = {
   ],
 };
 
+async function vali(model: any, options: any) {
+  return [];
+}
+
 function initStore() {
-  // Just gonna set up the form real quick...
+  // Set up the form(vana) class
   let form = new Form(
     new ExampleModel(),
     { validator: validate },
@@ -35,12 +39,8 @@ function initStore() {
       template: ExampleTemplate,
       on_events: new OnEvents({ focus: false }),
       refs: ref_data,
-      // hidden_fields: ["description_99", "status_97"],
+      hidden_fields: ["description_99", "status_97"],
       disabled_fields: ["email_96", "email_94"],
-      // perf_options: {
-      //   link_all_values_on_event: "all",
-      //   enable_change_detection: true,
-      // },
     }
   );
 
@@ -59,13 +59,13 @@ const updateState = (state, updates) => {
 };
 
 /**
- * * External functionlaity below
- *    || || || || || || || ||
- *    \/ \/ \/ \/ \/ \/ \/ \/
+ * Export the Form State
  */
-
 export const formState = initStore();
 
+/**
+ * Used to initialize the form on first load.
+ */
 export const init = () => {
   get(formState).loading.set(true);
 
@@ -96,7 +96,6 @@ export const init = () => {
     get(formState).updateInitialState();
 
     console.log(get(formState));
-    
   }, 3000);
 
   // get(formState).value_changes.subscribe((val) => {

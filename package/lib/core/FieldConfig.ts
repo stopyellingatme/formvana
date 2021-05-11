@@ -1,6 +1,11 @@
 import { SvelteComponent } from "svelte";
 import { writable, Writable } from "svelte/store";
-import { ValidationError } from "./types";
+import {
+  ElementAttributesMap,
+  FieldAttributes,
+  RefDataItem,
+  ValidationError,
+} from "./types";
 
 export interface FieldGroup {
   name: string;
@@ -38,7 +43,10 @@ export class FieldConfig {
     }
 
     // Set the type attribute if it's not already set
-    if (!this.attributes["type"]) {
+    if (this.attributes && !this.attributes["type"]) {
+      this.attributes["type"] = this.type;
+    } else if (!this.attributes) {
+      this.attributes = {};
       this.attributes["type"] = this.type;
     }
 
@@ -52,16 +60,20 @@ export class FieldConfig {
      */
     switch (this.type) {
       case "text" || "email" || "password" || "string":
-        this.setInitialValue("");
+        // this.setInitialValue("");
+        this.value.set("");
         break;
       case "decimal" || "double":
-        this.setInitialValue(0.0);
+        // this.setInitialValue(0.0);
+        this.value.set(0.0);
         break;
       case "number" || "int" || "integer":
-        this.setInitialValue(0);
+        this.value.set(0);
+        // this.setInitialValue(0);
         break;
       case "boolean" || "choice" || "radio" || "checkbox":
-        this.setInitialValue(false);
+        this.value.set(false);
+        // this.setInitialValue(false);
         this.options = [];
         break;
       case "select" || "dropdown":
@@ -69,7 +81,8 @@ export class FieldConfig {
         break;
 
       default:
-        this.setInitialValue(undefined);
+        this.value.set(undefined);
+        // this.setInitialValue(undefined);
         break;
     }
 
@@ -91,7 +104,16 @@ export class FieldConfig {
   readonly name: string;
 
   // Used to add and remove event listeners
-  node: HTMLElement | undefined;
+  node?: HTMLElement;
+
+  /**
+   * Value is a writable store defaulting to undefined.
+   */
+  value: Writable<any> = writable(undefined);
+  required?: boolean;
+  type: string = "text"; // Defaults to text, for now
+  label?: string;
+  hint?: string;
 
   /**
    * el can be either String or Svelte Component.
@@ -100,11 +122,6 @@ export class FieldConfig {
    */
   selector?: string;
   template?: SvelteComponent;
-
-  label?: string;
-  type: string = "text"; // Defaults to text, for now
-  required: boolean = false;
-  value: Writable<any> = writable(undefined);
 
   /**
    * You can use these to apply styles.
@@ -117,53 +134,53 @@ export class FieldConfig {
   /**
    * Used if there is a set of "options" to choose from.
    */
-  options?: any[];
+  options?: RefDataItem[];
   ref_key?: string; // Reference data key
 
-  disabled: boolean = false;
-  hidden: boolean = false;
+  disabled?: boolean;
+  hidden?: boolean;
 
   /**
    * Validation Errors!
    * We're mainly looking for the class-validator "constraints"
    * One ValidationError object can have multiple errors (constraints)
    */
-  errors: Writable<ValidationError | null> = writable(null);
+  errors: Writable<ValidationError | undefined> = writable(undefined);
 
   /**
    * * JSON of things like:
-   * -- disabled
-   * -- id="something"
-   * -- type="text || email || password || whatever"
-   * -- class='input class'
-   * -- title='input title'
-   * -- multiple
-   * -- etc.
-   * -- anything you want!
+   * * * disabled
+   * * * id="something"
+   * * * type="text || email || password || whatever"
+   * * * class='input class'
+   * * * title='input title'
+   * * * multiple
+   * * * etc.
+   * * * anything you want!
    */
-  attributes: object = {};
+  attributes?: FieldAttributes;
+  // attributes: Object = {};
 
-  hint?: string; // Mainly for textarea, or whatever
   group?: FieldGroup;
   step?: FieldStep;
 
-  private initial_value: any;
+  // private initial_value: NonNullable<any>;
 
-  clearValue = () => {
-    this.value.set(this.initial_value);
+  // private clearValue = (): void => {
+  //   this.value.set(this.initial_value);
+  // };
+
+  private clearErrors = (): void => {
+    this.errors.set(undefined);
   };
 
-  clearErrors = () => {
-    this.errors.set(null);
-  };
-
-  clear = () => {
-    this.clearValue();
+  clear = (): void | undefined => {
+    // this.clearValue();
     this.clearErrors();
   };
 
-  setInitialValue = (value: any) => {
-    this.initial_value = value;
-    this.value.set(value);
-  };
+  // setInitialValue = (value: any): void => {
+  //   this.initial_value = value;
+  //   this.value.set(value);
+  // };
 }

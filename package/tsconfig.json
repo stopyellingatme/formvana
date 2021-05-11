@@ -3,7 +3,7 @@
         "target": "ES2018",
         "moduleResolution": "node",
         "noUnusedLocals": false,
-        "strict": false,
+        "strict": true,
         "esModuleInterop": true,
         "declaration": true,
         "declarationMap": true,

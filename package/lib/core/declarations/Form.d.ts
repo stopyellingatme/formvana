@@ -1,6 +1,6 @@
 import { Writable } from "svelte/store";
 import { FieldConfig } from ".";
-import { OnEvents, LinkOnEvent, RefData, PerformanceOptions, ValidationError, ValidationCallback, Callback, ValidationOptions } from "./types";
+import { OnEvents, LinkOnEvent, RefData, ValidationError, ValidationCallback, Callback, ValidationOptions } from "./types";
 import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
 /**
  * Formvana - Form Class
@@ -83,8 +83,8 @@ export declare class Form<ModelType extends Object> {
      * in the external form context.
      */
     valid: Writable<boolean>;
-    loading: Writable<boolean>;
     changed: Writable<boolean>;
+    loading: Writable<boolean>;
     touched: Writable<boolean>;
     /**
      * Emits value changes as a plain JS object.
@@ -121,15 +121,13 @@ export declare class Form<ModelType extends Object> {
      * Simply an array of field names (or group names or stepper names)
      * in the order to be displayed
      */
-    field_order: Array<FieldConfig["name"]>;
+    private field_order;
     private field_names;
     /**
      * This is the model's initial state.
      * Shove the stateful_items into the inital state for a decent snapshot.
      */
     private initial_state;
-    private initial_state_str;
-    private stateful_items;
     /**
      * We keep track of required fields because we let class-validator handle everything
      * except *required* (field.required)
@@ -138,15 +136,6 @@ export declare class Form<ModelType extends Object> {
      * Keep track of the fields so we can validate faster.
      */
     private required_fields;
-    /**
-     * Performance options!
-     * Use these if you're trying to handle upwards of 1000+ inputs within a given model.
-     *
-     * link_all_values_on_event - we usually link all field values to the model on
-     * each event call. If set to false, we only link the field affected in the OnEvent
-     * which saves us iterating over each field and linking it to the model.
-     */
-    perf_options: Partial<PerformanceOptions>;
     /**
      * Builds the fields from the model.
      * Builds the field configs via this.model using metadata-reflection.
@@ -172,31 +161,27 @@ export declare class Form<ModelType extends Object> {
     }) => void;
     /**
      * Load new data into the form and build the fields.
-     * Useful if you fetched data and need to update the form values.
+     * Data is updated IN PLACE by default.
+     * Reinitialize is set to false, by default.
      *
-     * ReInit defaults to True. So the default is to pass in a new instance
-     * of the model (e.g. new ExampleMode(incoming_data)).
-     * If fresh is False then the incoming_data will be serialized into
-     * the model.
-     *
-     * State is updated upon data load, by default.
-     *
-     * Check example.form.ts for an example use case.
+     * Inital State is not updated by default.
      */
-    loadData: <T extends ModelType>(data: T, re_init?: boolean, update_initial_state?: boolean) => Form<ModelType>;
+    loadData: <T extends ModelType>(data: T, reinitialize?: boolean, update_initial_state?: boolean) => Form<ModelType>;
     /**
-     * Just pass in the reference data and let the field configs do the rest.
-     *
-     * * Ref data MUST BE in format: Record<string, RefDataItem[]>
+     * Pass in the reference data to add options to fields.
      */
     attachRefData: (refs?: RefData) => void;
     /**
-     * Well, validate the form!
-     * Clear the errors first, then do it, obviously.
-     * Can also link fields values to model.
-     * Can also hide or disable fields before validation.
+     * Validate the form!
+     * You can pass in callbacks as needed.
+     * Callbacks can be called "before" or "after" validation.
      */
     validate: (callbacks?: ValidationCallback[]) => Promise<ValidationError[]> | undefined;
+    /**
+     * Validate the form!
+     * You can pass in callbacks as needed.
+     * Callbacks can be called "before" or "after" validation.
+     */
     validateAsync: (callbacks?: ValidationCallback[]) => Promise<ValidationError[] | undefined>;
     /**
      * If want to (in)validate a specific field for any reason.
@@ -229,7 +214,7 @@ export declare class Form<ModelType extends Object> {
      * names in the order to be displayed.
      * Leftover fields are appended to bottom of form.
      */
-    setOrder: (order: string[]) => void;
+    setFieldOrder: (order: string[]) => void;
     /**
      * Hide a field or fields
      * @param names? string | string[]

@@ -1,14 +1,14 @@
 import { Writable } from "svelte/store";
 import { FieldConfig } from "./FieldConfig";
 import { Form } from "./Form";
-import { Callback, OnEvents, ValidationCallback, ValidationError } from "./types";
+import { Callback, OnEvents, ValidationCallback, ValidationError, InitialFormState } from "./types";
 export declare function _get(name: string, fields: FieldConfig[]): FieldConfig;
 /**
  *
  * Build the field configs from this.model using metadata-reflection.
  * More comments inside...
  */
-export declare function _buildFormFields(model: any, props?: string[]): FieldConfig[];
+export declare function _buildFormFields<T extends Object>(model: T, props?: string[]): FieldConfig[];
 export declare function _getRequiredFieldNames(fields: FieldConfig[]): string[];
 /**
  * Helper function for value_change emitter.
@@ -24,7 +24,7 @@ export declare function _setValueChanges(changes: Writable<Record<string, any>>,
  */
 export declare function _attachEventListeners(field: FieldConfig, on_events: OnEvents, callback: Callback): void;
 export declare function _attachOnClearErrorEvents(node: HTMLElement, clear_errors_on_events: OnEvents, callback: Callback): void;
-export declare function _addCallbackToField<T>(form: Form<T>, field: FieldConfig, event: keyof HTMLElementEventMap, callbacks: ValidationCallback[] | Callback, with_validation_event: boolean, required_fields: string[], stateful_items: string[], initial_state_str: string, field_names: string[]): void;
+export declare function _addCallbackToField<T>(form: Form<T>, field: FieldConfig, event: keyof HTMLElementEventMap, callbacks: ValidationCallback[] | Callback, with_validation_event: boolean, required_fields: string[], field_names: string[]): void;
 export declare function _linkValues<ModelType extends Object>(fromFieldsToModel: boolean, fields: FieldConfig[], model: ModelType): void;
 /**
  * Currently this depends on class-validator.
@@ -43,7 +43,7 @@ export declare function _executeCallbacks(callbacks: Callback | Callback[]): voi
  * Corresponds to the form.on_events field.
  *
  */
-export declare function _handleValidationEvent<T extends Object>(form: Form<T>, required_fields: string[], stateful_items: string[], initial_state_str: string, field_names: string[], field?: FieldConfig, callbacks?: ValidationCallback[]): Promise<ValidationError[]> | undefined;
+export declare function _handleValidationEvent<T extends Object>(form: Form<T>, required_fields: string[], field_names: string[], field?: FieldConfig, callbacks?: ValidationCallback[]): Promise<ValidationError[]> | undefined;
 /**
  * Handle all the things associated with validation!
  * Link the errors to the fields.
@@ -59,23 +59,22 @@ export declare function _handleFormValidation<T extends Object>(form: Form<T>, e
  * If there are no required fields in the errors, the form is valid
  */
 export declare function _requiredFieldsValid(errors: ValidationError[], required_fields: string[]): boolean;
-export declare function _getStateSnapshot<T extends Object>(form: Form<T>, stateful_items: string[]): string;
 /**
  * Is the current form state different than the initial state?
  *
  * I've tested it with > 1000 fields in a single class with very slight input lag.
  */
-export declare function _hasStateChanged<T extends Object>(form: Form<T>, stateful_items: string[], initial_state_str: string): void;
+export declare function _hasStateChanged(value_changes: Writable<Record<string, any>>, changed: Writable<boolean>): void;
 /**
  * Grab a snapshot of several items that generally define the state of the form
  * and serialize them into a format that's easy-ish to check/deserialize (for resetting)
  */
-export declare function _setInitialState<T extends Object>(form: Form<T>, stateful_items: string[], initial_state: any, initial_state_str: string): string;
+export declare function _setInitialState<T extends Object>(form: Form<T>, initial_state: InitialFormState<T>): InitialFormState<T>;
 /**
  * This one's kinda harry.
  * But it resets the form to it's initial state.
  */
-export declare function _resetState<T extends Object>(form: Form<T>, stateful_items: string[], initial_state: any): void;
+export declare function _resetState<T extends Object>(form: Form<T>, initial_state: InitialFormState<T>): void;
 /**
  * Using this.field_order, rearrange the order of the fields.
  */

@@ -6,7 +6,6 @@ import {
   OnEvents,
   ValidationCallback,
   ValidationError,
-  ObjectKeys,
   InitialFormState,
 } from "./types";
 
@@ -27,7 +26,7 @@ export function _buildFormFields<T extends Object>(
   // Grab the editableProperties from the @field decorator
   props: string[] = Reflect.getMetadata("editableProperties", model)
 ): FieldConfig[] {
-  // Map the @field fields to the form.fields 
+  // Map the @field fields to the form.fields
   const fields = props.map((prop: string) => {
     // Get the @FieldConfig using metadata reflection
     const field: FieldConfig = new FieldConfig(prop, {
@@ -37,23 +36,14 @@ export function _buildFormFields<T extends Object>(
     // If the model has a value, attach it to the field config
     // 0, "", [], etc. are set in the constructor based on type.
     if (model[prop as keyof T]) {
-      field.setInitialValue(model[prop]);
+      field.value.set(model[prop as keyof T]);
+      // field.setInitialValue(model[prop as keyof T]);
     }
 
     // We made it. Return the field config and let's generate some inputs!
     return field;
   });
   return fields;
-}
-
-export function _getRequiredFieldNames(fields: FieldConfig[]): string[] {
-  let required_field_names: string[] = [];
-  fields.forEach((f) => {
-    if (f.required) {
-      required_field_names.push(f.name);
-    }
-  });
-  return required_field_names;
 }
 
 /**
@@ -128,7 +118,7 @@ export function _addCallbackToField<T>(
   with_validation_event: boolean = true,
   required_fields: string[],
   field_names: string[]
-) {
+): void {
   if (with_validation_event && Array.isArray(callbacks)) {
     field.node &&
       field.node.addEventListener(
@@ -152,21 +142,6 @@ export function _addCallbackToField<T>(
 //#endregion
 
 //#region Linking Utilities
-
-/**
- * Better performance in place of model/field data sync integrity
- */
-function _linkFieldValues<ModelType extends Object>(
-  field: FieldConfig,
-  model: ModelType
-): void {
-  // let k: keyof ModelType;
-  // for (k in model) {
-  //   if (k === field.name) model[k] = get(field.value);
-  // }
-
-  model[field.name as keyof ModelType] = get(field.value);
-}
 
 // Link values from FIELDS toMODEL or MODEL to FIELDS
 export function _linkValues<ModelType extends Object>(
@@ -205,7 +180,7 @@ export function _linkFieldErrors(
   if (error && error.length > 0) {
     field.errors.set(error[0]);
   } else {
-    field.errors.set(null);
+    field.errors.set(undefined);
   }
 }
 
@@ -225,22 +200,16 @@ export function _hanldeValueLinking<T extends Object>(
   form: Form<T>,
   field?: FieldConfig
 ): void {
-  const checkAllFieldLink = () => {
-    if (form.perf_options.link_all_values_on_event === "all" || !field) {
-      _linkValues(true, form.fields, form.model);
-    } else if (form.perf_options.link_all_values_on_event === "field") {
-      _linkFieldValues(field, form.model);
-    }
-  };
   /**
    * Link the input from the field to the model.
-   * We aren't linking (only) the field value.
-   * We link all values just in case the field change propigates other field changes.
+   * We dont't link (just) the field value.
+   * We link all values just in case the field change propigates 
+   * to other field changes.
    */
   if (form.link_fields_to_model === "always") {
-    checkAllFieldLink();
+    _linkValues(true, form.fields, form.model);
   } else if (form.link_fields_to_model === "valid") {
-    checkAllFieldLink();
+    _linkValues(true, form.fields, form.model);
   }
 }
 
@@ -286,8 +255,6 @@ function _executeIfTrue(is_true: boolean, cb: Callback): void {
 export function _handleValidationEvent<T extends Object>(
   form: Form<T>,
   required_fields: string[],
-  // stateful_items: string[],
-  // initial_state_str: string,
   field_names: string[],
   field?: FieldConfig,
   callbacks?: ValidationCallback[]
@@ -301,13 +268,13 @@ export function _handleValidationEvent<T extends Object>(
        */
       () => _hanldeValueLinking(form, field),
 
-      () =>
-        _executeIfTrue(
-          field !== undefined && form.perf_options.enable_change_detection,
-          () => _setValueChanges(form.value_changes, field)
-        ),
+      () => {
+        if (field) _setValueChanges(form.value_changes, field);
+      },
 
-      () => _handleValidationCallbacks("before", callbacks),
+      () => {
+        if (callbacks) _handleValidationCallbacks("before", callbacks);
+      },
     ]);
 
     return form.validation_options
@@ -315,34 +282,27 @@ export function _handleValidationEvent<T extends Object>(
       .then((errors: ValidationError[]) => {
         _executeCallbacks([
           () => _handleFormValidation(form, errors, required_fields, field),
-          () =>
-            _executeIfTrue(
-              form.perf_options.enable_hidden_fields_detection,
-              () =>
-                // _hideFields(form.hidden_fields, field_names, form.fields)
-                _negateField(form.hidden_fields, field_names, form.fields, {
-                  type: "hide",
-                  value: true,
-                })
-            ),
+          () => {
+            if (form.hidden_fields)
+              _negateField(form.hidden_fields, field_names, form.fields, {
+                type: "hide",
+                value: true,
+              });
+          },
 
-          () =>
-            _executeIfTrue(
-              form.perf_options.enable_disabled_fields_detection,
-              () =>
-                // _disableFields(form.disabled_fields, field_names, form.fields)
-                _negateField(form.disabled_fields, field_names, form.fields, {
-                  type: "disable",
-                  value: true,
-                })
-            ),
+          () => {
+            if (form.disabled_fields)
+              _negateField(form.disabled_fields, field_names, form.fields, {
+                type: "disable",
+                value: true,
+              });
+          },
 
-          () =>
-            _executeIfTrue(form.perf_options.enable_change_detection, () =>
-              _hasStateChanged(form.value_changes, form.changed)
-            ),
+          () => _hasStateChanged(form.value_changes, form.changed),
 
-          () => _handleValidationCallbacks("after", callbacks),
+          () => {
+            if (callbacks) _handleValidationCallbacks("after", callbacks);
+          },
         ]);
         return errors;
       });
@@ -435,7 +395,6 @@ export function _requiredFieldsValid(
  *
  * I've tested it with > 1000 fields in a single class with very slight input lag.
  */
-// export function _hasStateChanged<T extends Object>(
 export function _hasStateChanged(
   value_changes: Writable<Record<string, any>>,
   changed: Writable<boolean>
@@ -474,7 +433,12 @@ export function _resetState<T extends Object>(
   form: Form<T>,
   initial_state: InitialFormState<T>
 ): void {
-  form.model = Object.assign({}, initial_state.model);
+  // !WHEN RESETTING, YOU CANNOT OVERWRITE THE MODEL. VALIDATION GETS FUCKED UP!
+  let k: keyof Form<T>["model"];
+  if (initial_state.model)
+    for (k in initial_state.model) {
+      form.model[k] = initial_state.model[k];
+    }
 
   if (initial_state.errors && initial_state.errors.length > 0) {
     form.errors = initial_state.errors.map((e) => e);
@@ -482,11 +446,11 @@ export function _resetState<T extends Object>(
     form.errors = [];
   }
 
+  _linkValues(false, form.fields, form.model);
+
   if (form.errors && form.errors.length > 0) {
     _linkAllErrors(form.errors, form.fields);
   }
-
-  _linkValues(false, form.fields, form.model);
 
   form.value_changes = writable({});
   form.changed.set(false);
@@ -529,16 +493,30 @@ export function _setFieldAttribute(
   fields: FieldConfig[],
   attributes: Partial<FieldConfig>
 ): void {
-  const f = _get(name, fields);
-  Object.entries(attributes).forEach(([key, value]) => {
-    if (typeof value === "object") {
-      Object.entries(value).forEach(([_key, _val]) => {
-        f.attributes[_key] = _val;
-      });
-    } else {
-      f[key] = value;
+  // Get field config
+  const f: FieldConfig = _get(name, fields);
+  // Loop over key of Partial FieldConfig
+  let k: keyof typeof attributes;
+  for (k in attributes) {
+    // If we hit the attributes property then we set the field.attributes
+    if (k === "attributes") {
+      Object.assign(f.attributes, attributes[k]);
+    } else if (k !== "name") {
+      setFieldProperty(f, k, attributes[k]);
     }
-  });
+  }
+}
+
+/**
+ * This was initially created to deal with TS compiler errors.
+ * Dynamically assigning a value to f[key] just wouldn't play nice.
+ */
+function setFieldProperty<K extends keyof FieldConfig>(
+  f: FieldConfig,
+  key: K,
+  value: FieldConfig[K]
+) {
+  f[key] = value;
 }
 
 export function _negateField(
@@ -546,7 +524,7 @@ export function _negateField(
   field_names: Array<FieldConfig["name"]>,
   fields: FieldConfig[],
   negation: { type: "disable" | "hide"; value: boolean }
-) {
+): void {
   if (
     affected_fields &&
     affected_fields.length > 0 &&
@@ -556,18 +534,20 @@ export function _negateField(
     let i = 0,
       len = affected_fields.length;
     if (len === 0) return;
+
     for (; len > i; ++i) {
-      const field = affected_fields[i],
-        field_index = field_names.indexOf(field);
+      const field_index = field_names.indexOf(affected_fields[i]);
 
       if (field_index !== -1) {
+        const field_name = field_names[field_index];
+
         if (negation.type === "disable") {
-          _setFieldAttribute(field_names[field_index], fields, {
+          _setFieldAttribute(field_name, fields, {
             disabled: negation.value,
             attributes: { disabled: negation.value },
           });
         } else if (negation.type === "hide") {
-          _setFieldAttribute(field_names[field_index], fields, {
+          _setFieldAttribute(field_name, fields, {
             hidden: negation.value,
           });
         }

@@ -8,22 +8,6 @@ export type InitialFormState<ModelType extends Object> = {
   errors: ValidationError[] | undefined;
 };
 
-export type ObjectKeys<T> = T extends object
-  ? (keyof T)[]
-  : T extends number
-  ? []
-  : T extends Array<any> | string
-  ? string[]
-  : never;
-
-export interface ObjectConstructor {
-  keys<T>(o: T): ObjectKeys<T>;
-}
-
-// export interface ModelType<T extends Object & ObjectConstructor> {
-//   keys<T>(o: T): ObjectKeys<T>;
-// };
-
 /**
  * Base interface for managing multiple instances of Form
  * classes.
@@ -32,7 +16,10 @@ export interface ObjectConstructor {
  */
 export interface FormManager {
   forms: Form<typeof Form>[];
+  
 }
+
+
 
 //#region Validation
 
@@ -209,9 +196,10 @@ export class OnEvents {
   constructor(init?: Partial<OnEvents>, disableAll: boolean = false) {
     // If disableAll is false, turn off all event listeners
     if (disableAll) {
-      Object.keys(this).forEach((key) => {
-        this[key] = false;
-      });
+      let k: keyof OnEvents | string;
+      for (k in this) {
+        this[k as keyof OnEvents] = false;
+      }
     }
     Object.assign(this, init);
   }
@@ -261,10 +249,19 @@ export interface RefDataItem {
 
 export type RefData = Record<string, RefDataItem[]>;
 
-export type PerformanceOptions = {
-  link_all_values_on_event: LinkValuesOnEvent;
-  enable_hidden_fields_detection: boolean;
-  enable_disabled_fields_detection: boolean;
-  enable_change_detection: boolean;
-};
+export type FieldAttributes = Record<Partial<ElementAttributesMap>, any>;
+
+export type ElementAttributesMap =
+  | (keyof HTMLElement &
+      keyof HTMLInputElement &
+      keyof HTMLImageElement &
+      keyof HTMLFieldSetElement &
+      keyof HTMLAudioElement &
+      keyof HTMLButtonElement &
+      keyof HTMLCanvasElement &
+      keyof HTMLFormElement &
+      keyof HTMLSelectElement &
+      keyof HTMLOptionElement)
+  | string;
+
 //#endregion

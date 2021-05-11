@@ -1,10 +1,10 @@
 import { get, writable, Writable } from "svelte/store";
+import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
 import { FieldConfig } from ".";
 import {
   OnEvents,
   LinkOnEvent,
   RefData,
-  PerformanceOptions,
   ValidationError,
   ValidationCallback,
   ValidatorFunction,
@@ -33,7 +33,6 @@ import {
   _addCallbackToField,
   _negateField,
 } from "./internal";
-import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
 
 /**
  * Formvana - Form Class
@@ -62,7 +61,6 @@ import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
  *
  * TODO: Create FormManager interface for dealing with FormGroup and FormStepper classes
  * TODO: Create easy component/pattern for field groups and stepper/wizzard
- * TODO: Create plugin base for form template styling
  *
  * TODO: Allow fields, model and validator to be passed in separately.
  *  - This will allow for a more "dynamic" form building experience
@@ -73,9 +71,8 @@ export class Form<ModelType extends Object> {
     validation_options: Partial<ValidationOptions>,
     init?: Partial<Form<ModelType>>
   ) {
-    if (init) {
-      Object.assign(this, init);
-    }
+    if (init) Object.assign(this, init);
+
     // If there's a model, set the inital state's and build the fields
     if (model) {
       this.model = model;
@@ -83,38 +80,34 @@ export class Form<ModelType extends Object> {
     } else {
       throw new Error("Model is not valid. Please pass in a valid model.");
     }
+
     if (validation_options) {
       Object.assign(this.validation_options, validation_options);
-      // this.validation_options.validator = validation_options.validator;
     } else {
       throw new Error(
         "Please add a validator with ReturnType<Promise<ValidationError[]>>"
       );
     }
     // If they passed in a field order, set the order.
-    if (this.field_order && this.field_order.length > 0)
-      this.setOrder(this.field_order);
+    if (this.field_order) this.setFieldOrder(this.field_order);
 
     // Well well, reference data. Better attach that to the fields.
     if (this.refs) this.attachRefData();
 
-    if (this.disabled_fields && this.disabled_fields.length > 0)
+    if (this.disabled_fields)
       _negateField(this.disabled_fields, this.field_names, this.fields, {
         type: "disable",
         value: true,
       });
 
-    if (this.hidden_fields && this.hidden_fields.length > 0)
+    if (this.hidden_fields)
       _negateField(this.hidden_fields, this.field_names, this.fields, {
         type: "hide",
         value: true,
       });
 
     // Wait until everything is initalized then set the inital state.
-    _setInitialState(
-      this,
-      this.initial_state,
-    );
+    _setInitialState(this, this.initial_state);
   }
 
   //#region ** Fields **
@@ -186,8 +179,9 @@ export class Form<ModelType extends Object> {
    * in the external form context.
    */
   valid: Writable<boolean> = writable(false);
-  loading: Writable<boolean> = writable(false);
   changed: Writable<boolean> = writable(false);
+
+  loading: Writable<boolean> = writable(false);
   touched: Writable<boolean> = writable(false);
 
   /**
@@ -235,16 +229,16 @@ export class Form<ModelType extends Object> {
     | typeof SvelteComponent
     | typeof SvelteComponent;
 
+  //#endregion
+
+  //#region Internal Fields
+
   /**
    * Determines the ordering of this.fields.
    * Simply an array of field names (or group names or stepper names)
    * in the order to be displayed
    */
   private field_order: Array<FieldConfig["name"]> = [];
-
-  //#endregion
-
-  //#region Internal Fields
 
   // Used to make checking for disabled/hidden fields faster
   private field_names: Array<FieldConfig["name"]> = [];
@@ -266,21 +260,6 @@ export class Form<ModelType extends Object> {
    */
   private required_fields: Array<FieldConfig["name"]> = [];
 
-  /**
-   * Performance options!
-   * Use these if you're trying to handle upwards of 1000+ inputs within a given model.
-   *
-   * link_all_values_on_event - we usually link all field values to the model on
-   * each event call. If set to false, we only link the field affected in the OnEvent
-   * which saves us iterating over each field and linking it to the model.
-   */
-  perf_options: Partial<PerformanceOptions> = {
-    link_all_values_on_event: "all",
-    enable_hidden_fields_detection: true,
-    enable_disabled_fields_detection: true,
-    enable_change_detection: true,
-  };
-
   //#endregion
 
   //#endregion ^^ Fields ^^
@@ -297,10 +276,13 @@ export class Form<ModelType extends Object> {
    */
   buildFields = (model = this.model): void => {
     this.fields = _buildFormFields(model);
+
     // Set the field names for faster searching
-    //(instead of mapping the names (potentially) each keystoke)
+    // instead of mapping the names (potentially) on each keystoke
     this.field_names = this.fields.map((f) => f.name);
-    this.required_fields = _getRequiredFieldNames(this.fields);
+    this.required_fields = this.fields
+      .filter((f) => f.required)
+      .map((f) => f.name);
   };
 
   /**
@@ -330,29 +312,23 @@ export class Form<ModelType extends Object> {
       )
     );
     _attachOnClearErrorEvents(node, this.clear_errors_on_events, (e: Event) => {
-      field.errors.set(null);
+      field.errors.set(undefined);
     });
   };
 
   /**
    * Load new data into the form and build the fields.
-   * Useful if you fetched data and need to update the form values.
+   * Data is updated IN PLACE by default.
+   * Reinitialize is set to false, by default.
    *
-   * ReInit defaults to True. So the default is to pass in a new instance
-   * of the model (e.g. new ExampleMode(incoming_data)).
-   * If fresh is False then the incoming_data will be serialized into
-   * the model.
-   *
-   * State is updated upon data load, by default.
-   *
-   * Check example.form.ts for an example use case.
+   * Inital State is not updated by default.
    */
   loadData = <T extends ModelType>(
     data: T,
-    re_init: boolean = true,
-    update_initial_state: boolean = true
+    reinitialize: boolean = false,
+    update_initial_state: boolean = false
   ): Form<ModelType> => {
-    if (re_init) {
+    if (reinitialize) {
       this.model = data;
       this.buildFields();
     } else {
@@ -369,9 +345,7 @@ export class Form<ModelType extends Object> {
   };
 
   /**
-   * Just pass in the reference data and let the field configs do the rest.
-   *
-   * * Ref data MUST BE in format: Record<string, RefDataItem[]>
+   * Pass in the reference data to add options to fields.
    */
   attachRefData = (refs?: RefData): void => {
     const fields_with_ref_keys = this.fields.filter((f) => f.ref_key);
@@ -392,10 +366,9 @@ export class Form<ModelType extends Object> {
   //#region - Validation
 
   /**
-   * Well, validate the form!
-   * Clear the errors first, then do it, obviously.
-   * Can also link fields values to model.
-   * Can also hide or disable fields before validation.
+   * Validate the form!
+   * You can pass in callbacks as needed.
+   * Callbacks can be called "before" or "after" validation.
    */
   validate = (
     callbacks?: ValidationCallback[]
@@ -409,6 +382,11 @@ export class Form<ModelType extends Object> {
     );
   };
 
+  /**
+   * Validate the form!
+   * You can pass in callbacks as needed.
+   * Callbacks can be called "before" or "after" validation.
+   */
   validateAsync = async (
     callbacks?: ValidationCallback[]
   ): Promise<ValidationError[] | undefined> => {
@@ -532,15 +510,14 @@ export class Form<ModelType extends Object> {
    * Generate a Svelte Store from the current "this".
    */
   storify = (): Writable<Form<ModelType>> => {
-    const f = writable(this);
-    return f;
+    return writable(this);
   };
 
   // Clear ALL the errors.
   clearErrors = (): void => {
     this.errors = [];
     this.fields.forEach((f) => {
-      f.errors.set(null);
+      f.errors.set(undefined);
     });
   };
 
@@ -568,7 +545,7 @@ export class Form<ModelType extends Object> {
         Object.keys(this.clear_errors_on_events).forEach((key) => {
           f.node &&
             f.node.removeEventListener(key, (e) => {
-              f.errors.set(null);
+              f.errors.set(undefined);
             });
         });
       });
@@ -586,10 +563,7 @@ export class Form<ModelType extends Object> {
 
   // Well, this updates the initial state of the form.
   updateInitialState = (): void => {
-    _setInitialState(
-      this,
-      this.initial_state
-    );
+    _setInitialState(this, this.initial_state);
     this.changed.set(false);
   };
 
@@ -603,7 +577,7 @@ export class Form<ModelType extends Object> {
    * names in the order to be displayed.
    * Leftover fields are appended to bottom of form.
    */
-  setOrder = (order: string[]): void => {
+  setFieldOrder = (order: string[]): void => {
     if (order && order.length > 0) {
       this.field_order = order;
       this.fields = _createOrder(this.field_order, this.fields);
@@ -614,7 +588,7 @@ export class Form<ModelType extends Object> {
    * Hide a field or fields
    * @param names? string | string[]
    */
-  hideFields = (names?: string | string[]) => {
+  hideFields = (names?: string | string[]): void => {
     if (names && this.hidden_fields) {
       if (Array.isArray(names)) {
         this.hidden_fields.push(...names);
@@ -633,7 +607,7 @@ export class Form<ModelType extends Object> {
    * Show a field or fields
    * @param names? string | string[]
    */
-  showFields = (names?: string | string[]) => {
+  showFields = (names?: string | string[]): void => {
     if (names && this.hidden_fields) {
       if (Array.isArray(names)) {
         names.forEach((name) => {
@@ -655,7 +629,7 @@ export class Form<ModelType extends Object> {
    * Disable a field or fields
    * @param names? string | string[]
    */
-  disableFields = (names?: string | string[]) => {
+  disableFields = (names?: string | string[]): void => {
     if (names && this.disabled_fields) {
       if (Array.isArray(names)) {
         this.disabled_fields.push(...names);
@@ -674,7 +648,7 @@ export class Form<ModelType extends Object> {
    * Enable a field or fields
    * @param names? string | string[]
    */
-  enableFields = (names?: string | string[]) => {
+  enableFields = (names?: string | string[]): void => {
     if (names && this.disabled_fields) {
       if (Array.isArray(names)) {
         names.forEach((name) => {

@@ -1,8 +1,11 @@
 import { Form } from ".";
-export declare type ObjectKeys<T> = T extends object ? (keyof T)[] : T extends number ? [] : T extends Array<any> | string ? string[] : never;
-export interface ObjectConstructor {
-    keys<T>(o: T): ObjectKeys<T>;
-}
+/**
+ * I'm using strings here for easier comparison.
+ */
+export declare type InitialFormState<ModelType extends Object> = {
+    model: ModelType | undefined;
+    errors: ValidationError[] | undefined;
+};
 /**
  * Base interface for managing multiple instances of Form
  * classes.
@@ -191,9 +194,5 @@ export interface RefDataItem {
     data?: any;
 }
 export declare type RefData = Record<string, RefDataItem[]>;
-export declare type PerformanceOptions = {
-    link_all_values_on_event: LinkValuesOnEvent;
-    enable_hidden_fields_detection: boolean;
-    enable_disabled_fields_detection: boolean;
-    enable_change_detection: boolean;
-};
+export declare type FieldAttributes = Record<Partial<ElementAttributesMap>, any>;
+export declare type ElementAttributesMap = (keyof HTMLElement & keyof HTMLInputElement & keyof HTMLImageElement & keyof HTMLFieldSetElement & keyof HTMLAudioElement & keyof HTMLButtonElement & keyof HTMLCanvasElement & keyof HTMLFormElement & keyof HTMLSelectElement & keyof HTMLOptionElement) | string;
