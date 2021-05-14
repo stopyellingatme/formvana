@@ -1,7 +1,7 @@
 import { Writable } from "svelte/store";
 import { FieldConfig } from "./FieldConfig";
 import { Form } from "./Form";
-import { Callback, OnEvents, ValidationCallback, ValidationError, InitialFormState } from "./types";
+import { Callback, OnEvents, ValidationCallback, ValidationError, InitialFormState, LinkOnEvent } from "./types";
 export declare function _get(name: string, fields: FieldConfig[]): FieldConfig;
 /**
  *
@@ -9,7 +9,6 @@ export declare function _get(name: string, fields: FieldConfig[]): FieldConfig;
  * More comments inside...
  */
 export declare function _buildFormFields<T extends Object>(model: T, props?: string[]): FieldConfig[];
-export declare function _getRequiredFieldNames(fields: FieldConfig[]): string[];
 /**
  * Helper function for value_change emitter.
  * Write the form's value changes to form.value_changes.
@@ -23,16 +22,15 @@ export declare function _setValueChanges(changes: Writable<Record<string, any>>,
  * Parent: form.useField(...)
  */
 export declare function _attachEventListeners(field: FieldConfig, on_events: OnEvents, callback: Callback): void;
-export declare function _attachOnClearErrorEvents(node: HTMLElement, clear_errors_on_events: OnEvents, callback: Callback): void;
-export declare function _addCallbackToField<T>(form: Form<T>, field: FieldConfig, event: keyof HTMLElementEventMap, callbacks: ValidationCallback[] | Callback, with_validation_event: boolean, required_fields: string[], field_names: string[]): void;
-export declare function _linkValues<ModelType extends Object>(fromFieldsToModel: boolean, fields: FieldConfig[], model: ModelType): void;
+export declare function _addCallbackToField<T>(form: Form<T>, field: FieldConfig, event: keyof HTMLElementEventMap, callback: ValidationCallback | Callback, required_fields: string[], field_names: string[], hidden_fields?: Array<FieldConfig["name"]>, disabled_fields?: Array<FieldConfig["name"]>): void;
+export declare function _linkValues<ModelType extends Object>(from_fields_to_model: boolean, fields: FieldConfig[], model: ModelType): void;
 /**
- * Currently this depends on class-validator.
- * TODO: Disconnect class-validator dependency from all functions
+ * Link form.errors to it's corresponding field.errors
+ * Via error[field_name]
  */
-export declare function _linkFieldErrors(errors: ValidationError[], field: FieldConfig, filter_term: keyof ValidationError): void;
+export declare function _linkFieldErrors(errors: ValidationError[], field: FieldConfig, field_name: keyof ValidationError): void;
 export declare function _linkAllErrors(errors: ValidationError[], fields: FieldConfig[]): void;
-export declare function _hanldeValueLinking<T extends Object>(form: Form<T>, field?: FieldConfig): void;
+export declare function _hanldeValueLinking<T extends Object>(model: T, fields: FieldConfig[], link_fields_to_model: LinkOnEvent): void;
 /**
  * This is used to add functions and callbacks to the OnEvent
  * handler. Functions can be added in a plugin-style manner now.
@@ -43,7 +41,7 @@ export declare function _executeCallbacks(callbacks: Callback | Callback[]): voi
  * Corresponds to the form.on_events field.
  *
  */
-export declare function _handleValidationEvent<T extends Object>(form: Form<T>, required_fields: string[], field_names: string[], field?: FieldConfig, callbacks?: ValidationCallback[]): Promise<ValidationError[]> | undefined;
+export declare function _handleValidationEvent<T extends Object>(form: Form<T>, required_fields: string[], field_names: string[], hidden_fields?: Array<FieldConfig["name"]>, disabled_fields?: Array<FieldConfig["name"]>, field?: FieldConfig, callbacks?: ValidationCallback[]): Promise<ValidationError[]> | undefined;
 /**
  * Handle all the things associated with validation!
  * Link the errors to the fields.
@@ -53,7 +51,7 @@ export declare function _handleValidationEvent<T extends Object>(form: Form<T>, 
  */
 export declare function _handleFormValidation<T extends Object>(form: Form<T>, errors: ValidationError[], required_fields: string[], field?: FieldConfig): Promise<ValidationError[]>;
 /**
- * TODO: Clean up this arfv implementation. Seems too clunky.
+ * TODO: Clean up this requiredFieldsValid implementation. Seems too clunky.
  *
  * Check if there are any required fields in the errors.
  * If there are no required fields in the errors, the form is valid
@@ -71,16 +69,18 @@ export declare function _hasStateChanged(value_changes: Writable<Record<string, 
  */
 export declare function _setInitialState<T extends Object>(form: Form<T>, initial_state: InitialFormState<T>): InitialFormState<T>;
 /**
- * This one's kinda harry.
- * But it resets the form to it's initial state.
+ * Reset form to inital state.
  */
 export declare function _resetState<T extends Object>(form: Form<T>, initial_state: InitialFormState<T>): void;
 /**
  * Using this.field_order, rearrange the order of the fields.
  */
-export declare function _createOrder(field_order: string[], fields: FieldConfig[]): FieldConfig[];
+export declare function _setFieldOrder(field_order: string[], fields: FieldConfig[]): FieldConfig[];
+/**
+ * Set any attributes on the given fields.
+ */
+export declare function _setFieldAttributes(target_fields: Array<FieldConfig["name"]>, all_field_names: Array<FieldConfig["name"]>, fields: FieldConfig[], attributes: Partial<FieldConfig>): void;
+/**
+ * Set any attributes on the given field.
+ */
 export declare function _setFieldAttribute(name: string, fields: FieldConfig[], attributes: Partial<FieldConfig>): void;
-export declare function _negateField(affected_fields: Array<FieldConfig["name"]>, field_names: Array<FieldConfig["name"]>, fields: FieldConfig[], negation: {
-    type: "disable" | "hide";
-    value: boolean;
-}): void;

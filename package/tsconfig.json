@@ -1,21 +1,22 @@
 {
     "compilerOptions": {
-        "target": "ES2018",
+        "target": "ESNext",
         "moduleResolution": "node",
         "noUnusedLocals": false,
         "strict": true,
         "esModuleInterop": true,
         "declaration": true,
-        "declarationMap": true,
-        "declarationDir": "./lib",
+        "declarationMap": false,
+        "declarationDir": "./lib/types",
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
-        "outDir": "./lib",
+        "emitDeclarationOnly": true,
     },
     "include": [
-        "lib"
+        "lib/**/*",
     ],
     "exclude": [
-        "node_modules"
+        "node_modules",
+        "./lib/types/**/*",
     ]
 }

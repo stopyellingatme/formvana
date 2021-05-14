@@ -7,6 +7,8 @@ import {
   ValidationCallback,
   ValidationError,
   InitialFormState,
+  FieldAttributes,
+  LinkOnEvent,
 } from "./types";
 
 //#region Utility Functions
@@ -85,57 +87,43 @@ export function _attachEventListeners(
   Object.entries(on_events).forEach(([eventName, shouldListen]) => {
     // If shouldListen true, then add the event listener
     if (shouldListen) {
-      field.node &&
-        field.node.addEventListener(
-          eventName,
-          (e: Event) => callback(e),
-          false
-        );
+      field.addEventListener(eventName as keyof HTMLElementEventMap, callback);
+      // field.node &&
+      //   field.node.addEventListener(
+      //     eventName,
+      //     (e: Event) => (callback instanceof Function ? callback(e) : callback),
+      //     false
+      //   );
     }
   });
-}
-
-export function _attachOnClearErrorEvents(
-  node: HTMLElement,
-  clear_errors_on_events: OnEvents,
-  callback: Callback
-): void {
-  Object.entries(clear_errors_on_events).forEach(
-    ([eventName, shouldListen]) => {
-      // If the OnEvent is true, then add the event listener
-      if (shouldListen) {
-        node.addEventListener(eventName, (e: Event) => callback(e), false);
-      }
-    }
-  );
 }
 
 export function _addCallbackToField<T>(
   form: Form<T>,
   field: FieldConfig,
   event: keyof HTMLElementEventMap,
-  callbacks: ValidationCallback[] | Callback,
-  with_validation_event: boolean = true,
+  callback: ValidationCallback | Callback,
   required_fields: string[],
-  field_names: string[]
+  field_names: string[],
+  hidden_fields?: Array<FieldConfig["name"]>,
+  disabled_fields?: Array<FieldConfig["name"]>
 ): void {
-  if (with_validation_event && Array.isArray(callbacks)) {
-    field.node &&
-      field.node.addEventListener(
-        event,
-        (e) =>
-          _handleValidationEvent(
-            form,
-            required_fields,
-            field_names,
-            undefined,
-            callbacks
-          ),
-        false
-      );
-  } else if (!Array.isArray(callbacks)) {
-    field.node &&
-      field.node.addEventListener(event, (e) => callbacks(e), false);
+  // Check if callback is of type ValidationCallback
+  if ((<ValidationCallback>callback).when) {
+    field.addEventListener(
+      event,
+      _handleValidationEvent(
+        form,
+        required_fields,
+        field_names,
+        hidden_fields,
+        disabled_fields,
+        undefined,
+        [<ValidationCallback>callback]
+      )
+    );
+  } else {
+    field.addEventListener(event, <Callback>callback);
   }
 }
 
@@ -145,7 +133,7 @@ export function _addCallbackToField<T>(
 
 // Link values from FIELDS toMODEL or MODEL to FIELDS
 export function _linkValues<ModelType extends Object>(
-  fromFieldsToModel: boolean,
+  from_fields_to_model: boolean,
   fields: FieldConfig[],
   model: ModelType
 ): void {
@@ -156,26 +144,26 @@ export function _linkValues<ModelType extends Object>(
     // Get name and value of the field
     const name = fields[i].name,
       val = fields[i].value;
-    if (fromFieldsToModel) {
-      // Link field values to the model
+    // Link field[values] to model[values]
+    if (from_fields_to_model) {
       model[name as keyof ModelType] = get(val);
     } else {
-      // Link model values to the fields
+      // Link form.model[values] to the form.fields[values]
       val.set(model[name as keyof ModelType]);
     }
   }
 }
 
 /**
- * Currently this depends on class-validator.
- * TODO: Disconnect class-validator dependency from all functions
+ * Link form.errors to it's corresponding field.errors
+ * Via error[field_name]
  */
 export function _linkFieldErrors(
   errors: ValidationError[],
   field: FieldConfig,
-  filter_term: keyof ValidationError
+  field_name: keyof ValidationError
 ): void {
-  const error = errors.filter((e) => e[filter_term] === field.name);
+  const error = errors.filter((e) => e[field_name] === field.name);
   // Check if there's an error for the field
   if (error && error.length > 0) {
     field.errors.set(error[0]);
@@ -197,19 +185,20 @@ export function _linkAllErrors(
 }
 
 export function _hanldeValueLinking<T extends Object>(
-  form: Form<T>,
-  field?: FieldConfig
+  model: T,
+  fields: FieldConfig[],
+  link_fields_to_model: LinkOnEvent
 ): void {
   /**
    * Link the input from the field to the model.
    * We dont't link (just) the field value.
-   * We link all values just in case the field change propigates 
+   * We link all values just in case the field change propigates
    * to other field changes.
    */
-  if (form.link_fields_to_model === "always") {
-    _linkValues(true, form.fields, form.model);
-  } else if (form.link_fields_to_model === "valid") {
-    _linkValues(true, form.fields, form.model);
+  if (link_fields_to_model === "always") {
+    _linkValues(true, fields, model);
+  } else if (link_fields_to_model === "valid") {
+    _linkValues(true, fields, model);
   }
 }
 
@@ -217,14 +206,18 @@ export function _hanldeValueLinking<T extends Object>(
 
 //#region Validation Helpers
 
-function _handleValidationCallbacks(
+function _executeValidationCallbacks(
   when_to_call: "before" | "after",
   callbacks: ValidationCallback[]
 ): void {
   if (callbacks && callbacks.length > 0)
     callbacks.forEach((cb) => {
       if (cb.when === when_to_call) {
-        cb.callback();
+        if (cb.callback instanceof Function) {
+          cb.callback();
+        } else {
+          () => cb.callback;
+        }
       }
     });
 }
@@ -234,17 +227,23 @@ function _handleValidationCallbacks(
  * handler. Functions can be added in a plugin-style manner now.
  */
 export function _executeCallbacks(callbacks: Callback | Callback[]): void {
+  // Is it an Array of callbacks?
   if (Array.isArray(callbacks)) {
     callbacks.forEach((cb) => {
-      cb();
+      // If the cb is a function, call it
+      if (cb instanceof Function) {
+        cb();
+      } else {
+        () => cb;
+      }
     });
   } else {
-    callbacks();
+    if (callbacks instanceof Function) {
+      callbacks();
+    } else {
+      () => callbacks;
+    }
   }
-}
-
-function _executeIfTrue(is_true: boolean, cb: Callback): void {
-  if (is_true) cb();
 }
 
 /**
@@ -256,9 +255,13 @@ export function _handleValidationEvent<T extends Object>(
   form: Form<T>,
   required_fields: string[],
   field_names: string[],
+  hidden_fields?: Array<FieldConfig["name"]>,
+  disabled_fields?: Array<FieldConfig["name"]>,
   field?: FieldConfig,
   callbacks?: ValidationCallback[]
 ): Promise<ValidationError[]> | undefined {
+  form.pristine.set(false);
+
   if (form.validation_options.validator) {
     _executeCallbacks([
       /**
@@ -266,43 +269,27 @@ export function _handleValidationEvent<T extends Object>(
        * We aren't linking (only) the field value.
        * We link all values just in case the field change propigates other field changes.
        */
-      () => _hanldeValueLinking(form, field),
-
-      () => {
-        if (field) _setValueChanges(form.value_changes, field);
-      },
-
-      () => {
-        if (callbacks) _handleValidationCallbacks("before", callbacks);
-      },
+      _hanldeValueLinking(form.model, form.fields, form.link_fields_to_model),
+      field && _setValueChanges(form.value_changes, field),
+      callbacks && _executeValidationCallbacks("before", callbacks),
     ]);
 
     return form.validation_options
       .validator(form.model, form.validation_options.options)
       .then((errors: ValidationError[]) => {
         _executeCallbacks([
-          () => _handleFormValidation(form, errors, required_fields, field),
-          () => {
-            if (form.hidden_fields)
-              _negateField(form.hidden_fields, field_names, form.fields, {
-                type: "hide",
-                value: true,
-              });
-          },
-
-          () => {
-            if (form.disabled_fields)
-              _negateField(form.disabled_fields, field_names, form.fields, {
-                type: "disable",
-                value: true,
-              });
-          },
-
-          () => _hasStateChanged(form.value_changes, form.changed),
-
-          () => {
-            if (callbacks) _handleValidationCallbacks("after", callbacks);
-          },
+          _handleFormValidation(form, errors, required_fields, field),
+          hidden_fields &&
+            _setFieldAttributes(hidden_fields, field_names, form.fields, {
+              hidden: true,
+            }),
+          disabled_fields &&
+            _setFieldAttributes(disabled_fields, field_names, form.fields, {
+              disabled: true,
+              attributes: { disabled: true },
+            }),
+          _hasStateChanged(form.value_changes, form.changed),
+          callbacks && _executeValidationCallbacks("after", callbacks),
         ]);
         return errors;
       });
@@ -350,9 +337,11 @@ export async function _handleFormValidation<T extends Object>(
   } else {
     // We can't get here unless the errors we see are for non-required fields
 
-    // If the config tells us to link the values only when the form
-    // is valid, then link them here.
-    _hanldeValueLinking(form, field);
+    /**
+     * If the config tells us to link the values only when the form
+     * is valid, then link them here.
+     */
+    _hanldeValueLinking(form.model, form.fields, form.link_fields_to_model);
     form.clearErrors(); // Clear form errors
     form.valid.set(true); // Form is valid!
   }
@@ -360,7 +349,7 @@ export async function _handleFormValidation<T extends Object>(
 }
 
 /**
- * TODO: Clean up this arfv implementation. Seems too clunky.
+ * TODO: Clean up this requiredFieldsValid implementation. Seems too clunky.
  *
  * Check if there are any required fields in the errors.
  * If there are no required fields in the errors, the form is valid
@@ -375,8 +364,10 @@ export function _requiredFieldsValid(
     len = required_fields.length;
   // If there are no required fields, just go ahead and return
   if (len === 0) return true;
-  // Otherwise we have to map the names of the errors so we can
-  // check if they're for a required field
+  /**
+   * Otherwise we have to map the names of the errors so we can
+   * check if they're for a required field
+   */
   const errs = errors.map((e) => e.property);
   for (; len > i; ++i) {
     if (errs.indexOf(required_fields[i]) !== -1) {
@@ -426,14 +417,13 @@ export function _setInitialState<T extends Object>(
 }
 
 /**
- * This one's kinda harry.
- * But it resets the form to it's initial state.
+ * Reset form to inital state.
  */
 export function _resetState<T extends Object>(
   form: Form<T>,
   initial_state: InitialFormState<T>
 ): void {
-  // !WHEN RESETTING, YOU CANNOT OVERWRITE THE MODEL. VALIDATION GETS FUCKED UP!
+  // !CANNOT OVERWRITE MODEL. VALIDATION GETS FUCKED UP!
   let k: keyof Form<T>["model"];
   if (initial_state.model)
     for (k in initial_state.model) {
@@ -453,6 +443,7 @@ export function _resetState<T extends Object>(
   }
 
   form.value_changes = writable({});
+  form.pristine.set(true);
   form.changed.set(false);
 }
 
@@ -463,7 +454,7 @@ export function _resetState<T extends Object>(
 /**
  * Using this.field_order, rearrange the order of the fields.
  */
-export function _createOrder(
+export function _setFieldOrder(
   field_order: string[],
   fields: FieldConfig[]
 ): FieldConfig[] {
@@ -488,6 +479,33 @@ export function _createOrder(
   return fields;
 }
 
+/**
+ * Set any attributes on the given fields.
+ */
+export function _setFieldAttributes(
+  target_fields: Array<FieldConfig["name"]>,
+  all_field_names: Array<FieldConfig["name"]>,
+  fields: FieldConfig[],
+  attributes: Partial<FieldConfig>
+): void {
+  let i = 0,
+    len = target_fields.length;
+  if (len === 0) return;
+
+  for (; len > i; ++i) {
+    const field_index = all_field_names.indexOf(target_fields[i]);
+
+    if (field_index !== -1) {
+      const field_name = all_field_names[field_index];
+
+      _setFieldAttribute(field_name, fields, attributes);
+    }
+  }
+}
+
+/**
+ * Set any attributes on the given field.
+ */
 export function _setFieldAttribute(
   name: string,
   fields: FieldConfig[],
@@ -502,14 +520,15 @@ export function _setFieldAttribute(
     if (k === "attributes") {
       Object.assign(f.attributes, attributes[k]);
     } else if (k !== "name") {
+      // "name" is readonly on FieldConfig
       setFieldProperty(f, k, attributes[k]);
     }
   }
 }
 
 /**
- * This was initially created to deal with TS compiler errors.
- * Dynamically assigning a value to f[key] just wouldn't play nice.
+ * Initially created to deal with TS compiler errors.
+ * Dynamically assigning a value to f[key] wouldn't play nice.
  */
 function setFieldProperty<K extends keyof FieldConfig>(
   f: FieldConfig,
@@ -517,43 +536,6 @@ function setFieldProperty<K extends keyof FieldConfig>(
   value: FieldConfig[K]
 ) {
   f[key] = value;
-}
-
-export function _negateField(
-  affected_fields: Array<FieldConfig["name"]>,
-  field_names: Array<FieldConfig["name"]>,
-  fields: FieldConfig[],
-  negation: { type: "disable" | "hide"; value: boolean }
-): void {
-  if (
-    affected_fields &&
-    affected_fields.length > 0 &&
-    fields &&
-    fields.length > 0
-  ) {
-    let i = 0,
-      len = affected_fields.length;
-    if (len === 0) return;
-
-    for (; len > i; ++i) {
-      const field_index = field_names.indexOf(affected_fields[i]);
-
-      if (field_index !== -1) {
-        const field_name = field_names[field_index];
-
-        if (negation.type === "disable") {
-          _setFieldAttribute(field_name, fields, {
-            disabled: negation.value,
-            attributes: { disabled: negation.value },
-          });
-        } else if (negation.type === "hide") {
-          _setFieldAttribute(field_name, fields, {
-            hidden: negation.value,
-          });
-        }
-      }
-    }
-  }
 }
 
 //#endregion

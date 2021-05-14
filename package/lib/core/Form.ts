@@ -14,16 +14,15 @@ import {
 } from "./types";
 import {
   _buildFormFields,
-  _getRequiredFieldNames,
   _get,
   _attachEventListeners,
-  _attachOnClearErrorEvents,
+  // _attachOnClearErrorEvents,
   _linkFieldErrors,
   _linkAllErrors,
   _linkValues,
   _requiredFieldsValid,
   _hasStateChanged,
-  _createOrder,
+  _setFieldOrder,
   _setInitialState,
   _resetState,
   _handleFormValidation,
@@ -31,22 +30,11 @@ import {
   _executeCallbacks,
   _hanldeValueLinking,
   _addCallbackToField,
-  _negateField,
+  _setFieldAttributes,
 } from "./internal";
 
 /**
- * Formvana - Form Class
- * Form is NOT valid, initially.
- * If you want to make it valid, this.valid.set(true).
- *
- * The main thing to understand here is that the fields and the model are separate.
- * Fields are built using the model, via the @field() & @editable() decorators.
- * We keep the fields and the model in sync (simply) via model property names
- * which are mapped to field.name.
- * We do our best to initialize this thing with good, sane defaults without
- * adding too many restrictions.
- *
- * Recommended Use:
+ * * Recommended Use:
  *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
  *  - Set the model (if you didn't in the first step)
  *  - Attach reference data (if you didn't in the first step)
@@ -55,15 +43,26 @@ import {
  *  - Pass it into the DynamicForm component and let the form generate itself!
  *
  * Performance is blazing with < 500 fields.
- * Can render up to 2000 inputs in per class/fields.
+ * Can render up to 2000 inputs in per class/fields, not recommended.
  * Just break it up into 100 or so fields per form (max 250) if its a huge form.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
+ *
  *
  * TODO: Create FormManager interface for dealing with FormGroup and FormStepper classes
  * TODO: Create easy component/pattern for field groups and stepper/wizzard
  *
  * TODO: Allow fields, model and validator to be passed in separately.
  *  - This will allow for a more "dynamic" form building experience
+ */
+
+/**
+ * Formvana - Form Class
+ * Form is NOT valid, initially.
+ *
+ * Main Concept: fields and model are separate.
+ * Fields are built using the model, via the @field() decorator.
+ * We keep the fields and the model in sync via your model property names
+ * and field[name].
  */
 export class Form<ModelType extends Object> {
   constructor(
@@ -78,7 +77,7 @@ export class Form<ModelType extends Object> {
       this.model = model;
       this.buildFields();
     } else {
-      throw new Error("Model is not valid. Please pass in a valid model.");
+      throw new Error("Model is not valid. Please use a valid model.");
     }
 
     if (validation_options) {
@@ -95,15 +94,14 @@ export class Form<ModelType extends Object> {
     if (this.refs) this.attachRefData();
 
     if (this.disabled_fields)
-      _negateField(this.disabled_fields, this.field_names, this.fields, {
-        type: "disable",
-        value: true,
+      _setFieldAttributes(this.disabled_fields, this.field_names, this.fields, {
+        disabled: true,
+        attributes: { disabled: true },
       });
 
     if (this.hidden_fields)
-      _negateField(this.hidden_fields, this.field_names, this.fields, {
-        type: "hide",
-        value: true,
+      _setFieldAttributes(this.hidden_fields, this.field_names, this.fields, {
+        hidden: true,
       });
 
     // Wait until everything is initalized then set the inital state.
@@ -111,8 +109,6 @@ export class Form<ModelType extends Object> {
   }
 
   //#region ** Fields **
-
-  //#region Core Functionality Fields
 
   /**
    * This is your form Model/Schema.
@@ -129,6 +125,22 @@ export class Form<ModelType extends Object> {
   fields: FieldConfig[] = [];
 
   /**
+   * Form Template Layout
+   *
+   * Render the form into a custom svelte template!
+   * Use a svelte component.
+   * * The component/template must accept {form} prop
+   *
+   * Note: add ` types": ["svelte"] ` to tsconfig compilerOptions
+   * to remove TS import error of .svelte files (for your template)
+   */
+  template?:
+    | string
+    | typeof SvelteComponentDev
+    | typeof SvelteComponent
+    | typeof SvelteComponent;
+
+  /**
    * refs hold any reference data you'll be using in the form
    * e.g. seclet dropdowns, radio buttons, etc.
    *
@@ -140,13 +152,12 @@ export class Form<ModelType extends Object> {
   refs?: RefData;
 
   /**
-   * Validation Options contain the logic and config for validating
-   * the form as well as linking errors to fields.
-   *
-   * Other, more fine grained options are in validation_options.options
+   * validation_options contains the logic and configuration for
+   * validating the form as well as linking errors to fields.
    */
   validation_options: Partial<ValidationOptions> = {
     validator: undefined,
+    field_error_link_name: "property",
     options: {
       skipMissingProperties: false,
       dismissDefaultMessages: false,
@@ -157,7 +168,6 @@ export class Form<ModelType extends Object> {
       forbidUnknownValues: true,
       stopAtFirstError: false,
     },
-    field_error_link_name: "property",
   };
 
   /**
@@ -180,9 +190,8 @@ export class Form<ModelType extends Object> {
    */
   valid: Writable<boolean> = writable(false);
   changed: Writable<boolean> = writable(false);
-
+  pristine: Writable<boolean> = writable(true);
   loading: Writable<boolean> = writable(false);
-  touched: Writable<boolean> = writable(false);
 
   /**
    * Emits value changes as a plain JS object.
@@ -193,63 +202,39 @@ export class Form<ModelType extends Object> {
   value_changes: Writable<Record<string, any>> = writable({});
 
   /**
-   * Use the NAME of the field (field.name) to disable/hide the field.
+   * This is the model's initial state.
+   * Shove the stateful_items into the inital state for a decent snapshot.
    */
-  hidden_fields?: Array<FieldConfig["name"]>;
-  disabled_fields?: Array<FieldConfig["name"]>;
+  initial_state: InitialFormState<ModelType> = {
+    model: undefined,
+    errors: undefined,
+  };
 
   /**
    * Which events should the form do things on?
    * (validate, link values, hide/disable fields)
    */
   on_events: OnEvents = new OnEvents();
-  // Which events should we clear the field errors on?
-  clear_errors_on_events: OnEvents = new OnEvents({}, true);
 
   // When to link this.field values to this.model values
   link_fields_to_model: LinkOnEvent = "always";
 
-  //#endregion
-
-  //#region Field Styling
-
-  /**
-   * Form Template Layout
-   *
-   * Render the form into a custom svelte template!
-   * Use a svelte component.
-   * * The component/template must accept {form} prop
-   *
-   * Note: add ` types": ["svelte"] ` to tsconfig compilerOptions
-   * to remove TS import error of .svelte files (for your template)
-   */
-  template?:
-    | string
-    | typeof SvelteComponentDev
-    | typeof SvelteComponent
-    | typeof SvelteComponent;
-
-  //#endregion
-
   //#region Internal Fields
+  /**
+   * Use the NAME of the field (field.name) to disable/hide the field.
+   */
+  hidden_fields?: Array<FieldConfig["name"]>;
+  disabled_fields?: Array<FieldConfig["name"]>;
 
   /**
    * Determines the ordering of this.fields.
    * Simply an array of field names (or group names or stepper names)
    * in the order to be displayed
    */
-  private field_order: Array<FieldConfig["name"]> = [];
+  private field_order?: Array<FieldConfig["name"]>;
 
   // Used to make checking for disabled/hidden fields faster
   private field_names: Array<FieldConfig["name"]> = [];
-  /**
-   * This is the model's initial state.
-   * Shove the stateful_items into the inital state for a decent snapshot.
-   */
-  private initial_state: InitialFormState<ModelType> = {
-    model: undefined,
-    errors: undefined,
-  };
 
   /**
    * We keep track of required fields because we let class-validator handle everything
@@ -274,7 +259,7 @@ export class Form<ModelType extends Object> {
    *
    * TODO: Allow JSON model and schema validation/setup
    */
-  buildFields = (model = this.model): void => {
+  private buildFields = (model: ModelType = this.model): void => {
     this.fields = _buildFormFields(model);
 
     // Set the field names for faster searching
@@ -287,16 +272,15 @@ export class Form<ModelType extends Object> {
 
   /**
    * ATTACH TO SAME ELEMENT AS FIELD.NAME!
-   *
-   * Use on the element that will be interacted with.
-   * e.g. <input/> -- <button/> -- <select/> -- etc.
-   * Check examples folder for more details.
-   *
-   * * This hooks up the event listeners!
+   * This hooks up the event listeners!
    *
    * This is for Svelte's "use:FUNCTION" feature.
    * The "use" directive passes the HTML Node as a parameter
    * to the given function (e.g. use:useField(node: HTMLElement)).
+   *
+   * Use on the element that will be interacted with.
+   * e.g. <input/> -- <button/> -- <select/> -- etc.
+   * Check examples folder for more details.
    */
   useField = (node: HTMLElement & { name: string }): void => {
     // Attach HTML Node to field so we can remove event listeners later
@@ -308,12 +292,11 @@ export class Form<ModelType extends Object> {
         this,
         this.required_fields,
         this.field_names,
+        this.hidden_fields,
+        this.disabled_fields,
         field
       )
     );
-    _attachOnClearErrorEvents(node, this.clear_errors_on_events, (e: Event) => {
-      field.errors.set(undefined);
-    });
   };
 
   /**
@@ -323,18 +306,18 @@ export class Form<ModelType extends Object> {
    *
    * Inital State is not updated by default.
    */
-  loadData = <T extends ModelType>(
-    data: T,
+  loadModel = <T extends ModelType>(
+    model: T,
     reinitialize: boolean = false,
     update_initial_state: boolean = false
   ): Form<ModelType> => {
     if (reinitialize) {
-      this.model = data;
+      this.model = model;
       this.buildFields();
     } else {
       let key: keyof ModelType;
       for (key in this.model) {
-        this.model[key] = data[key];
+        this.model[key] = model[key];
       }
       _linkValues(false, this.fields, this.model);
     }
@@ -377,6 +360,8 @@ export class Form<ModelType extends Object> {
       this,
       this.required_fields,
       this.field_names,
+      this.hidden_fields,
+      this.disabled_fields,
       undefined,
       callbacks
     );
@@ -394,6 +379,8 @@ export class Form<ModelType extends Object> {
       this,
       this.required_fields,
       this.field_names,
+      this.hidden_fields,
+      this.disabled_fields,
       undefined,
       callbacks
     );
@@ -413,6 +400,8 @@ export class Form<ModelType extends Object> {
         this,
         this.required_fields,
         this.field_names,
+        this.hidden_fields,
+        this.disabled_fields,
         field,
         callbacks
       );
@@ -428,11 +417,13 @@ export class Form<ModelType extends Object> {
   };
 
   /**
-   * Can attach event listeners to one or more fields.
+   * Attach a callback to a field or array of fields.
+   * If the callback if type ValidationCallback it will be added
+   * to the validation handler
    */
-  addEventListenerToFields = (
+  attachCallbacks = (
     event: keyof HTMLElementEventMap,
-    callback: Callback,
+    callback: Callback | ValidationCallback,
     field_names: string | string[]
   ): void => {
     if (Array.isArray(field_names)) {
@@ -443,9 +434,10 @@ export class Form<ModelType extends Object> {
           f,
           event,
           callback,
-          false,
           this.required_fields,
-          this.field_names
+          this.field_names,
+          this.hidden_fields,
+          this.disabled_fields
         );
       });
     } else {
@@ -455,46 +447,20 @@ export class Form<ModelType extends Object> {
         field,
         event,
         callback,
-        false,
         this.required_fields,
-        this.field_names
+        this.field_names,
+        this.hidden_fields,
+        this.disabled_fields
       );
     }
   };
 
-  /**
-   * Add your own callbacks to the normal _handleValidationEvent method.
-   */
-  addValidationCallbackToFields = (
-    event: keyof HTMLElementEventMap,
-    callbacks: ValidationCallback[],
-    field_names: string | string[]
-  ): void => {
-    if (Array.isArray(field_names)) {
-      const fields = field_names.map((f) => _get(f, this.fields));
-      fields.forEach((f) => {
-        _addCallbackToField(
-          this,
-          f,
-          event,
-          callbacks,
-          true,
-          this.required_fields,
-          this.field_names
-        );
-      });
-    } else {
-      const field = _get(field_names, this.fields);
-      _addCallbackToField(
-        this,
-        field,
-        event,
-        callbacks,
-        true,
-        this.required_fields,
-        this.field_names
-      );
-    }
+  // Clear ALL the errors.
+  clearErrors = (): void => {
+    this.errors = [];
+    this.fields.forEach((f) => {
+      f.errors.set(undefined);
+    });
   };
 
   //#endregion
@@ -504,21 +470,6 @@ export class Form<ModelType extends Object> {
   // Get Field by name
   get = (field_name: string): FieldConfig => {
     return _get(field_name, this.fields);
-  };
-
-  /**
-   * Generate a Svelte Store from the current "this".
-   */
-  storify = (): Writable<Form<ModelType>> => {
-    return writable(this);
-  };
-
-  // Clear ALL the errors.
-  clearErrors = (): void => {
-    this.errors = [];
-    this.fields.forEach((f) => {
-      f.errors.set(undefined);
-    });
   };
 
   /**
@@ -538,14 +489,10 @@ export class Form<ModelType extends Object> {
                   this,
                   this.required_fields,
                   this.field_names,
+                  this.hidden_fields,
+                  this.disabled_fields,
                   f
                 );
-            });
-        });
-        Object.keys(this.clear_errors_on_events).forEach((key) => {
-          f.node &&
-            f.node.removeEventListener(key, (e) => {
-              f.errors.set(undefined);
             });
         });
       });
@@ -569,7 +516,7 @@ export class Form<ModelType extends Object> {
 
   //#endregion
 
-  //#region - Styling
+  //#region - Layout
 
   /**
    * Set the field order.
@@ -580,90 +527,28 @@ export class Form<ModelType extends Object> {
   setFieldOrder = (order: string[]): void => {
     if (order && order.length > 0) {
       this.field_order = order;
-      this.fields = _createOrder(this.field_order, this.fields);
+      this.fields = _setFieldOrder(this.field_order, this.fields);
     }
   };
 
   /**
-   * Hide a field or fields
-   * @param names? string | string[]
+   * Set attributes on a given set of fields.
+   *
+   * @exapmle to hide several fields:
+   * names = [field.name, field.name],
+   * attributes = { hidden: true };
    */
-  hideFields = (names?: string | string[]): void => {
-    if (names && this.hidden_fields) {
+  setFieldAttributes = (
+    names: string | string[],
+    attributes: Partial<FieldConfig>
+  ): void => {
+    if (names) {
       if (Array.isArray(names)) {
-        this.hidden_fields.push(...names);
+        _setFieldAttributes(names, this.field_names, this.fields, attributes);
       } else {
-        this.hidden_fields.push(names);
+        _setFieldAttributes([names], this.field_names, this.fields, attributes);
       }
     }
-    if (this.hidden_fields)
-      _negateField(this.hidden_fields, this.field_names, this.fields, {
-        type: "hide",
-        value: true,
-      });
-  };
-
-  /**
-   * Show a field or fields
-   * @param names? string | string[]
-   */
-  showFields = (names?: string | string[]): void => {
-    if (names && this.hidden_fields) {
-      if (Array.isArray(names)) {
-        names.forEach((name) => {
-          if (this.hidden_fields)
-            this.hidden_fields.splice(this.hidden_fields.indexOf(name), 1);
-        });
-      } else {
-        this.hidden_fields.splice(this.hidden_fields.indexOf(names), 1);
-      }
-    }
-    if (this.hidden_fields)
-      _negateField(this.hidden_fields, this.field_names, this.fields, {
-        type: "hide",
-        value: false,
-      });
-  };
-
-  /**
-   * Disable a field or fields
-   * @param names? string | string[]
-   */
-  disableFields = (names?: string | string[]): void => {
-    if (names && this.disabled_fields) {
-      if (Array.isArray(names)) {
-        this.disabled_fields.push(...names);
-      } else {
-        this.disabled_fields.push(names);
-      }
-    }
-    if (this.disabled_fields)
-      _negateField(this.disabled_fields, this.field_names, this.fields, {
-        type: "disable",
-        value: true,
-      });
-  };
-
-  /**
-   * Enable a field or fields
-   * @param names? string | string[]
-   */
-  enableFields = (names?: string | string[]): void => {
-    if (names && this.disabled_fields) {
-      if (Array.isArray(names)) {
-        names.forEach((name) => {
-          if (this.disabled_fields)
-            this.disabled_fields.splice(this.disabled_fields.indexOf(name), 1);
-        });
-      } else {
-        this.disabled_fields.splice(this.disabled_fields.indexOf(names), 1);
-      }
-    }
-    if (this.disabled_fields)
-      _negateField(this.disabled_fields, this.field_names, this.fields, {
-        type: "disable",
-        value: false,
-      });
   };
 
   //#endregion

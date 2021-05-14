@@ -1,12 +1,211 @@
-import { Form } from ".";
+// import { Form } from ".";
+import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
+import { Writable } from "svelte/store";
+import { FieldConfig } from "./FieldConfig";
+import { Form } from "./Form";
 
-/**
- * I'm using strings here for easier comparison.
- */
-export type InitialFormState<ModelType extends Object> = {
-  model: ModelType | undefined;
-  errors: ValidationError[] | undefined;
-};
+//#region Form Type Defs
+// interface Form<ModelType extends Object> {
+//   constructor: (
+//     model: ModelType,
+//     validation_options: Partial<ValidationOptions>,
+//     init: Partial<Form<ModelType>>
+//   ) => Form<ModelType>;
+
+//   props: FormFields<ModelType> &
+//     FormValidation &
+//     FormLayout &
+//     FormState<ModelType>;
+
+//   api: FormFieldsApi<ModelType> &
+//     FormValidationApi &
+//     FormStateApi<ModelType> &
+//     FormLayoutApi;
+
+//   state: FormStateApi<ModelType>;
+
+//   layout: FormLayoutApi;
+// }
+
+// interface FormFields<ModelType extends Object> {
+//   model: ModelType;
+//   fields: FieldConfig[];
+
+//   /**
+//    * refs hold any reference data you'll be using in the form
+//    * e.g. seclet dropdowns, radio buttons, etc.
+//    *
+//    * If you did not set the model in constructor:
+//    * Call attachRefData() to link the data to the respective field
+//    *
+//    * * Fields & reference data are linked via field.ref_key
+//    */
+//   refs?: RefData;
+
+//   /**
+//    * Which events should the form do things on?
+//    * (validate, link values, hide/disable fields)
+//    */
+//   on_events: OnEvents;
+//   // Which events should we clear the field errors on?
+//   clear_errors_on_events: OnEvents;
+
+//   // When to link this.field values to this.model values
+//   link_fields_to_model: LinkOnEvent;
+// }
+
+// interface FormValidation {
+//   options: Partial<ValidationOptions>;
+//   errors: ValidationError[];
+//   valid: Writable<boolean>;
+
+//   required_fields: Array<FieldConfig["name"]>;
+// }
+
+// interface FormLayout {
+//   template?:
+//     | string
+//     | typeof SvelteComponentDev
+//     | typeof SvelteComponent
+//     | typeof SvelteComponent;
+
+//   /**
+//    * Use the NAME of the field (field.name) to disable/hide the field.
+//    */
+//   hidden_fields?: Array<FieldConfig["name"]>;
+//   disabled_fields?: Array<FieldConfig["name"]>;
+
+//   field_order: Array<FieldConfig["name"]>;
+
+//   field_names: Array<FieldConfig["name"]>;
+// }
+
+// interface FormState<ModelType extends Object> {
+//   changed: Writable<boolean>;
+
+//   loading: Writable<boolean>;
+//   touched: Writable<boolean>;
+
+//   /**
+//    * Emits value changes as a plain JS object.
+//    * Format: { [field.name]: value }
+//    *
+//    * Similar to Angular form.valueChanges
+//    */
+//   value_changes: Writable<Record<string, any>>;
+
+//   initial_state: InitialFormState<ModelType>;
+// }
+
+// interface FormFieldsApi<ModelType extends Object> {
+//   get: (field_name: string) => FieldConfig;
+
+//   buildFields: (model: ModelType) => void;
+//   useField: (node: HTMLElement & { name: string }) => void;
+//   loadData: <T extends ModelType>(
+//     data: T,
+//     reinitialize: boolean,
+//     update_initial_state: boolean
+//   ) => Form<ModelType>;
+
+//   /**
+//    * Pass in the reference data to add options to fields.
+//    */
+//   attachRefData: (refs?: RefData) => void;
+
+//   /**
+//    * Can attach event listeners to one or more fields.
+//    */
+//   addEventListenerToFields: (
+//     event: keyof HTMLElementEventMap,
+//     callback: Callback,
+//     field_names: string | string[]
+//   ) => void;
+//   /**
+//    * Add your own callbacks to the normal _handleValidationEvent method.
+//    */
+//   addValidationCallbackToFields: (
+//     event: keyof HTMLElementEventMap,
+//     callbacks: ValidationCallback[],
+//     field_names: string | string[]
+//   ) => void;
+// }
+
+// interface FormValidationApi {
+//   /**
+//    * Validate the form!
+//    * You can pass in callbacks as needed.
+//    * Callbacks can be called "before" or "after" validation.
+//    */
+//   validate: (
+//     callbacks?: ValidationCallback[]
+//   ) => Promise<ValidationError[]> | undefined;
+//   /**
+//    * Validate the form!
+//    * You can pass in callbacks as needed.
+//    * Callbacks can be called "before" or "after" validation.
+//    */
+//   validateAsync: (
+//     callbacks?: ValidationCallback[]
+//   ) => Promise<ValidationError[] | undefined>;
+//   /**
+//    * If want to (in)validate a specific field for any reason.
+//    */
+//   validateField: (
+//     field_name: string,
+//     withMessage?: string,
+//     callbacks?: ValidationCallback[]
+//   ) => void;
+
+//   clearErrors: () => void;
+// }
+
+// interface FormStateApi<ModelType extends Object> {
+//   updateInitialState: () => void;
+//   /**
+//    * Generate a Svelte Store from the current "this".
+//    */
+//   storify: () => Writable<Form<ModelType>>;
+
+//   /**
+//    *! Make sure to call this when the component is unloaded/destroyed
+//    * Removes all event listeners and clears the form state.
+//    */
+//   destroy: () => void;
+//   reset: () => void;
+// }
+
+// interface FormLayoutApi {
+//   /**
+//    * Set the field order.
+//    * Layout param is simply an array of field (or group)
+//    * names in the order to be displayed.
+//    * Leftover fields are appended to bottom of form.
+//    */
+//   setFieldOrder: (order: string[]) => void;
+//   /**
+//    * Hide a field or fields
+//    * @param names? string | string[]
+//    */
+//   hideFields: (names?: string | string[]) => void;
+//   /**
+//    * Show a field or fields
+//    * @param names? string | string[]
+//    */
+//   showFields: (names?: string | string[]) => void;
+//   /**
+//    * Disable a field or fields
+//    * @param names? string | string[]
+//    */
+//   disableFields: (names?: string | string[]) => void;
+//   /**
+//    * Enable a field or fields
+//    * @param names? string | string[]
+//    */
+//   enableFields: (names?: string | string[]) => void;
+// }
+
+//#endregion
 
 /**
  * Base interface for managing multiple instances of Form
@@ -15,11 +214,18 @@ export type InitialFormState<ModelType extends Object> = {
  * TODO: Class for FormGroup and FormStepper
  */
 export interface FormManager {
-  forms: Form<typeof Form>[];
-  
+  forms: Form<Object>[];
+
+  validateForms: (idxs: number[]) => void;
 }
 
-
+/**
+ * I'm using strings here for easier comparison.
+ */
+export type InitialFormState<ModelType extends Object> = {
+  model: ModelType | undefined;
+  errors: ValidationError[] | undefined;
+};
 
 //#region Validation
 
@@ -91,16 +297,21 @@ export interface ValidationOptions {
    */
   validator: ValidatorFunction | undefined;
   /**
-   * Validation options come from class-validator ValidatorOptions.
+   * Validation options come from class-validator ClassValidatorOptions.
    *
    * Biggest perf increase comes from setting validationError.target = false
    * (so the whole model is not attached to each error message)
    */
-  options?: Partial<ValidatorOptions>;
+  options?: Partial<ClassValidatorOptions>;
+
+  /**
+   * Optional validation schema.
+   * Decorator free method of validating the model.
+   */
+  schema?: Object;
   /**
    * Name of the property which links errors to fields.
    * Error.property_or_name_or_whatever must match field.name.
-   * ValidationError[name] must match field.name.
    */
   field_error_link_name: keyof ValidationError;
 }
@@ -109,7 +320,7 @@ export interface ValidationOptions {
  * Options passed to validator during validation.
  * Note: this interface used by class-validator
  */
-export interface ValidatorOptions extends Record<string, unknown> {
+export interface ClassValidatorOptions extends Record<string, unknown> {
   /**
    * If set to true then class-validator will print extra warning messages to the console when something is not right.
    */
@@ -145,7 +356,7 @@ export interface ValidatorOptions extends Record<string, unknown> {
    */
   always?: boolean;
   /**
-   * If [groups]{@link ValidatorOptions#groups} is not given or is empty,
+   * If [groups]{@link ClassValidatorOptions#groups} is not given or is empty,
    * ignore decorators with at least one group.
    */
   strictGroups?: boolean;
@@ -181,16 +392,10 @@ export interface ValidatorOptions extends Record<string, unknown> {
 
 //#region Events
 /**
- * Determines which events to validate/clear validation, on.
- * And, you can bring your own event listeners just by adding one on
- * the init.
+ * Determines which events to validate on.
+ * You can insert event listeners just by adding a [string]: boolean
+ * to the constructor's init object.
  * Enabled By Default: blue, change, focus, input, submit
- *
- * Also has the good ole Object.assign in the constructor.
- * It's brazen, but you're a smart kid.
- * Use it wisely.
- *
- * Should be keyof HTMLElementEventMap
  */
 export class OnEvents {
   constructor(init?: Partial<OnEvents>, disableAll: boolean = false) {
@@ -235,7 +440,14 @@ export type LinkValuesOnEvent = "all" | "field";
 //#endregion
 
 //#region Misc
-export type Callback = ((...args: any[]) => any) | (() => any);
+export type Callback =
+  | ((...args: any[]) => any)
+  | (() => any)
+  | void
+  | boolean
+  | string
+  | undefined
+  | Promise<ValidationError[]>;
 
 /**
  * Data format for the reference data items
@@ -247,21 +459,235 @@ export interface RefDataItem {
   data?: any;
 }
 
+export type BaseType = string | number | boolean | symbol | object;
+
 export type RefData = Record<string, RefDataItem[]>;
 
-export type FieldAttributes = Record<Partial<ElementAttributesMap>, any>;
+export type FieldAttributes = Record<ElementAttributesMap & string, BaseType>;
 
 export type ElementAttributesMap =
-  | (keyof HTMLElement &
-      keyof HTMLInputElement &
-      keyof HTMLImageElement &
-      keyof HTMLFieldSetElement &
-      keyof HTMLAudioElement &
-      keyof HTMLButtonElement &
-      keyof HTMLCanvasElement &
-      keyof HTMLFormElement &
-      keyof HTMLSelectElement &
-      keyof HTMLOptionElement)
-  | string;
+  | keyof HTMLElement
+  | keyof HTMLInputElement
+  | keyof HTMLSelectElement
+  | keyof HTMLFieldSetElement
+  | keyof HTMLImageElement
+  | keyof HTMLButtonElement
+  | keyof HTMLCanvasElement
+  | keyof HTMLOptionElement
+  | keyof AriaAttributes;
+
+// All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/
+interface AriaAttributes {
+  /** Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. */
+  "aria-activedescendant"?: string;
+  /** Indicates whether assistive technologies will present all, or only parts of, the changed region based on the change notifications defined by the aria-relevant attribute. */
+  "aria-atomic"?: boolean | "false" | "true";
+  /**
+   * Indicates whether inputting text could trigger display of one or more predictions of the user's intended value for an input and specifies how predictions would be
+   * presented if they are made.
+   */
+  "aria-autocomplete"?: "none" | "inline" | "list" | "both";
+  /** Indicates an element is being modified and that assistive technologies MAY want to wait until the modifications are complete before exposing them to the user. */
+  "aria-busy"?: boolean | "false" | "true";
+  /**
+   * Indicates the current "checked" state of checkboxes, radio buttons, and other widgets.
+   * @see aria-pressed @see aria-selected.
+   */
+  "aria-checked"?: boolean | "false" | "mixed" | "true";
+  /**
+   * Defines the total number of columns in a table, grid, or treegrid.
+   * @see aria-colindex.
+   */
+  "aria-colcount"?: number;
+  /**
+   * Defines an element's column index or position with respect to the total number of columns within a table, grid, or treegrid.
+   * @see aria-colcount @see aria-colspan.
+   */
+  "aria-colindex"?: number;
+  /**
+   * Defines the number of columns spanned by a cell or gridcell within a table, grid, or treegrid.
+   * @see aria-colindex @see aria-rowspan.
+   */
+  "aria-colspan"?: number;
+  /**
+   * Identifies the element (or elements) whose contents or presence are controlled by the current element.
+   * @see aria-owns.
+   */
+  "aria-controls"?: string;
+  /** Indicates the element that represents the current item within a container or set of related elements. */
+  "aria-current"?:
+    | boolean
+    | "false"
+    | "true"
+    | "page"
+    | "step"
+    | "location"
+    | "date"
+    | "time";
+  /**
+   * Identifies the element (or elements) that describes the object.
+   * @see aria-labelledby
+   */
+  "aria-describedby"?: string;
+  /**
+   * Identifies the element that provides a detailed, extended description for the object.
+   * @see aria-describedby.
+   */
+  "aria-details"?: string;
+  /**
+   * Indicates that the element is perceivable but disabled, so it is not editable or otherwise operable.
+   * @see aria-hidden @see aria-readonly.
+   */
+  "aria-disabled"?: boolean | "false" | "true";
+  /**
+   * Indicates what functions can be performed when a dragged object is released on the drop target.
+   * @deprecated in ARIA 1.1
+   */
+  "aria-dropeffect"?: "none" | "copy" | "execute" | "link" | "move" | "popup";
+  /**
+   * Identifies the element that provides an error message for the object.
+   * @see aria-invalid @see aria-describedby.
+   */
+  "aria-errormessage"?: string;
+  /** Indicates whether the element, or another grouping element it controls, is currently expanded or collapsed. */
+  "aria-expanded"?: boolean | "false" | "true";
+  /**
+   * Identifies the next element (or elements) in an alternate reading order of content which, at the user's discretion,
+   * allows assistive technology to override the general default of reading in document source order.
+   */
+  "aria-flowto"?: string;
+  /**
+   * Indicates an element's "grabbed" state in a drag-and-drop operation.
+   * @deprecated in ARIA 1.1
+   */
+  "aria-grabbed"?: boolean | "false" | "true";
+  /** Indicates the availability and type of interactive popup element, such as menu or dialog, that can be triggered by an element. */
+  "aria-haspopup"?:
+    | boolean
+    | "false"
+    | "true"
+    | "menu"
+    | "listbox"
+    | "tree"
+    | "grid"
+    | "dialog";
+  /**
+   * Indicates whether the element is exposed to an accessibility API.
+   * @see aria-disabled.
+   */
+  "aria-hidden"?: boolean | "false" | "true";
+  /**
+   * Indicates the entered value does not conform to the format expected by the application.
+   * @see aria-errormessage.
+   */
+  "aria-invalid"?: boolean | "false" | "true" | "grammar" | "spelling";
+  /** Indicates keyboard shortcuts that an author has implemented to activate or give focus to an element. */
+  "aria-keyshortcuts"?: string;
+  /**
+   * Defines a string value that labels the current element.
+   * @see aria-labelledby.
+   */
+  "aria-label"?: string;
+  /**
+   * Identifies the element (or elements) that labels the current element.
+   * @see aria-describedby.
+   */
+  "aria-labelledby"?: string;
+  /** Defines the hierarchical level of an element within a structure. */
+  "aria-level"?: number;
+  /** Indicates that an element will be updated, and describes the types of updates the user agents, assistive technologies, and user can expect from the live region. */
+  "aria-live"?: "off" | "assertive" | "polite";
+  /** Indicates whether an element is modal when displayed. */
+  "aria-modal"?: boolean | "false" | "true";
+  /** Indicates whether a text box accepts multiple lines of input or only a single line. */
+  "aria-multiline"?: boolean | "false" | "true";
+  /** Indicates that the user may select more than one item from the current selectable descendants. */
+  "aria-multiselectable"?: boolean | "false" | "true";
+  /** Indicates whether the element's orientation is horizontal, vertical, or unknown/ambiguous. */
+  "aria-orientation"?: "horizontal" | "vertical";
+  /**
+   * Identifies an element (or elements) in order to define a visual, functional, or contextual parent/child relationship
+   * between DOM elements where the DOM hierarchy cannot be used to represent the relationship.
+   * @see aria-controls.
+   */
+  "aria-owns"?: string;
+  /**
+   * Defines a short hint (a word or short phrase) intended to aid the user with data entry when the control has no value.
+   * A hint could be a sample value or a brief description of the expected format.
+   */
+  "aria-placeholder"?: string;
+  /**
+   * Defines an element's number or position in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM.
+   * @see aria-setsize.
+   */
+  "aria-posinset"?: number;
+  /**
+   * Indicates the current "pressed" state of toggle buttons.
+   * @see aria-checked @see aria-selected.
+   */
+  "aria-pressed"?: boolean | "false" | "mixed" | "true";
+  /**
+   * Indicates that the element is not editable, but is otherwise operable.
+   * @see aria-disabled.
+   */
+  "aria-readonly"?: boolean | "false" | "true";
+  /**
+   * Indicates what notifications the user agent will trigger when the accessibility tree within a live region is modified.
+   * @see aria-atomic.
+   */
+  "aria-relevant"?:
+    | "additions"
+    | "additions removals"
+    | "additions text"
+    | "all"
+    | "removals"
+    | "removals additions"
+    | "removals text"
+    | "text"
+    | "text additions"
+    | "text removals";
+  /** Indicates that user input is required on the element before a form may be submitted. */
+  "aria-required"?: boolean | "false" | "true";
+  /** Defines a human-readable, author-localized description for the role of an element. */
+  "aria-roledescription"?: string;
+  /**
+   * Defines the total number of rows in a table, grid, or treegrid.
+   * @see aria-rowindex.
+   */
+  "aria-rowcount"?: number;
+  /**
+   * Defines an element's row index or position with respect to the total number of rows within a table, grid, or treegrid.
+   * @see aria-rowcount @see aria-rowspan.
+   */
+  "aria-rowindex"?: number;
+  /**
+   * Defines the number of rows spanned by a cell or gridcell within a table, grid, or treegrid.
+   * @see aria-rowindex @see aria-colspan.
+   */
+  "aria-rowspan"?: number;
+  /**
+   * Indicates the current "selected" state of various widgets.
+   * @see aria-checked @see aria-pressed.
+   */
+  "aria-selected"?: boolean | "false" | "true";
+  /**
+   * Defines the number of items in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM.
+   * @see aria-posinset.
+   */
+  "aria-setsize"?: number;
+  /** Indicates if items in a table or grid are sorted in ascending or descending order. */
+  "aria-sort"?: "none" | "ascending" | "descending" | "other";
+  /** Defines the maximum allowed value for a range widget. */
+  "aria-valuemax"?: number;
+  /** Defines the minimum allowed value for a range widget. */
+  "aria-valuemin"?: number;
+  /**
+   * Defines the current value for a range widget.
+   * @see aria-valuetext.
+   */
+  "aria-valuenow"?: number;
+  /** Defines the human readable text alternative of aria-valuenow for a range widget. */
+  "aria-valuetext"?: string;
+}
 
 //#endregion

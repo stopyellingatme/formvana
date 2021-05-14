@@ -4,12 +4,7 @@
         "target": "esNext",
         "module": "esNext",
         "moduleResolution": "node",
-        "sourceMap": true,
         "allowJs": true,
-        "declaration": true,
-        "declarationMap": true,
-        "declarationDir": "package/lib/typescript",
-        "emitDeclarationOnly": false,
         "noLib": false,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
@@ -17,8 +12,6 @@
         "downlevelIteration": true,
         "esModuleInterop": true,
         "importHelpers": false,
-        "noEmitHelpers": true,
-        "outDir": "package/lib/typescript",
         "lib": [
             "es2018",
             "dom"
@@ -28,11 +21,10 @@
         ]
     },
     "include": [
-        "src/**/*",
+        "example/**/*",
         "package/**/*",
     ],
     "exclude": [
         "node_modules"
     ],
-    "compileOnSave": false
 }

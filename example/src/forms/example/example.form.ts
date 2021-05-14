@@ -1,4 +1,4 @@
-import { get, Writable } from "svelte/store";
+import { get, Writable, writable } from "svelte/store";
 import { Form, OnEvents, RefData, ValidationCallback } from "@formvana";
 import { ExampleModel } from "../../models/ExampleClass";
 import { validate } from "class-validator";
@@ -45,7 +45,7 @@ function initStore() {
   );
 
   // And add it to the store...
-  const { subscribe, update } = form.storify();
+  const { subscribe, update } = writable(form);
 
   return {
     subscribe,
