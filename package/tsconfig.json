@@ -2,7 +2,7 @@
     "compilerOptions": {
         "target": "ESNext",
         "moduleResolution": "node",
-        "noUnusedLocals": false,
+        "noUnusedLocals": true,
         "strict": true,
         "esModuleInterop": true,
         "declaration": true,

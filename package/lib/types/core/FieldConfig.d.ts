@@ -22,6 +22,12 @@ export declare class FieldConfig {
      * Attached using the form.useField method.
      */
     node?: HTMLElement;
+    /**
+     * el can be either String or Svelte Component.
+     * This allows us a more flexible dynamic field generator.
+     * Using a template also allows you to style each input as needed.
+     */
+    selector?: string | SvelteComponent;
     /** Value is a writable store defaulting to undefined. */
     value: Writable<any>;
     /** Defaults to text, can be set to anything though. */
@@ -30,11 +36,11 @@ export declare class FieldConfig {
     label?: string;
     hint?: string;
     /**
-     * el can be either String or Svelte Component.
-     * This allows us a more flexible dynamic field generator.
-     * Using a template also allows you to style each input as needed.
+     * Validation Errors!
+     * We're mainly looking for the "constraints".
+     * One ValidationError object can have multiple errors (constraints)
      */
-    selector?: string | SvelteComponent;
+    errors: Writable<ValidationError | undefined>;
     /**
      * Use styles and classes to apply styling.
      * However, using a template/component is recommended.
@@ -49,12 +55,6 @@ export declare class FieldConfig {
     disabled?: boolean;
     /** Pretty self-explainitory, hide the field. */
     hidden?: boolean;
-    /**
-     * Validation Errors!
-     * We're mainly looking for the "constraints".
-     * One ValidationError object can have multiple errors (constraints)
-     */
-    errors: Writable<ValidationError | undefined>;
     /**
      * Attributes uses a fairly exhaustive map of most HTML Field-ish
      * attributes. Also have the option to use plain JSON Object for

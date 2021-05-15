@@ -3,11 +3,11 @@ import { Form } from "./Form";
  * Base interface for managing multiple instances of Form
  * classes.
  *
- * TODO: Class for FormGroup and FormStepper
+ * @TODO Class for FormGroup and FormStepper
  */
 export interface FormManager {
-    forms: Form<Object>[];
-    validateForms: (idxs: number[]) => void;
+    forms: Array<Form<Object>>;
+    validateForms: (forms: number[]) => void;
 }
 /**
  * I'm using strings here for easier comparison.
@@ -73,10 +73,10 @@ export interface ValidationOptions {
      */
     schema?: Object;
     /**
-     * Name of the property which links errors to fields.
+     * Name of the property which links ERRORS to fields.
      * Error.property_or_name_or_whatever must match field.name.
      */
-    field_error_link_name: keyof ValidationError;
+    field_error_link_name: ValidationError["property"];
 }
 /**
  * Options passed to validator during validation.
@@ -155,8 +155,8 @@ export interface ClassValidatorOptions extends Record<string, unknown> {
  * to the constructor's init object.
  * Enabled By Default: blue, change, focus, input, submit
  */
-export declare class OnEvents {
-    constructor(init?: Partial<OnEvents>, disableAll?: boolean);
+export declare class OnEvents<T extends HTMLElementEventMap> {
+    constructor(init?: Partial<OnEvents<T>>, disableAll?: boolean);
     blur: boolean;
     change: boolean;
     click: boolean;
@@ -192,9 +192,8 @@ export interface RefDataItem {
     value: any;
     data?: any;
 }
-export declare type BaseType = string | number | boolean | symbol | object;
 export declare type RefData = Record<string, RefDataItem[]>;
-export declare type FieldAttributes = Record<ElementAttributesMap & string, BaseType>;
+export declare type FieldAttributes = Record<ElementAttributesMap & string, any>;
 export declare type ElementAttributesMap = keyof HTMLElement | keyof HTMLInputElement | keyof HTMLSelectElement | keyof HTMLFieldSetElement | keyof HTMLImageElement | keyof HTMLButtonElement | keyof HTMLCanvasElement | keyof HTMLOptionElement | keyof AriaAttributes;
 interface AriaAttributes {
     /** Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. */

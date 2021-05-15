@@ -3,7 +3,7 @@ import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
 import { FieldConfig } from ".";
 import { OnEvents, LinkOnEvent, RefData, ValidationError, ValidationCallback, Callback, ValidationOptions, InitialFormState } from "./types";
 /**
- * * Recommended Use:
+ * @Recomended_Use
  *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
  *  - Set the model (if you didn't in the first step)
  *  - Attach reference data (if you didn't in the first step)
@@ -17,14 +17,15 @@ import { OnEvents, LinkOnEvent, RefData, ValidationError, ValidationCallback, Ca
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
  *
- * TODO: Create FormManager interface for dealing with FormGroup and FormStepper classes
- * TODO: Create easy component/pattern for field groups and stepper/wizzard
+ * @TODO Create FormManager interface for dealing with FormGroup and FormStepper classes
+ * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
- * TODO: Allow fields, model and validator to be passed in separately.
+ * @TODO Allow fields, model and validator to be passed in separately.
  *  - This will allow for a more "dynamic" form building experience
  */
 /**
- * Formvana - Form Class
+ * Formvana Form Class
+ *
  * Form is NOT valid, initially.
  *
  * Main Concept: fields and model are separate.
@@ -47,10 +48,34 @@ export declare class Form<ModelType extends Object> {
      */
     fields: FieldConfig[];
     /**
+     * validation_options contains the logic and configuration for
+     * validating the form as well as linking errors to fields.
+     */
+    validation_options: Partial<ValidationOptions>;
+    /**
+     * Errors are attached to their corresponding fields.
+     * This pattern adds flexibility at the cost of a little complexity.
+     *
+     * When a single field is validated, the whole model is validated (if
+     * using class-validator).
+     * We just don't show all the errors to the user.
+     * This way, we know if the form is still invalid, even if we aren't
+     * showing the user any errors (like, pre-submit-button press).
+     */
+    errors: ValidationError[];
+    /** Is the form valid? */
+    valid: Writable<boolean>;
+    /** Has the form state changed from it's initial value? */
+    changed: Writable<boolean>;
+    /** Has the form been altered in any way? */
+    pristine: Writable<boolean>;
+    /** Is the form loading? */
+    loading: Writable<boolean>;
+    /**
      * Form Template Layout
      *
      * Render the form into a custom svelte template!
-     * Use a svelte component.
+     * Use a svelte component. Or use a string as the selector.
      * * The component/template must accept {form} prop
      *
      * Note: add ` types": ["svelte"] ` to tsconfig compilerOptions
@@ -68,32 +93,6 @@ export declare class Form<ModelType extends Object> {
      */
     refs?: RefData;
     /**
-     * validation_options contains the logic and configuration for
-     * validating the form as well as linking errors to fields.
-     */
-    validation_options: Partial<ValidationOptions>;
-    /**
-     * The errors are of type ValidationError.
-     * Errors are attached to their corresponding fields.
-     * This pattern adds flexibility at the cost of a little complexity.
-     *
-     * When a single field is validated, the whole model is validated. We just don't
-     * show all the errors to the user. This way, we know if the form is still invalid,
-     * even if we aren't showing the user any errors (like, pre-submit-button press).
-     */
-    errors: ValidationError[];
-    /**
-     * These next properties are all pretty self-explanatory.
-     *
-     * this.valid is a svelte store so we can change the state of the variable
-     * inside of the class and it (the change) will be reflected
-     * in the external form context.
-     */
-    valid: Writable<boolean>;
-    changed: Writable<boolean>;
-    pristine: Writable<boolean>;
-    loading: Writable<boolean>;
-    /**
      * Emits value changes as a plain JS object.
      * Format: { [field.name]: value }
      *
@@ -109,19 +108,21 @@ export declare class Form<ModelType extends Object> {
      * Which events should the form do things on?
      * (validate, link values, hide/disable fields)
      */
-    on_events: OnEvents;
+    on_events: OnEvents<HTMLElementEventMap>;
+    /** When to link this.field values to this.model values */
     link_fields_to_model: LinkOnEvent;
     /**
      * Use the NAME of the field (field.name) to disable/hide the field.
      */
-    hidden_fields?: Array<FieldConfig["name"]>;
-    disabled_fields?: Array<FieldConfig["name"]>;
+    hidden_fields?: Array<keyof ModelType>;
+    disabled_fields?: Array<keyof ModelType>;
     /**
      * Determines the ordering of this.fields.
      * Simply an array of field names (or group names or stepper names)
      * in the order to be displayed
      */
     private field_order?;
+    /** Used to make checking for disabled/hidden fields faster */
     private field_names;
     /**
      * We keep track of required fields because we let class-validator handle everything
@@ -139,7 +140,7 @@ export declare class Form<ModelType extends Object> {
      */
     private buildFields;
     /**
-     * ATTACH TO SAME ELEMENT AS FIELD.NAME!
+     * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!
      * This hooks up the event listeners!
      *
      * This is for Svelte's "use:FUNCTION" feature.
@@ -202,7 +203,7 @@ export declare class Form<ModelType extends Object> {
      * names in the order to be displayed.
      * Leftover fields are appended to bottom of form.
      */
-    setFieldOrder: (order: string[]) => void;
+    setFieldOrder: (order: Array<keyof ModelType>) => void;
     /**
      * Set attributes on a given set of fields.
      *
@@ -210,5 +211,5 @@ export declare class Form<ModelType extends Object> {
      * names = [field.name, field.name],
      * attributes = { hidden: true };
      */
-    setFieldAttributes: (names: string | string[], attributes: Partial<FieldConfig>) => void;
+    setFieldAttributes: (names: string | Array<keyof ModelType>, attributes: Partial<FieldConfig>) => void;
 }

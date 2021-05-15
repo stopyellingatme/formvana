@@ -7,25 +7,27 @@ import {
   ValidationCallback,
   ValidationError,
   InitialFormState,
-  FieldAttributes,
   LinkOnEvent,
 } from "./types";
 
-//#region Utility Functions
+// #region Utility Functions
 
-// Get the form field by name
-export function _get(name: string, fields: FieldConfig[]): FieldConfig {
+/** Get the form field by name */
+export function _get<T extends Object>(
+  name: keyof T,
+  fields: FieldConfig[]
+): FieldConfig {
   return fields.filter((f) => f.name === name)[0];
 }
 
 /**
- *
  * Build the field configs from this.model using metadata-reflection.
- * More comments inside...
+ * Grab the editableProperties from the @field decorator.
+ *
+ * @TODO Create method to use plain JSON as model, fields and validation schema
  */
 export function _buildFormFields<T extends Object>(
   model: T,
-  // Grab the editableProperties from the @field decorator
   props: string[] = Reflect.getMetadata("editableProperties", model)
 ): FieldConfig[] {
   // Map the @field fields to the form.fields
@@ -33,14 +35,8 @@ export function _buildFormFields<T extends Object>(
     // Get the @FieldConfig using metadata reflection
     const field: FieldConfig = new FieldConfig(prop, {
       ...Reflect.getMetadata("fieldConfig", model, prop),
+      value: model[prop as keyof T],
     });
-
-    // If the model has a value, attach it to the field config
-    // 0, "", [], etc. are set in the constructor based on type.
-    if (model[prop as keyof T]) {
-      field.value.set(model[prop as keyof T]);
-      // field.setInitialValue(model[prop as keyof T]);
-    }
 
     // We made it. Return the field config and let's generate some inputs!
     return field;
@@ -73,7 +69,7 @@ export function _setValueChanges(
 
 //#endregion
 
-//#region HTML Event Helpers
+// #region HTML Event Helpers
 
 /**
  * Attach the OnEvents events to each form.field.
@@ -81,38 +77,32 @@ export function _setValueChanges(
  */
 export function _attachEventListeners(
   field: FieldConfig,
-  on_events: OnEvents,
+  on_events: OnEvents<HTMLElementEventMap>,
   callback: Callback
 ): void {
   Object.entries(on_events).forEach(([eventName, shouldListen]) => {
-    // If shouldListen true, then add the event listener
+    /** If shouldListen true, then add the event listener */
     if (shouldListen) {
       field.addEventListener(eventName as keyof HTMLElementEventMap, callback);
-      // field.node &&
-      //   field.node.addEventListener(
-      //     eventName,
-      //     (e: Event) => (callback instanceof Function ? callback(e) : callback),
-      //     false
-      //   );
     }
   });
 }
 
-export function _addCallbackToField<T>(
+export function _addCallbackToField<T extends Object>(
   form: Form<T>,
   field: FieldConfig,
   event: keyof HTMLElementEventMap,
   callback: ValidationCallback | Callback,
-  required_fields: string[],
-  field_names: string[],
-  hidden_fields?: Array<FieldConfig["name"]>,
-  disabled_fields?: Array<FieldConfig["name"]>
+  required_fields: Array<keyof T>,
+  field_names: Array<keyof T>,
+  hidden_fields?: Array<keyof T>,
+  disabled_fields?: Array<keyof T>
 ): void {
-  // Check if callback is of type ValidationCallback
-  if ((<ValidationCallback>callback).when) {
+  /** Check if callback is of type ValidationCallback */
+  if (callback && (<ValidationCallback>callback).when) {
     field.addEventListener(
       event,
-      _handleValidationEvent(
+      _executeValidationEvent(
         form,
         required_fields,
         field_names,
@@ -129,26 +119,26 @@ export function _addCallbackToField<T>(
 
 //#endregion
 
-//#region Linking Utilities
+// #region Linking Utilities
 
-// Link values from FIELDS toMODEL or MODEL to FIELDS
+/**  Link values from FIELDS to MODEL or MODEL to FIELDS */
 export function _linkValues<ModelType extends Object>(
   from_fields_to_model: boolean,
   fields: FieldConfig[],
   model: ModelType
 ): void {
-  // Still the fastest way i've seen to loop in JS.
+  /** Still the fastest way i've seen to loop in JS. */
   let i = 0,
     len = fields.length;
   for (; len > i; ++i) {
-    // Get name and value of the field
+    /** Get name and value of the field */
     const name = fields[i].name,
       val = fields[i].value;
-    // Link field[values] to model[values]
+    /**  Link field[values] to model[values] */
     if (from_fields_to_model) {
       model[name as keyof ModelType] = get(val);
     } else {
-      // Link form.model[values] to the form.fields[values]
+      /**  Link form.model[values] to the form.fields[values] */
       val.set(model[name as keyof ModelType]);
     }
   }
@@ -161,9 +151,11 @@ export function _linkValues<ModelType extends Object>(
 export function _linkFieldErrors(
   errors: ValidationError[],
   field: FieldConfig,
-  field_name: keyof ValidationError
+  field_name: ValidationError["property"]
 ): void {
-  const error = errors.filter((e) => e[field_name] === field.name);
+  const error = errors.filter(
+    (e) => e[field_name as keyof ValidationError] === field.name
+  );
   // Check if there's an error for the field
   if (error && error.length > 0) {
     field.errors.set(error[0]);
@@ -174,13 +166,21 @@ export function _linkFieldErrors(
 
 export function _linkAllErrors(
   errors: ValidationError[],
-  fields: FieldConfig[]
+  fields: FieldConfig[],
+  field_error_link_name: ValidationError["property"]
 ): void {
   errors.forEach((err) => {
-    if (err && err.property) {
-      const f = _get(err.property, fields);
-      f.errors.set(err);
+    let k: keyof typeof err;
+    for (k in err) {
+      if (k === field_error_link_name) {
+        const f = _get(err[field_error_link_name], fields);
+        f.errors.set(err);
+      }
     }
+    // if (err && err[field_error_link_name]) {
+    //   const f = _get(err[field_error_link_name], fields);
+    //   f.errors.set(err);
+    // }
   });
 }
 
@@ -204,7 +204,7 @@ export function _hanldeValueLinking<T extends Object>(
 
 //#endregion
 
-//#region Validation Helpers
+// #region Validation Helpers
 
 function _executeValidationCallbacks(
   when_to_call: "before" | "after",
@@ -251,12 +251,12 @@ export function _executeCallbacks(callbacks: Callback | Callback[]): void {
  * Corresponds to the form.on_events field.
  *
  */
-export function _handleValidationEvent<T extends Object>(
+export function _executeValidationEvent<T extends Object>(
   form: Form<T>,
-  required_fields: string[],
-  field_names: string[],
-  hidden_fields?: Array<FieldConfig["name"]>,
-  disabled_fields?: Array<FieldConfig["name"]>,
+  required_fields: Array<keyof T>,
+  field_names: Array<keyof T>,
+  hidden_fields?: Array<keyof T>,
+  disabled_fields?: Array<keyof T>,
   field?: FieldConfig,
   callbacks?: ValidationCallback[]
 ): Promise<ValidationError[]> | undefined {
@@ -306,7 +306,7 @@ export function _handleValidationEvent<T extends Object>(
 export async function _handleFormValidation<T extends Object>(
   form: Form<T>,
   errors: ValidationError[],
-  required_fields: string[],
+  required_fields: Array<keyof T>,
   field?: FieldConfig
 ): Promise<ValidationError[]> {
   // There are errors!
@@ -325,7 +325,11 @@ export async function _handleFormValidation<T extends Object>(
       }
     } else {
       // This is validatino for the whole form!
-      _linkAllErrors(errors, form.fields);
+      _linkAllErrors(
+        errors,
+        form.fields,
+        form.validation_options.field_error_link_name
+      );
     }
 
     // All required fields are valid?
@@ -354,9 +358,9 @@ export async function _handleFormValidation<T extends Object>(
  * Check if there are any required fields in the errors.
  * If there are no required fields in the errors, the form is valid
  */
-export function _requiredFieldsValid(
+export function _requiredFieldsValid<T extends Object>(
   errors: ValidationError[],
-  required_fields: string[]
+  required_fields: Array<keyof T>
 ): boolean {
   if (errors.length === 0) return true;
   // Go ahead and return if there are no errors
@@ -370,7 +374,7 @@ export function _requiredFieldsValid(
    */
   const errs = errors.map((e) => e.property);
   for (; len > i; ++i) {
-    if (errs.indexOf(required_fields[i]) !== -1) {
+    if (errs.indexOf(required_fields[i] as keyof ValidationError) !== -1) {
       return false;
     }
   }
@@ -379,7 +383,7 @@ export function _requiredFieldsValid(
 
 //#endregion
 
-//#region - Form State
+// #region Form State
 
 /**
  * Is the current form state different than the initial state?
@@ -408,8 +412,9 @@ export function _setInitialState<T extends Object>(
   initial_state: InitialFormState<T>
 ): InitialFormState<T> {
   initial_state.model = Object.assign({}, form.model);
+
   if (form.errors && form.errors.length > 0) {
-    initial_state.errors = form.errors.map((e) => e);
+    initial_state.errors = [...form.errors];
   } else {
     initial_state.errors = [];
   }
@@ -423,39 +428,50 @@ export function _resetState<T extends Object>(
   form: Form<T>,
   initial_state: InitialFormState<T>
 ): void {
-  // !CANNOT OVERWRITE MODEL. VALIDATION GETS FUCKED UP!
-  let k: keyof Form<T>["model"];
-  if (initial_state.model)
+  /** !CANNOT OVERWRITE MODEL. VALIDATION GETS FUCKED UP! */
+  let k: keyof T;
+  if (initial_state.model) {
     for (k in initial_state.model) {
       form.model[k] = initial_state.model[k];
     }
+  }
 
+  /** Clear the form errors before assigning initial_state.errors */
+  form.clearErrors();
   if (initial_state.errors && initial_state.errors.length > 0) {
-    form.errors = initial_state.errors.map((e) => e);
+    form.errors = [...initial_state.errors];
   } else {
     form.errors = [];
   }
+  /** Done serializing the initial_state */
 
+  /** Link the values, now */
   _linkValues(false, form.fields, form.model);
 
+  /** If there were errors in the inital_state
+   *  link them to each field
+   */
   if (form.errors && form.errors.length > 0) {
-    _linkAllErrors(form.errors, form.fields);
+    _linkAllErrors(
+      form.errors,
+      form.fields,
+      form.validation_options.field_error_link_name
+    );
   }
-
+  /** Reset the value changes and the "changed" store */
   form.value_changes = writable({});
-  form.pristine.set(true);
   form.changed.set(false);
 }
 
 //#endregion
 
-//#region - Styling
+// #region - Styling
 
 /**
  * Using this.field_order, rearrange the order of the fields.
  */
-export function _setFieldOrder(
-  field_order: string[],
+export function _setFieldOrder<T extends Object>(
+  field_order: Array<keyof T>,
   fields: FieldConfig[]
 ): FieldConfig[] {
   let newLayout: FieldConfig[] = [];
@@ -469,7 +485,7 @@ export function _setFieldOrder(
       newLayout.push(field);
     } else if (
       leftovers.indexOf(field) === -1 &&
-      field_order.indexOf(field.name) === -1
+      field_order.indexOf(field.name as keyof T) === -1
     ) {
       // Field is not in the order, so push it to bottom of order.
       leftovers.push(field);
@@ -482,9 +498,9 @@ export function _setFieldOrder(
 /**
  * Set any attributes on the given fields.
  */
-export function _setFieldAttributes(
-  target_fields: Array<FieldConfig["name"]>,
-  all_field_names: Array<FieldConfig["name"]>,
+export function _setFieldAttributes<T extends Object>(
+  target_fields: Array<keyof T>,
+  all_field_names: Array<keyof T>,
   fields: FieldConfig[],
   attributes: Partial<FieldConfig>
 ): void {
@@ -506,8 +522,8 @@ export function _setFieldAttributes(
 /**
  * Set any attributes on the given field.
  */
-export function _setFieldAttribute(
-  name: string,
+export function _setFieldAttribute<T extends Object>(
+  name: keyof T,
   fields: FieldConfig[],
   attributes: Partial<FieldConfig>
 ): void {

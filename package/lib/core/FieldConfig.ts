@@ -34,6 +34,12 @@ export class FieldConfig {
       );
     }
 
+    /** Check if the value is still a Writable store */
+    if (!this.value || !(<Writable<any>>this.value).subscribe) {
+      /** If it's not, make it a writable store. */
+      this.value = writable(this.value);
+    }
+
     /**  Set the type attribute if it's not already set */
     if (this.attributes && !this.attributes["type"]) {
       this.attributes["type"] = this.type;
@@ -100,6 +106,13 @@ export class FieldConfig {
    */
   node?: HTMLElement;
 
+  /**
+   * el can be either String or Svelte Component.
+   * This allows us a more flexible dynamic field generator.
+   * Using a template also allows you to style each input as needed.
+   */
+  selector?: string | SvelteComponent;
+
   /** Value is a writable store defaulting to undefined. */
   value: Writable<any> = writable(undefined);
   /** Defaults to text, can be set to anything though. */
@@ -110,12 +123,11 @@ export class FieldConfig {
   hint?: string;
 
   /**
-   * el can be either String or Svelte Component.
-   * This allows us a more flexible dynamic field generator.
-   * Using a template also allows you to style each input as needed.
+   * Validation Errors!
+   * We're mainly looking for the "constraints".
+   * One ValidationError object can have multiple errors (constraints)
    */
-  selector?: string | SvelteComponent;
-  // template?: SvelteComponent;
+  errors: Writable<ValidationError | undefined> = writable(undefined);
 
   /**
    * Use styles and classes to apply styling.
@@ -133,13 +145,6 @@ export class FieldConfig {
   disabled?: boolean;
   /** Pretty self-explainitory, hide the field. */
   hidden?: boolean;
-
-  /**
-   * Validation Errors!
-   * We're mainly looking for the "constraints".
-   * One ValidationError object can have multiple errors (constraints)
-   */
-  errors: Writable<ValidationError | undefined> = writable(undefined);
 
   /**
    * Attributes uses a fairly exhaustive map of most HTML Field-ish
