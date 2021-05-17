@@ -272,7 +272,7 @@ export class Form<ModelType extends Object> {
    * e.g. <input/> -- <button/> -- <select/> -- etc.
    * Check examples folder for more details.
    */
-  useField = (node: HTMLElement & { name: string }): void => {
+  useField = (node: HTMLElement & { name: keyof ModelType }): void => {
     /** Attach HTML Node to field so we can remove event listeners later */
     const field = _get(node.name, this.fields);
     field.node = node;
@@ -380,7 +380,7 @@ export class Form<ModelType extends Object> {
    * If want to (in)validate a specific field for any reason.
    */
   validateField = (
-    field_name: string,
+    field_name: keyof ModelType,
     withMessage?: string,
     callbacks?: ValidationCallback[]
   ): void => {
@@ -397,7 +397,7 @@ export class Form<ModelType extends Object> {
       );
     } else {
       const err = new ValidationError(
-        field_name,
+        field_name as string,
         { error: withMessage },
         { value: get(field.value) }
       );
@@ -418,7 +418,7 @@ export class Form<ModelType extends Object> {
   attachCallbacks = (
     event: keyof HTMLElementEventMap,
     callback: Callback | ValidationCallback,
-    field_names: string | string[]
+    field_names: keyof ModelType | Array<keyof ModelType>
   ): void => {
     if (Array.isArray(field_names)) {
       const fields = field_names.map((f) => _get(f, this.fields));
@@ -462,7 +462,7 @@ export class Form<ModelType extends Object> {
   // #region - Utility Methods
 
   // Get Field by name
-  get = (field_name: string): FieldConfig => {
+  get = (field_name: keyof ModelType): FieldConfig => {
     return _get(field_name, this.fields);
   };
 

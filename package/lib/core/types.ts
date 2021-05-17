@@ -234,10 +234,10 @@ export type Callback =
   | ((...args: any[]) => any)
   | (() => any)
   | void
+  | undefined
   | boolean
   | string
-  | undefined
-  | Promise<ValidationError[]>;
+  | Promise<any>;
 
 /**
  * Data format for the reference data items

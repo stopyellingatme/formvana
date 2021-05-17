@@ -25,6 +25,7 @@ export declare function _setValueChanges(changes: Writable<Record<string, any>>,
  */
 export declare function _attachEventListeners(field: FieldConfig, on_events: OnEvents<HTMLElementEventMap>, callback: Callback): void;
 export declare function _addCallbackToField<T extends Object>(form: Form<T>, field: FieldConfig, event: keyof HTMLElementEventMap, callback: ValidationCallback | Callback, required_fields: Array<keyof T>, field_names: Array<keyof T>, hidden_fields?: Array<keyof T>, disabled_fields?: Array<keyof T>): void;
+/**  Link values from FIELDS to MODEL or MODEL to FIELDS */
 export declare function _linkValues<ModelType extends Object>(from_fields_to_model: boolean, fields: FieldConfig[], model: ModelType): void;
 /**
  * Link form.errors to it's corresponding field.errors

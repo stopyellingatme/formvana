@@ -136,7 +136,7 @@ export declare class Form<ModelType extends Object> {
      * Builds the fields from the model.
      * Builds the field configs via this.model using metadata-reflection.
      *
-     * TODO: Allow JSON model and schema validation/setup
+     * @TODO Allow plain JSON model, fields and schema validation/setup
      */
     private buildFields;
     /**
@@ -152,7 +152,7 @@ export declare class Form<ModelType extends Object> {
      * Check examples folder for more details.
      */
     useField: (node: HTMLElement & {
-        name: string;
+        name: keyof ModelType;
     }) => void;
     /**
      * Load new data into the form and build the fields.
@@ -181,21 +181,23 @@ export declare class Form<ModelType extends Object> {
     /**
      * If want to (in)validate a specific field for any reason.
      */
-    validateField: (field_name: string, withMessage?: string | undefined, callbacks?: ValidationCallback[] | undefined) => void;
+    validateField: (field_name: keyof ModelType, withMessage?: string | undefined, callbacks?: ValidationCallback[] | undefined) => void;
     /**
      * Attach a callback to a field or array of fields.
      * If the callback if type ValidationCallback it will be added
      * to the validation handler
      */
-    attachCallbacks: (event: keyof HTMLElementEventMap, callback: Callback | ValidationCallback, field_names: string | string[]) => void;
+    attachCallbacks: (event: keyof HTMLElementEventMap, callback: Callback | ValidationCallback, field_names: keyof ModelType | Array<keyof ModelType>) => void;
     clearErrors: () => void;
-    get: (field_name: string) => FieldConfig;
+    get: (field_name: keyof ModelType) => FieldConfig;
     /**
      *! Make sure to call this when the component is unloaded/destroyed
      * Removes all event listeners and clears the form state.
      */
     destroy: () => void;
+    /** Resets to the inital state of the form. */
     reset: () => void;
+    /** Well, this updates the initial state of the form. */
     updateInitialState: () => void;
     /**
      * Set the field order.

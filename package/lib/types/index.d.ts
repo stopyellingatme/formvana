@@ -140,7 +140,7 @@ declare class Form<ModelType extends Object> {
      * Builds the fields from the model.
      * Builds the field configs via this.model using metadata-reflection.
      *
-     * TODO: Allow JSON model and schema validation/setup
+     * @TODO Allow plain JSON model, fields and schema validation/setup
      */
     private buildFields;
     /**
@@ -156,7 +156,7 @@ declare class Form<ModelType extends Object> {
      * Check examples folder for more details.
      */
     useField: (node: HTMLElement & {
-        name: string;
+        name: keyof ModelType;
     }) => void;
     /**
      * Load new data into the form and build the fields.
@@ -187,19 +187,19 @@ declare class Form<ModelType extends Object> {
     /**
      * If want to (in)validate a specific field for any reason.
      */
-    validateField: (field_name: string, withMessage?: string | undefined, callbacks?: ValidationCallback[] | undefined) => void;
+    validateField: (field_name: keyof ModelType, withMessage?: string | undefined, callbacks?: ValidationCallback[] | undefined) => void;
     /**
      * Attach a callback to a field or array of fields.
      * If the callback if type ValidationCallback it will be added
      * to the validation handler
      */
-    attachCallbacks: (event: keyof HTMLElementEventMap, callback: Callback | ValidationCallback, field_names: string | string[]) => void;
+    attachCallbacks: (event: keyof HTMLElementEventMap, callback: Callback | ValidationCallback, field_names: keyof ModelType | Array<keyof ModelType>) => void;
     // Clear ALL the errors.
     clearErrors: () => void;
     //#endregion
     // #region - Utility Methods
     // Get Field by name
-    get: (field_name: string) => FieldConfig;
+    get: (field_name: keyof ModelType) => FieldConfig;
     /**
      *! Make sure to call this when the component is unloaded/destroyed
      * Removes all event listeners and clears the form state.
@@ -207,9 +207,9 @@ declare class Form<ModelType extends Object> {
     destroy: () => void;
     //#endregion
     // #region - Form State
-    // Resets to the inital state of the form.
+    /** Resets to the inital state of the form. */
     reset: () => void;
-    // Well, this updates the initial state of the form.
+    /** Well, this updates the initial state of the form. */
     updateInitialState: () => void;
     //#endregion
     // #region - Layout
@@ -723,7 +723,7 @@ declare function _attachEventListeners(field: FieldConfig, on_events: OnEvents<H
 declare function _addCallbackToField<T extends Object>(form: Form<T>, field: FieldConfig, event: keyof HTMLElementEventMap, callback: ValidationCallback | Callback, required_fields: Array<keyof T>, field_names: Array<keyof T>, hidden_fields?: Array<keyof T>, disabled_fields?: Array<keyof T>): void;
 //#endregion
 // #region Linking Utilities
-// Link values from FIELDS toMODEL or MODEL to FIELDS
+/**  Link values from FIELDS to MODEL or MODEL to FIELDS */
 declare function _linkValues<ModelType extends Object>(from_fields_to_model: boolean, fields: FieldConfig[], model: ModelType): void;
 /**
  * Link form.errors to it's corresponding field.errors
