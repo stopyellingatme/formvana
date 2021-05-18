@@ -47,7 +47,7 @@ declare class Form<ModelType extends Object> {
      * Fields are built from the model's metadata using reflection.
      * If model is set, call buildFields().
      */
-    fields: FieldConfig[];
+    fields: FieldConfig<ModelType>[];
     /**
      * validation_options contains the logic and configuration for
      * validating the form as well as linking errors to fields.
@@ -99,7 +99,7 @@ declare class Form<ModelType extends Object> {
      *
      * Similar to Angular form.valueChanges
      */
-    value_changes: Writable<Record<string, any>>;
+    value_changes: Writable<Record<keyof ModelType | any, any>>;
     /**
      * This is the model's initial state.
      * Shove the stateful_items into the inital state for a decent snapshot.
@@ -199,7 +199,7 @@ declare class Form<ModelType extends Object> {
     //#endregion
     // #region - Utility Methods
     // Get Field by name
-    get: (field_name: keyof ModelType) => FieldConfig;
+    get: (field_name: keyof ModelType) => FieldConfig<ModelType>;
     /**
      *! Make sure to call this when the component is unloaded/destroyed
      * Removes all event listeners and clears the form state.
@@ -227,7 +227,7 @@ declare class Form<ModelType extends Object> {
      * names = [field.name, field.name],
      * attributes = { hidden: true };
      */
-    setFieldAttributes: (names: string | Array<keyof ModelType>, attributes: Partial<FieldConfig>) => void;
+    setFieldAttributes: (names: string | Array<keyof ModelType>, attributes: Partial<FieldConfig<ModelType>>) => void;
 }
 /**
  * Base interface for managing multiple instances of Form
@@ -240,13 +240,14 @@ interface FormManager {
     validateForms: (forms: number[]) => void;
 }
 /**
- * I'm using strings here for easier comparison.
+ * Keeping it simple. Just keep up with model and errors.
  */
 type InitialFormState<ModelType extends Object> = {
     model: ModelType | undefined;
     errors: ValidationError[] | undefined;
 };
 // #region Validation
+/** Using "when" gives us a little more flexibilty. */
 interface ValidationCallback {
     callback: Callback;
     /**
@@ -255,6 +256,9 @@ interface ValidationCallback {
      */
     when: "before" | "after";
 }
+/** Pretty much any funciton as long as it returns a Promise with
+ * Validation Error array.
+ */
 type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
 interface ValidationErrorType {
     target?: Object; // Object that was validated.
@@ -266,6 +270,7 @@ interface ValidationErrorType {
     };
     children?: ValidationErrorType[];
 }
+/** This makes it easier to create validation errors. */
 declare class ValidationError {
     /**
      * @param errors essentially Record<string #1, string #2>
@@ -286,6 +291,7 @@ declare class ValidationError {
     };
     children?: ValidationErrorType[];
 }
+/** Form Validation Options  */
 interface ValidationOptions {
     /**
      * This is the (validation) function that will be called when validating.
@@ -303,6 +309,8 @@ interface ValidationOptions {
     /**
      * Optional validation schema.
      * Decorator free method of validating the model.
+     *
+     * @TODO Create a way to validate JSON model
      */
     schema?: Object;
     /**
@@ -419,7 +427,8 @@ type LinkOnEvent = "always" | "valid";
 type LinkValuesOnEvent = "all" | "field";
 //#endregion
 // #region Misc
-type Callback = ((...args: any[]) => any) | (() => any) | void | boolean | string | undefined | Promise<ValidationError[]>;
+/** Catchall type for giving callbacks a bit more typesafety */
+type Callback = ((...args: any[]) => any) | (() => any) | void | undefined | boolean | string | Promise<any>;
 /**
  * Data format for the reference data items
  * Form.refs are of type Record<string, RefDataItem[]>
@@ -429,10 +438,14 @@ interface RefDataItem {
     value: any;
     data?: any;
 }
+/** Helpful shape for loading in reference data for the Form */
 type RefData = Record<string, RefDataItem[]>;
+/** This gives us a pretty exhaustive typesafe map of element attributes */
 type FieldAttributes = Record<ElementAttributesMap & string, any>;
 type ElementAttributesMap = keyof HTMLElement | keyof HTMLInputElement | keyof HTMLSelectElement | keyof HTMLFieldSetElement | keyof HTMLImageElement | keyof HTMLButtonElement | keyof HTMLCanvasElement | keyof HTMLOptionElement | keyof AriaAttributes;
-// All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/
+/** All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/
+ * This is here because there is no AriaAttrubutes type in the default library.
+ */
 interface AriaAttributes {
     /** Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. */
     "aria-activedescendant"?: string;
@@ -626,15 +639,15 @@ interface AriaAttributes {
  * It is simply a vehicle to help give the form generator
  * an easy-to-use format to work with.
  */
-declare class FieldConfig {
-    constructor(name: string, init?: Partial<FieldConfig>);
+declare class FieldConfig<T extends Object> {
+    constructor(name: keyof T, init?: Partial<FieldConfig<T>>);
     /**
      * Name of the class property.
      * Only set "name" if you are using FieldConfig apart from
      * your object/model.
      * I.e. you are using plain JSON rather than a TS class.
      */
-    readonly name: string;
+    readonly name: keyof T;
     /**
      * HTML Element which the field is attached to.
      * Attached using the form.useField method.
@@ -694,17 +707,17 @@ declare class FieldConfig {
     clear: () => void | undefined;
     addEventListener: (event: keyof HTMLElementEventMap, callback: ValidationCallback | Callback) => void;
 }
-declare function field(config: Partial<FieldConfig>): (target: any, propertyKey: string) => void;
+declare function field<T extends Object>(config: Partial<FieldConfig<T>>): (target: any, propertyKey: string) => void;
 // #region Utility Functions
 /** Get the form field by name */
-declare function _get<T extends Object>(name: keyof T, fields: FieldConfig[]): FieldConfig;
+declare function _get<T extends Object>(name: keyof T, fields: FieldConfig<T>[]): FieldConfig<T>;
 /**
  * Build the field configs from this.model using metadata-reflection.
  * Grab the editableProperties from the @field decorator.
  *
  * @TODO Create method to use plain JSON as model, fields and validation schema
  */
-declare function _buildFormFields<T extends Object>(model: T, props?: string[]): FieldConfig[];
+declare function _buildFormFields<T extends Object>(model: T, props?: string[]): FieldConfig<T>[];
 /**
  * Helper function for value_change emitter.
  * Write the form's value changes to form.value_changes.
@@ -712,26 +725,33 @@ declare function _buildFormFields<T extends Object>(model: T, props?: string[]):
  * @param changes incoming value changes
  * @param field field emitting the changes
  */
-declare function _setValueChanges(changes: Writable<Record<string, any>>, field: FieldConfig): void;
+declare function _setValueChanges<T extends Object>(changes: Writable<Record<keyof T, any>>, field: FieldConfig<T>): void;
 //#endregion
 // #region HTML Event Helpers
 /**
  * Attach the OnEvents events to each form.field.
  * Parent: form.useField(...)
  */
-declare function _attachEventListeners(field: FieldConfig, on_events: OnEvents<HTMLElementEventMap>, callback: Callback): void;
-declare function _addCallbackToField<T extends Object>(form: Form<T>, field: FieldConfig, event: keyof HTMLElementEventMap, callback: ValidationCallback | Callback, required_fields: Array<keyof T>, field_names: Array<keyof T>, hidden_fields?: Array<keyof T>, disabled_fields?: Array<keyof T>): void;
+declare function _attachEventListeners<T extends Object>(field: FieldConfig<T>, on_events: OnEvents<HTMLElementEventMap>, callback: Callback): void;
+declare function _addCallbackToField<T extends Object>(form: Form<T>, field: FieldConfig<T>, event: keyof HTMLElementEventMap, callback: ValidationCallback | Callback, required_fields: Array<keyof T>): void;
 //#endregion
 // #region Linking Utilities
 /**  Link values from FIELDS to MODEL or MODEL to FIELDS */
-declare function _linkValues<ModelType extends Object>(from_fields_to_model: boolean, fields: FieldConfig[], model: ModelType): void;
+declare function _linkValues<ModelType extends Object>(from_fields_to_model: boolean, fields: FieldConfig<ModelType>[], model: ModelType): void;
 /**
  * Link form.errors to it's corresponding field.errors
  * Via error[field_name]
  */
-declare function _linkFieldErrors(errors: ValidationError[], field: FieldConfig, field_name: ValidationError["property"]): void;
-declare function _linkAllErrors(errors: ValidationError[], fields: FieldConfig[], field_error_link_name: ValidationError["property"]): void;
-declare function _hanldeValueLinking<T extends Object>(model: T, fields: FieldConfig[], link_fields_to_model: LinkOnEvent): void;
+declare function _linkFieldErrors<T extends Object>(errors: ValidationError[], field: FieldConfig<T>, field_name: ValidationError["property"]): void;
+/**
+ * Link all Validation Errors on Form.errors to each field via the
+ * field_error_link_name.
+ */
+declare function _linkAllErrors<T extends Object>(errors: ValidationError[], fields: FieldConfig<T>[], field_error_link_name: ValidationError["property"]): void;
+/** When should we link the fields to the model?
+ * "alwyas" | "valid" (when valid)
+ */
+declare function _hanldeValueLinking<T extends Object>(model: T, fields: FieldConfig<T>[], link_fields_to_model: LinkOnEvent): void;
 /**
  * This is used to add functions and callbacks to the OnEvent
  * handler. Functions can be added in a plugin-style manner now.
@@ -742,7 +762,7 @@ declare function _executeCallbacks(callbacks: Callback | Callback[]): void;
  * Corresponds to the form.on_events field.
  *
  */
-declare function _executeValidationEvent<T extends Object>(form: Form<T>, required_fields: Array<keyof T>, field_names: Array<keyof T>, hidden_fields?: Array<keyof T>, disabled_fields?: Array<keyof T>, field?: FieldConfig, callbacks?: ValidationCallback[]): Promise<ValidationError[]> | undefined;
+declare function _executeValidationEvent<T extends Object>(form: Form<T>, required_fields: Array<keyof T>, field?: FieldConfig<T>, callbacks?: ValidationCallback[]): Promise<ValidationError[]> | undefined;
 /**
  * Handle all the things associated with validation!
  * Link the errors to the fields.
@@ -750,7 +770,7 @@ declare function _executeValidationEvent<T extends Object>(form: Form<T>, requir
  * Link values from fields to model if
  * form.link_fields_to_model === LinkOnEvent.Valid is true.
  */
-declare function _handleFormValidation<T extends Object>(form: Form<T>, errors: ValidationError[], required_fields: Array<keyof T>, field?: FieldConfig): Promise<ValidationError[]>;
+declare function _handleFormValidation<T extends Object>(form: Form<T>, errors: ValidationError[], required_fields: Array<keyof T>, field?: FieldConfig<T>): Promise<ValidationError[]>;
 /**
  * TODO: Clean up this requiredFieldsValid implementation. Seems too clunky.
  *
@@ -780,13 +800,13 @@ declare function _resetState<T extends Object>(form: Form<T>, initial_state: Ini
 /**
  * Using this.field_order, rearrange the order of the fields.
  */
-declare function _setFieldOrder<T extends Object>(field_order: Array<keyof T>, fields: FieldConfig[]): FieldConfig[];
+declare function _setFieldOrder<T extends Object>(field_order: Array<keyof T>, fields: FieldConfig<T>[]): FieldConfig<T>[];
 /**
  * Set any attributes on the given fields.
  */
-declare function _setFieldAttributes<T extends Object>(target_fields: Array<keyof T>, all_field_names: Array<keyof T>, fields: FieldConfig[], attributes: Partial<FieldConfig>): void;
+declare function _setFieldAttributes<T extends Object>(target_fields: Array<keyof T>, all_field_names: Array<keyof T>, fields: FieldConfig<T>[], attributes: Partial<FieldConfig<T>>): void;
 /**
  * Set any attributes on the given field.
  */
-declare function _setFieldAttribute<T extends Object>(name: keyof T, fields: FieldConfig[], attributes: Partial<FieldConfig>): void;
+declare function _setFieldAttribute<T extends Object>(name: keyof T, fields: FieldConfig<T>[], attributes: Partial<FieldConfig<T>>): void;
 export { FieldConfig, Form, field, _get, _buildFormFields, _setValueChanges, _attachEventListeners, _addCallbackToField, _linkValues, _linkFieldErrors, _linkAllErrors, _hanldeValueLinking, _executeCallbacks, _executeValidationEvent, _handleFormValidation, _requiredFieldsValid, _hasStateChanged, _setInitialState, _resetState, _setFieldOrder, _setFieldAttributes, _setFieldAttribute, FormManager, InitialFormState, ValidationCallback, ValidatorFunction, ValidationErrorType, ValidationError, ValidationOptions, ClassValidatorOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, Callback, RefDataItem, RefData, FieldAttributes, ElementAttributesMap };

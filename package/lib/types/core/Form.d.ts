@@ -46,7 +46,7 @@ export declare class Form<ModelType extends Object> {
      * Fields are built from the model's metadata using reflection.
      * If model is set, call buildFields().
      */
-    fields: FieldConfig[];
+    fields: FieldConfig<ModelType>[];
     /**
      * validation_options contains the logic and configuration for
      * validating the form as well as linking errors to fields.
@@ -98,7 +98,7 @@ export declare class Form<ModelType extends Object> {
      *
      * Similar to Angular form.valueChanges
      */
-    value_changes: Writable<Record<string, any>>;
+    value_changes: Writable<Record<keyof ModelType | any, any>>;
     /**
      * This is the model's initial state.
      * Shove the stateful_items into the inital state for a decent snapshot.
@@ -189,7 +189,7 @@ export declare class Form<ModelType extends Object> {
      */
     attachCallbacks: (event: keyof HTMLElementEventMap, callback: Callback | ValidationCallback, field_names: keyof ModelType | Array<keyof ModelType>) => void;
     clearErrors: () => void;
-    get: (field_name: keyof ModelType) => FieldConfig;
+    get: (field_name: keyof ModelType) => FieldConfig<ModelType>;
     /**
      *! Make sure to call this when the component is unloaded/destroyed
      * Removes all event listeners and clears the form state.
@@ -213,5 +213,5 @@ export declare class Form<ModelType extends Object> {
      * names = [field.name, field.name],
      * attributes = { hidden: true };
      */
-    setFieldAttributes: (names: string | Array<keyof ModelType>, attributes: Partial<FieldConfig>) => void;
+    setFieldAttributes: (names: string | Array<keyof ModelType>, attributes: Partial<FieldConfig<ModelType>>) => void;
 }

@@ -8,15 +8,15 @@ import { Callback, FieldAttributes, RefDataItem, ValidationCallback, ValidationE
  * It is simply a vehicle to help give the form generator
  * an easy-to-use format to work with.
  */
-export declare class FieldConfig {
-    constructor(name: string, init?: Partial<FieldConfig>);
+export declare class FieldConfig<T extends Object> {
+    constructor(name: keyof T, init?: Partial<FieldConfig<T>>);
     /**
      * Name of the class property.
      * Only set "name" if you are using FieldConfig apart from
      * your object/model.
      * I.e. you are using plain JSON rather than a TS class.
      */
-    readonly name: string;
+    readonly name: keyof T;
     /**
      * HTML Element which the field is attached to.
      * Attached using the form.useField method.

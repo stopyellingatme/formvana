@@ -10,12 +10,13 @@ export interface FormManager {
     validateForms: (forms: number[]) => void;
 }
 /**
- * I'm using strings here for easier comparison.
+ * Keeping it simple. Just keep up with model and errors.
  */
 export declare type InitialFormState<ModelType extends Object> = {
     model: ModelType | undefined;
     errors: ValidationError[] | undefined;
 };
+/** Using "when" gives us a little more flexibilty. */
 export interface ValidationCallback {
     callback: Callback;
     /**
@@ -24,6 +25,9 @@ export interface ValidationCallback {
      */
     when: "before" | "after";
 }
+/** Pretty much any funciton as long as it returns a Promise with
+ * Validation Error array.
+ */
 export declare type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
 export interface ValidationErrorType {
     target?: Object;
@@ -34,6 +38,7 @@ export interface ValidationErrorType {
     };
     children?: ValidationErrorType[];
 }
+/** This makes it easier to create validation errors. */
 export declare class ValidationError {
     /**
      * @param errors essentially Record<string #1, string #2>
@@ -53,6 +58,7 @@ export declare class ValidationError {
     };
     children?: ValidationErrorType[];
 }
+/** Form Validation Options  */
 export interface ValidationOptions {
     /**
      * This is the (validation) function that will be called when validating.
@@ -70,6 +76,8 @@ export interface ValidationOptions {
     /**
      * Optional validation schema.
      * Decorator free method of validating the model.
+     *
+     * @TODO Create a way to validate JSON model
      */
     schema?: Object;
     /**
@@ -182,7 +190,8 @@ export declare class OnEvents<T extends HTMLElementEventMap> {
  */
 export declare type LinkOnEvent = "always" | "valid";
 export declare type LinkValuesOnEvent = "all" | "field";
-export declare type Callback = ((...args: any[]) => any) | (() => any) | void | boolean | string | undefined | Promise<ValidationError[]>;
+/** Catchall type for giving callbacks a bit more typesafety */
+export declare type Callback = ((...args: any[]) => any) | (() => any) | void | undefined | boolean | string | Promise<any>;
 /**
  * Data format for the reference data items
  * Form.refs are of type Record<string, RefDataItem[]>
@@ -192,9 +201,14 @@ export interface RefDataItem {
     value: any;
     data?: any;
 }
+/** Helpful shape for loading in reference data for the Form */
 export declare type RefData = Record<string, RefDataItem[]>;
+/** This gives us a pretty exhaustive typesafe map of element attributes */
 export declare type FieldAttributes = Record<ElementAttributesMap & string, any>;
 export declare type ElementAttributesMap = keyof HTMLElement | keyof HTMLInputElement | keyof HTMLSelectElement | keyof HTMLFieldSetElement | keyof HTMLImageElement | keyof HTMLButtonElement | keyof HTMLCanvasElement | keyof HTMLOptionElement | keyof AriaAttributes;
+/** All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/
+ * This is here because there is no AriaAttrubutes type in the default library.
+*/
 interface AriaAttributes {
     /** Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. */
     "aria-activedescendant"?: string;

@@ -15,8 +15,8 @@ import {
 /** Get the form field by name */
 export function _get<T extends Object>(
   name: keyof T,
-  fields: FieldConfig[]
-): FieldConfig {
+  fields: FieldConfig<T>[]
+): FieldConfig<T> {
   return fields.filter((f) => f.name === name)[0];
 }
 
@@ -29,11 +29,11 @@ export function _get<T extends Object>(
 export function _buildFormFields<T extends Object>(
   model: T,
   props: string[] = Reflect.getMetadata("editableProperties", model)
-): FieldConfig[] {
+): FieldConfig<T>[] {
   // Map the @field fields to the form.fields
   const fields = props.map((prop: string) => {
     // Get the @FieldConfig using metadata reflection
-    const field: FieldConfig = new FieldConfig(prop, {
+    const field: FieldConfig<T> = new FieldConfig<T>(prop as keyof T, {
       ...Reflect.getMetadata("fieldConfig", model, prop),
       value: model[prop as keyof T],
     });
@@ -51,9 +51,9 @@ export function _buildFormFields<T extends Object>(
  * @param changes incoming value changes
  * @param field field emitting the changes
  */
-export function _setValueChanges(
-  changes: Writable<Record<string, any>>,
-  field: FieldConfig
+export function _setValueChanges<T extends Object>(
+  changes: Writable<Record<keyof T, any>>,
+  field: FieldConfig<T>
 ): void {
   const _changes = get(changes);
 
@@ -75,8 +75,8 @@ export function _setValueChanges(
  * Attach the OnEvents events to each form.field.
  * Parent: form.useField(...)
  */
-export function _attachEventListeners(
-  field: FieldConfig,
+export function _attachEventListeners<T extends Object>(
+  field: FieldConfig<T>,
   on_events: OnEvents<HTMLElementEventMap>,
   callback: Callback
 ): void {
@@ -90,13 +90,10 @@ export function _attachEventListeners(
 
 export function _addCallbackToField<T extends Object>(
   form: Form<T>,
-  field: FieldConfig,
+  field: FieldConfig<T>,
   event: keyof HTMLElementEventMap,
   callback: ValidationCallback | Callback,
   required_fields: Array<keyof T>,
-  field_names: Array<keyof T>,
-  hidden_fields?: Array<keyof T>,
-  disabled_fields?: Array<keyof T>
 ): void {
   /** Check if callback is of type ValidationCallback */
   if (callback && (<ValidationCallback>callback).when) {
@@ -105,9 +102,6 @@ export function _addCallbackToField<T extends Object>(
       _executeValidationEvent(
         form,
         required_fields,
-        field_names,
-        hidden_fields,
-        disabled_fields,
         undefined,
         [<ValidationCallback>callback]
       )
@@ -124,7 +118,7 @@ export function _addCallbackToField<T extends Object>(
 /**  Link values from FIELDS to MODEL or MODEL to FIELDS */
 export function _linkValues<ModelType extends Object>(
   from_fields_to_model: boolean,
-  fields: FieldConfig[],
+  fields: FieldConfig<ModelType>[],
   model: ModelType
 ): void {
   /** Still the fastest way i've seen to loop in JS. */
@@ -148,9 +142,9 @@ export function _linkValues<ModelType extends Object>(
  * Link form.errors to it's corresponding field.errors
  * Via error[field_name]
  */
-export function _linkFieldErrors(
+export function _linkFieldErrors<T extends Object>(
   errors: ValidationError[],
-  field: FieldConfig,
+  field: FieldConfig<T>,
   field_name: ValidationError["property"]
 ): void {
   const error = errors.filter(
@@ -164,9 +158,13 @@ export function _linkFieldErrors(
   }
 }
 
-export function _linkAllErrors(
+/**
+ * Link all Validation Errors on Form.errors to each field via the
+ * field_error_link_name.
+ */
+export function _linkAllErrors<T extends Object>(
   errors: ValidationError[],
-  fields: FieldConfig[],
+  fields: FieldConfig<T>[],
   field_error_link_name: ValidationError["property"]
 ): void {
   errors.forEach((err) => {
@@ -177,16 +175,15 @@ export function _linkAllErrors(
         f.errors.set(err);
       }
     }
-    // if (err && err[field_error_link_name]) {
-    //   const f = _get(err[field_error_link_name], fields);
-    //   f.errors.set(err);
-    // }
   });
 }
 
+/** When should we link the fields to the model?
+ * "alwyas" | "valid" (when valid)
+ */
 export function _hanldeValueLinking<T extends Object>(
   model: T,
-  fields: FieldConfig[],
+  fields: FieldConfig<T>[],
   link_fields_to_model: LinkOnEvent
 ): void {
   /**
@@ -206,6 +203,7 @@ export function _hanldeValueLinking<T extends Object>(
 
 // #region Validation Helpers
 
+/** Execute validation callbacks, depending on when_to_call */
 function _executeValidationCallbacks(
   when_to_call: "before" | "after",
   callbacks: ValidationCallback[]
@@ -213,13 +211,18 @@ function _executeValidationCallbacks(
   if (callbacks && callbacks.length > 0)
     callbacks.forEach((cb) => {
       if (cb.when === when_to_call) {
-        if (cb.callback instanceof Function) {
-          cb.callback();
-        } else {
-          () => cb.callback;
-        }
+        _callFunction(cb.callback);
       }
     });
+}
+
+/** Check if the callback is a function and execute it accordingly */
+function _callFunction(cb: Callback | Callback[]) {
+  if (cb instanceof Function) {
+    cb();
+  } else {
+    () => cb;
+  }
 }
 
 /**
@@ -230,19 +233,10 @@ export function _executeCallbacks(callbacks: Callback | Callback[]): void {
   // Is it an Array of callbacks?
   if (Array.isArray(callbacks)) {
     callbacks.forEach((cb) => {
-      // If the cb is a function, call it
-      if (cb instanceof Function) {
-        cb();
-      } else {
-        () => cb;
-      }
+      _callFunction(cb);
     });
   } else {
-    if (callbacks instanceof Function) {
-      callbacks();
-    } else {
-      () => callbacks;
-    }
+    _callFunction(callbacks);
   }
 }
 
@@ -254,10 +248,7 @@ export function _executeCallbacks(callbacks: Callback | Callback[]): void {
 export function _executeValidationEvent<T extends Object>(
   form: Form<T>,
   required_fields: Array<keyof T>,
-  field_names: Array<keyof T>,
-  hidden_fields?: Array<keyof T>,
-  disabled_fields?: Array<keyof T>,
-  field?: FieldConfig,
+  field?: FieldConfig<T>,
   callbacks?: ValidationCallback[]
 ): Promise<ValidationError[]> | undefined {
   form.pristine.set(false);
@@ -279,15 +270,6 @@ export function _executeValidationEvent<T extends Object>(
       .then((errors: ValidationError[]) => {
         _executeCallbacks([
           _handleFormValidation(form, errors, required_fields, field),
-          hidden_fields &&
-            _setFieldAttributes(hidden_fields, field_names, form.fields, {
-              hidden: true,
-            }),
-          disabled_fields &&
-            _setFieldAttributes(disabled_fields, field_names, form.fields, {
-              disabled: true,
-              attributes: { disabled: true },
-            }),
           _hasStateChanged(form.value_changes, form.changed),
           callbacks && _executeValidationCallbacks("after", callbacks),
         ]);
@@ -307,7 +289,7 @@ export async function _handleFormValidation<T extends Object>(
   form: Form<T>,
   errors: ValidationError[],
   required_fields: Array<keyof T>,
-  field?: FieldConfig
+  field?: FieldConfig<T>
 ): Promise<ValidationError[]> {
   // There are errors!
   if (errors && errors.length > 0) {
@@ -472,10 +454,10 @@ export function _resetState<T extends Object>(
  */
 export function _setFieldOrder<T extends Object>(
   field_order: Array<keyof T>,
-  fields: FieldConfig[]
-): FieldConfig[] {
-  let newLayout: FieldConfig[] = [];
-  let leftovers: FieldConfig[] = [];
+  fields: FieldConfig<T>[]
+): FieldConfig<T>[] {
+  let newLayout: FieldConfig<T>[] = [];
+  let leftovers: FieldConfig<T>[] = [];
   // Loop over the order...
   field_order.forEach((name) => {
     const field = _get(name, fields);
@@ -501,8 +483,8 @@ export function _setFieldOrder<T extends Object>(
 export function _setFieldAttributes<T extends Object>(
   target_fields: Array<keyof T>,
   all_field_names: Array<keyof T>,
-  fields: FieldConfig[],
-  attributes: Partial<FieldConfig>
+  fields: FieldConfig<T>[],
+  attributes: Partial<FieldConfig<T>>
 ): void {
   let i = 0,
     len = target_fields.length;
@@ -524,11 +506,11 @@ export function _setFieldAttributes<T extends Object>(
  */
 export function _setFieldAttribute<T extends Object>(
   name: keyof T,
-  fields: FieldConfig[],
-  attributes: Partial<FieldConfig>
+  fields: FieldConfig<T>[],
+  attributes: Partial<FieldConfig<T>>
 ): void {
   // Get field config
-  const f: FieldConfig = _get(name, fields);
+  const f: FieldConfig<T> = _get(name, fields);
   // Loop over key of Partial FieldConfig
   let k: keyof typeof attributes;
   for (k in attributes) {
@@ -546,10 +528,10 @@ export function _setFieldAttribute<T extends Object>(
  * Initially created to deal with TS compiler errors.
  * Dynamically assigning a value to f[key] wouldn't play nice.
  */
-function setFieldProperty<K extends keyof FieldConfig>(
-  f: FieldConfig,
+function setFieldProperty<T extends Object, K extends keyof FieldConfig<T>>(
+  f: FieldConfig<T>,
   key: K,
-  value: FieldConfig[K]
+  value: FieldConfig<T>[K]
 ) {
   f[key] = value;
 }

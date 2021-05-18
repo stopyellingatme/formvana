@@ -15,8 +15,8 @@ import {
  * It is simply a vehicle to help give the form generator
  * an easy-to-use format to work with.
  */
-export class FieldConfig {
-  constructor(name: string, init?: Partial<FieldConfig>) {
+export class FieldConfig<T extends Object> {
+  constructor(name: keyof T, init?: Partial<FieldConfig<T>>) {
     if (name) {
       this.name = name;
     } else {
@@ -98,7 +98,7 @@ export class FieldConfig {
    * your object/model.
    * I.e. you are using plain JSON rather than a TS class.
    */
-  readonly name: string;
+  readonly name: keyof T;
 
   /**
    * HTML Element which the field is attached to.

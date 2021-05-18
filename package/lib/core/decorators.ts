@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { FieldConfig } from "./FieldConfig";
 
-export function field(config: Partial<FieldConfig>) {
+export function field<T extends Object>(config: Partial<FieldConfig<T>>) {
   return function (target: any, propertyKey: string) {
     let properties: string[] =
       Reflect.getMetadata("editableProperties", target) || [];

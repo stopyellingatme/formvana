@@ -13,7 +13,7 @@ export interface FormManager {
 }
 
 /**
- * I'm using strings here for easier comparison.
+ * Keeping it simple. Just keep up with model and errors.
  */
 export type InitialFormState<ModelType extends Object> = {
   model: ModelType | undefined;
@@ -22,6 +22,7 @@ export type InitialFormState<ModelType extends Object> = {
 
 // #region Validation
 
+/** Using "when" gives us a little more flexibilty. */
 export interface ValidationCallback {
   callback: Callback;
   /**
@@ -31,6 +32,9 @@ export interface ValidationCallback {
   when: "before" | "after";
 }
 
+/** Pretty much any funciton as long as it returns a Promise with
+ * Validation Error array.
+ */
 export type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
 
 export interface ValidationErrorType {
@@ -44,6 +48,7 @@ export interface ValidationErrorType {
   children?: ValidationErrorType[];
 }
 
+/** This makes it easier to create validation errors. */
 export class ValidationError {
   /**
    * @param errors essentially Record<string #1, string #2>
@@ -79,6 +84,7 @@ export class ValidationError {
   children?: ValidationErrorType[];
 }
 
+/** Form Validation Options  */
 export interface ValidationOptions {
   /**
    * This is the (validation) function that will be called when validating.
@@ -97,6 +103,8 @@ export interface ValidationOptions {
   /**
    * Optional validation schema.
    * Decorator free method of validating the model.
+   *
+   * @TODO Create a way to validate JSON model
    */
   schema?: Object;
   /**
@@ -230,6 +238,8 @@ export type LinkValuesOnEvent = "all" | "field";
 //#endregion
 
 // #region Misc
+
+/** Catchall type for giving callbacks a bit more typesafety */
 export type Callback =
   | ((...args: any[]) => any)
   | (() => any)
@@ -249,8 +259,10 @@ export interface RefDataItem {
   data?: any;
 }
 
+/** Helpful shape for loading in reference data for the Form */
 export type RefData = Record<string, RefDataItem[]>;
 
+/** This gives us a pretty exhaustive typesafe map of element attributes */
 export type FieldAttributes = Record<ElementAttributesMap & string, any>;
 
 export type ElementAttributesMap =
@@ -264,7 +276,9 @@ export type ElementAttributesMap =
   | keyof HTMLOptionElement
   | keyof AriaAttributes;
 
-// All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/
+/** All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/ 
+ * This is here because there is no AriaAttrubutes type in the default library.
+*/
 interface AriaAttributes {
   /** Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. */
   "aria-activedescendant"?: string;

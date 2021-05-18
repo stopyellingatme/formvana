@@ -116,7 +116,7 @@ export class Form<ModelType extends Object> {
    * Fields are built from the model's metadata using reflection.
    * If model is set, call buildFields().
    */
-  fields: FieldConfig[] = [];
+  fields: FieldConfig<ModelType>[] = [];
 
   /**
    * validation_options contains the logic and configuration for
@@ -191,7 +191,7 @@ export class Form<ModelType extends Object> {
    *
    * Similar to Angular form.valueChanges
    */
-  value_changes: Writable<Record<string, any>> = writable({});
+  value_changes: Writable<Record<keyof ModelType | any, any>> = writable({});
 
   /**
    * This is the model's initial state.
@@ -278,14 +278,7 @@ export class Form<ModelType extends Object> {
     field.node = node;
 
     _attachEventListeners(field, this.on_events, (e: Event) =>
-      _executeValidationEvent(
-        this,
-        this.required_fields,
-        this.field_names,
-        this.hidden_fields,
-        this.disabled_fields,
-        field
-      )
+      _executeValidationEvent(this, this.required_fields, field)
     );
   };
 
@@ -349,9 +342,6 @@ export class Form<ModelType extends Object> {
     return _executeValidationEvent(
       this,
       this.required_fields,
-      this.field_names,
-      this.hidden_fields,
-      this.disabled_fields,
       undefined,
       callbacks
     );
@@ -368,9 +358,6 @@ export class Form<ModelType extends Object> {
     return await _executeValidationEvent(
       this,
       this.required_fields,
-      this.field_names,
-      this.hidden_fields,
-      this.disabled_fields,
       undefined,
       callbacks
     );
@@ -386,15 +373,7 @@ export class Form<ModelType extends Object> {
   ): void => {
     const field = _get(field_name, this.fields);
     if (!withMessage) {
-      _executeValidationEvent(
-        this,
-        this.required_fields,
-        this.field_names,
-        this.hidden_fields,
-        this.disabled_fields,
-        field,
-        callbacks
-      );
+      _executeValidationEvent(this, this.required_fields, field, callbacks);
     } else {
       const err = new ValidationError(
         field_name as string,
@@ -423,29 +402,11 @@ export class Form<ModelType extends Object> {
     if (Array.isArray(field_names)) {
       const fields = field_names.map((f) => _get(f, this.fields));
       fields.forEach((f) => {
-        _addCallbackToField(
-          this,
-          f,
-          event,
-          callback,
-          this.required_fields,
-          this.field_names,
-          this.hidden_fields,
-          this.disabled_fields
-        );
+        _addCallbackToField(this, f, event, callback, this.required_fields);
       });
     } else {
       const field = _get(field_names, this.fields);
-      _addCallbackToField(
-        this,
-        field,
-        event,
-        callback,
-        this.required_fields,
-        this.field_names,
-        this.hidden_fields,
-        this.disabled_fields
-      );
+      _addCallbackToField(this, field, event, callback, this.required_fields);
     }
   };
 
@@ -462,7 +423,7 @@ export class Form<ModelType extends Object> {
   // #region - Utility Methods
 
   // Get Field by name
-  get = (field_name: keyof ModelType): FieldConfig => {
+  get = (field_name: keyof ModelType): FieldConfig<ModelType> => {
     return _get(field_name, this.fields);
   };
 
@@ -479,14 +440,7 @@ export class Form<ModelType extends Object> {
           f.node &&
             f.node.removeEventListener(key, (ev) => {
               (e: Event) =>
-                _executeValidationEvent(
-                  this,
-                  this.required_fields,
-                  this.field_names,
-                  this.hidden_fields,
-                  this.disabled_fields,
-                  f
-                );
+                _executeValidationEvent(this, this.required_fields, f);
             });
         });
       });
@@ -534,7 +488,7 @@ export class Form<ModelType extends Object> {
    */
   setFieldAttributes = (
     names: string | Array<keyof ModelType>,
-    attributes: Partial<FieldConfig>
+    attributes: Partial<FieldConfig<ModelType>>
   ): void => {
     if (names) {
       if (Array.isArray(names)) {
