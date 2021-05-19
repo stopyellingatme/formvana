@@ -30,15 +30,15 @@ export function _buildFormFields<T extends Object>(
   model: T,
   props: string[] = Reflect.getMetadata("editableProperties", model)
 ): FieldConfig<T>[] {
-  // Map the @field fields to the form.fields
+  /** Map the @field fields to the form.fields */
   const fields = props.map((prop: string) => {
-    // Get the @FieldConfig using metadata reflection
+    /** Get the @FieldConfig using metadata reflection */
     const field: FieldConfig<T> = new FieldConfig<T>(prop as keyof T, {
       ...Reflect.getMetadata("fieldConfig", model, prop),
       value: model[prop as keyof T],
     });
 
-    // We made it. Return the field config and let's generate some inputs!
+    /** We made it. Return the field config and let's generate some inputs! */
     return field;
   });
   return fields;
@@ -52,17 +52,17 @@ export function _buildFormFields<T extends Object>(
  * @param field field emitting the changes
  */
 export function _setValueChanges<T extends Object>(
-  changes: Writable<Record<keyof T, any>>,
+  changes: Writable<Record<keyof T | any, T[keyof T]>>,
   field: FieldConfig<T>
 ): void {
   const _changes = get(changes);
 
-  // The change is on the same field
+  /** Is the change is on the same field? */
   if (_changes[field.name]) {
     _changes[field.name] = get(field.value);
     changes.set({ ..._changes });
   } else {
-    // Change is on a different field
+    /** Or is the change on a different field? */
     changes.set({ ..._changes, [field.name]: get(field.value) });
   }
 }
@@ -93,18 +93,15 @@ export function _addCallbackToField<T extends Object>(
   field: FieldConfig<T>,
   event: keyof HTMLElementEventMap,
   callback: ValidationCallback | Callback,
-  required_fields: Array<keyof T>,
+  required_fields: Array<keyof T>
 ): void {
   /** Check if callback is of type ValidationCallback */
   if (callback && (<ValidationCallback>callback).when) {
     field.addEventListener(
       event,
-      _executeValidationEvent(
-        form,
-        required_fields,
-        undefined,
-        [<ValidationCallback>callback]
-      )
+      _executeValidationEvent(form, required_fields, undefined, [
+        <ValidationCallback>callback,
+      ])
     );
   } else {
     field.addEventListener(event, <Callback>callback);
@@ -116,10 +113,10 @@ export function _addCallbackToField<T extends Object>(
 // #region Linking Utilities
 
 /**  Link values from FIELDS to MODEL or MODEL to FIELDS */
-export function _linkValues<ModelType extends Object>(
+export function _linkValues<T extends Object>(
   from_fields_to_model: boolean,
-  fields: FieldConfig<ModelType>[],
-  model: ModelType
+  fields: FieldConfig<T>[],
+  model: T
 ): void {
   /** Still the fastest way i've seen to loop in JS. */
   let i = 0,
@@ -130,10 +127,10 @@ export function _linkValues<ModelType extends Object>(
       val = fields[i].value;
     /**  Link field[values] to model[values] */
     if (from_fields_to_model) {
-      model[name as keyof ModelType] = get(val);
+      model[name as keyof T] = get(val);
     } else {
       /**  Link form.model[values] to the form.fields[values] */
-      val.set(model[name as keyof ModelType]);
+      val.set(model[name as keyof T]);
     }
   }
 }
@@ -184,7 +181,7 @@ export function _linkAllErrors<T extends Object>(
 export function _hanldeValueLinking<T extends Object>(
   model: T,
   fields: FieldConfig<T>[],
-  link_fields_to_model: LinkOnEvent
+  link_fields_to_model: LinkOnEvent | undefined
 ): void {
   /**
    * Link the input from the field to the model.
@@ -203,6 +200,49 @@ export function _hanldeValueLinking<T extends Object>(
 
 // #region Validation Helpers
 
+/**
+ * Hanlde the events that will fire for each field.
+ * Corresponds to the form.on_events field.
+ *
+ */
+export function _executeValidationEvent<T extends Object>(
+  form: Form<T>,
+  required_fields: Array<keyof T>,
+  field?: FieldConfig<T>,
+  callbacks?: ValidationCallback[]
+): Promise<ValidationError[]> | undefined {
+  /** The form has been altered (no longer pristine) */
+  form.pristine.set(false);
+
+  /** Execute pre-validation callbacks */
+  _executeCallbacks([
+    /**
+     * Link the input from the field to the model.
+     * We aren't linking (only) the field value.
+     * We link all values just in case the field change propigates other field changes.
+     */
+    _hanldeValueLinking(
+      form.model,
+      form.fields,
+      form.validation_options.link_fields_to_model
+    ),
+    // Execution step may need work
+    field && _setValueChanges(form.value_changes, field),
+    callbacks && _executeValidationCallbacks("before", callbacks),
+  ]);
+
+  return form.validation_options
+    .validator(form.model, form.validation_options.options)
+    .then((errors: ValidationError[]) => {
+      _executeCallbacks([
+        _handleValidationSideEffects(form, errors, required_fields, field),
+        _hasStateChanged(form.value_changes, form.changed),
+        callbacks && _executeValidationCallbacks("after", callbacks),
+      ]);
+      return errors;
+    });
+}
+
 /** Execute validation callbacks, depending on when_to_call */
 function _executeValidationCallbacks(
   when_to_call: "before" | "after",
@@ -217,7 +257,7 @@ function _executeValidationCallbacks(
 }
 
 /** Check if the callback is a function and execute it accordingly */
-function _callFunction(cb: Callback | Callback[]) {
+function _callFunction(cb: Callback) {
   if (cb instanceof Function) {
     cb();
   } else {
@@ -230,7 +270,7 @@ function _callFunction(cb: Callback | Callback[]) {
  * handler. Functions can be added in a plugin-style manner now.
  */
 export function _executeCallbacks(callbacks: Callback | Callback[]): void {
-  // Is it an Array of callbacks?
+  /** Is it an Array of callbacks? */
   if (Array.isArray(callbacks)) {
     callbacks.forEach((cb) => {
       _callFunction(cb);
@@ -241,63 +281,25 @@ export function _executeCallbacks(callbacks: Callback | Callback[]): void {
 }
 
 /**
- * Hanlde the events that will fire for each field.
- * Corresponds to the form.on_events field.
- *
- */
-export function _executeValidationEvent<T extends Object>(
-  form: Form<T>,
-  required_fields: Array<keyof T>,
-  field?: FieldConfig<T>,
-  callbacks?: ValidationCallback[]
-): Promise<ValidationError[]> | undefined {
-  form.pristine.set(false);
-
-  if (form.validation_options.validator) {
-    _executeCallbacks([
-      /**
-       * Link the input from the field to the model.
-       * We aren't linking (only) the field value.
-       * We link all values just in case the field change propigates other field changes.
-       */
-      _hanldeValueLinking(form.model, form.fields, form.link_fields_to_model),
-      field && _setValueChanges(form.value_changes, field),
-      callbacks && _executeValidationCallbacks("before", callbacks),
-    ]);
-
-    return form.validation_options
-      .validator(form.model, form.validation_options.options)
-      .then((errors: ValidationError[]) => {
-        _executeCallbacks([
-          _handleFormValidation(form, errors, required_fields, field),
-          _hasStateChanged(form.value_changes, form.changed),
-          callbacks && _executeValidationCallbacks("after", callbacks),
-        ]);
-        return errors;
-      });
-  }
-}
-
-/**
  * Handle all the things associated with validation!
  * Link the errors to the fields.
  * Check if all required fields are valid.
  * Link values from fields to model if
  * form.link_fields_to_model === LinkOnEvent.Valid is true.
  */
-export async function _handleFormValidation<T extends Object>(
+export async function _handleValidationSideEffects<T extends Object>(
   form: Form<T>,
   errors: ValidationError[],
   required_fields: Array<keyof T>,
   field?: FieldConfig<T>
 ): Promise<ValidationError[]> {
-  // There are errors!
+  /**  There are errors! */
   if (errors && errors.length > 0) {
     form.errors = errors;
 
-    // Are we validating the whole form or just the fields?
+    /**  Are we validating the whole form or just the fields? */
     if (field) {
-      // Link errors to field (to show validation errors)
+      /**  Link errors to field (to show validation errors) */
       if (form.validation_options.field_error_link_name) {
         _linkFieldErrors(
           errors,
@@ -306,7 +308,7 @@ export async function _handleFormValidation<T extends Object>(
         );
       }
     } else {
-      // This is validatino for the whole form!
+      /**  This is validatino for the whole form! */
       _linkAllErrors(
         errors,
         form.fields,
@@ -314,22 +316,26 @@ export async function _handleFormValidation<T extends Object>(
       );
     }
 
-    // All required fields are valid?
+    /**  All required fields are valid? */
     if (_requiredFieldsValid(errors, required_fields)) {
       form.valid.set(true);
     } else {
       form.valid.set(false);
     }
   } else {
-    // We can't get here unless the errors we see are for non-required fields
+    /** We can't get here unless the errors we see are for non-required fields */
 
     /**
      * If the config tells us to link the values only when the form
      * is valid, then link them here.
      */
-    _hanldeValueLinking(form.model, form.fields, form.link_fields_to_model);
-    form.clearErrors(); // Clear form errors
-    form.valid.set(true); // Form is valid!
+    _hanldeValueLinking(
+      form.model,
+      form.fields,
+      form.validation_options.link_fields_to_model
+    );
+    form.clearErrors(); /** Clear form errors */
+    form.valid.set(true); /** Form is valid! */
   }
   return errors;
 }
@@ -482,13 +488,13 @@ export function _setFieldOrder<T extends Object>(
  */
 export function _setFieldAttributes<T extends Object>(
   target_fields: Array<keyof T>,
-  all_field_names: Array<keyof T>,
   fields: FieldConfig<T>[],
   attributes: Partial<FieldConfig<T>>
 ): void {
   let i = 0,
     len = target_fields.length;
   if (len === 0) return;
+  const all_field_names = fields.map((f) => f.name);
 
   for (; len > i; ++i) {
     const field_index = all_field_names.indexOf(target_fields[i]);

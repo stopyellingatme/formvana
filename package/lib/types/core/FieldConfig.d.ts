@@ -57,7 +57,8 @@ export declare class FieldConfig<T extends Object> {
     hidden?: boolean;
     /**
      * Attributes uses a fairly exhaustive map of most HTML Field-ish
-     * attributes. Also have the option to use plain JSON Object for
+     * attributes.
+     * You also have the option to use a plain JSON Object, for
      * extra flexibility.
      *
      * @example attrubutes["description"] is ok without being a FieldAttribute

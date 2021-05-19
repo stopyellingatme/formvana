@@ -12,14 +12,6 @@ export interface FormManager {
   validateForms: (forms: number[]) => void;
 }
 
-/**
- * Keeping it simple. Just keep up with model and errors.
- */
-export type InitialFormState<ModelType extends Object> = {
-  model: ModelType | undefined;
-  errors: ValidationError[] | undefined;
-};
-
 // #region Validation
 
 /** Using "when" gives us a little more flexibilty. */
@@ -87,11 +79,13 @@ export class ValidationError {
 /** Form Validation Options  */
 export interface ValidationOptions {
   /**
+   * PLEASE PASS IN A VALIDATOR FUNCTION!
+   *
    * This is the (validation) function that will be called when validating.
    * You can use any validation library you like, as long as this function
    * returns Promise<ValidationError[]>
    */
-  validator: ValidatorFunction | undefined;
+  validator: ValidatorFunction;
   /**
    * Validation options come from class-validator ClassValidatorOptions.
    *
@@ -112,6 +106,15 @@ export interface ValidationOptions {
    * Error.property_or_name_or_whatever must match field.name.
    */
   field_error_link_name: ValidationError["property"];
+
+  /** When to link this.field values to this.model values */
+  link_fields_to_model?: LinkOnEvent;
+
+  /**
+   * Which events should the form do things on?
+   * @examples validate, link values, hide/disable fields, callbacks
+   */
+  on_events: OnEvents<HTMLElementEventMap>;
 }
 
 /**
@@ -239,15 +242,13 @@ export type LinkValuesOnEvent = "all" | "field";
 
 // #region Misc
 
-/** Catchall type for giving callbacks a bit more typesafety */
-export type Callback =
-  | ((...args: any[]) => any)
-  | (() => any)
-  | void
-  | undefined
-  | boolean
-  | string
-  | Promise<any>;
+/**
+ * Keeping it simple. Just keep up with model and errors.
+ */
+export type InitialFormState<ModelType extends Object> = {
+  model: ModelType | undefined;
+  errors: ValidationError[] | undefined;
+};
 
 /**
  * Data format for the reference data items
@@ -276,9 +277,19 @@ export type ElementAttributesMap =
   | keyof HTMLOptionElement
   | keyof AriaAttributes;
 
-/** All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/ 
+/** Catchall type for giving callbacks a bit more typesafety */
+export type Callback =
+  | ((...args: any[]) => any)
+  | (() => any)
+  | void
+  | undefined
+  | boolean
+  | string
+  | Promise<any>;
+
+/** All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/
  * This is here because there is no AriaAttrubutes type in the default library.
-*/
+ */
 interface AriaAttributes {
   /** Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. */
   "aria-activedescendant"?: string;

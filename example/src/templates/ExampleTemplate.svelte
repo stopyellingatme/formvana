@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import LoadingIndicator from "./inputs/LoadingIndicator.svelte";
-  import Field from "./inputs/Field.svelte";
+  import LoadingIndicator from "../components/inputs/LoadingIndicator.svelte";
+  import Field from "../components/inputs/Field.svelte";
   import { createEventDispatcher } from "svelte";
   const dispatch = createEventDispatcher();
 
@@ -102,7 +102,7 @@
           disabled
           class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md shadow-sm cursor-not-allowed focus:outline-none"
         >
-          Invalid or Unchanged
+          Invalid OR Unchanged
         </button>
       {/if}
     </div>

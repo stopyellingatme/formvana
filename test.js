@@ -74,7 +74,7 @@ const field = (
 function generateFields() {
   let fields = [];
   let i = 1,
-    len = 101;
+    len = 11;
   for (; len > i; ++i) {
     if (i <= 10) {
       fields.push(psudoRandomGetField(i));

@@ -3,7 +3,6 @@ import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
 import { FieldConfig } from ".";
 import {
   OnEvents,
-  LinkOnEvent,
   RefData,
   ValidationError,
   ValidationCallback,
@@ -51,12 +50,12 @@ import {
 /**
  * Formvana Form Class
  *
- * Form is NOT valid, initially.
- *
  * Main Concept: fields and model are separate.
  * Fields are built using the model, via the @field() decorator.
  * We keep the fields and the model in sync via your model property names
  * and field[name].
+ *
+ * Form is NOT valid, initially.
  */
 export class Form<ModelType extends Object> {
   constructor(
@@ -88,13 +87,13 @@ export class Form<ModelType extends Object> {
     if (this.refs) this.attachRefData();
 
     if (this.disabled_fields)
-      _setFieldAttributes(this.disabled_fields, this.field_names, this.fields, {
+      _setFieldAttributes(this.disabled_fields, this.fields, {
         disabled: true,
         attributes: { disabled: true },
       });
 
     if (this.hidden_fields)
-      _setFieldAttributes(this.hidden_fields, this.field_names, this.fields, {
+      _setFieldAttributes(this.hidden_fields, this.fields, {
         hidden: true,
       });
 
@@ -121,9 +120,13 @@ export class Form<ModelType extends Object> {
   /**
    * validation_options contains the logic and configuration for
    * validating the form as well as linking errors to fields.
+   * If you're using class-validator, just pass in the validate func
    */
-  validation_options: Partial<ValidationOptions> = {
-    validator: undefined,
+  validation_options: ValidationOptions = {
+    validator: async () => [],
+    on_events: new OnEvents(),
+    /** When to link this.field values to this.model values */
+    link_fields_to_model: "always",
     field_error_link_name: "property",
     options: {
       skipMissingProperties: false,
@@ -163,7 +166,7 @@ export class Form<ModelType extends Object> {
    *
    * Render the form into a custom svelte template!
    * Use a svelte component. Or use a string as the selector.
-   * * The component/template must accept {form} prop
+   * * The template/component must accept {form} prop
    *
    * Note: add ` types": ["svelte"] ` to tsconfig compilerOptions
    * to remove TS import error of .svelte files (for your template)
@@ -191,7 +194,9 @@ export class Form<ModelType extends Object> {
    *
    * Similar to Angular form.valueChanges
    */
-  value_changes: Writable<Record<keyof ModelType | any, any>> = writable({});
+  value_changes: Writable<
+    Record<keyof ModelType | any, ModelType[keyof ModelType]>
+  > = writable({});
 
   /**
    * This is the model's initial state.
@@ -203,15 +208,6 @@ export class Form<ModelType extends Object> {
   };
 
   /**
-   * Which events should the form do things on?
-   * (validate, link values, hide/disable fields)
-   */
-  on_events: OnEvents<HTMLElementEventMap> = new OnEvents();
-
-  /** When to link this.field values to this.model values */
-  link_fields_to_model: LinkOnEvent = "always";
-
-  /**
    * Use the NAME of the field (field.name) to disable/hide the field.
    */
   hidden_fields?: Array<keyof ModelType>;
@@ -221,11 +217,9 @@ export class Form<ModelType extends Object> {
    * Determines the ordering of this.fields.
    * Simply an array of field names (or group names or stepper names)
    * in the order to be displayed
+   *
    */
   private field_order?: Array<keyof ModelType>;
-
-  /** Used to make checking for disabled/hidden fields faster */
-  private field_names: Array<keyof ModelType> = [];
 
   /**
    * We keep track of required fields because we let class-validator handle everything
@@ -251,10 +245,6 @@ export class Form<ModelType extends Object> {
   private buildFields = (model: ModelType = this.model): void => {
     this.fields = _buildFormFields(model);
 
-    /** Set the field names for faster searching
-     * instead of mapping the names (potentially) on each keystoke
-     */
-    this.field_names = this.fields.map((f) => f.name as keyof ModelType);
     this.required_fields = this.fields
       .filter((f) => f.required)
       .map((f) => f.name as keyof ModelType);
@@ -277,9 +267,110 @@ export class Form<ModelType extends Object> {
     const field = _get(node.name, this.fields);
     field.node = node;
 
-    _attachEventListeners(field, this.on_events, (e: Event) =>
-      _executeValidationEvent(this, this.required_fields, field)
+    if (this.validation_options.on_events)
+      _attachEventListeners(
+        field,
+        this.validation_options.on_events,
+        (e: Event) => _executeValidationEvent(this, this.required_fields, field)
+      );
+  };
+
+  //#endregion
+
+  // #region - Validation
+
+  /**
+   * Validate the form!
+   * You can pass in callbacks as needed.
+   * Callbacks can be called "before" or "after" validation.
+   */
+  validate = (
+    callbacks?: ValidationCallback[]
+  ): Promise<ValidationError[]> | undefined => {
+    return _executeValidationEvent(
+      this,
+      this.required_fields,
+      undefined,
+      callbacks
     );
+  };
+
+  /**
+   * Validate the form!
+   * You can pass in callbacks as needed.
+   * Callbacks can be applied "before" or "after" validation.
+   */
+  validateAsync = async (
+    callbacks?: ValidationCallback[]
+  ): Promise<ValidationError[] | undefined> => {
+    return await _executeValidationEvent(
+      this,
+      this.required_fields,
+      undefined,
+      callbacks
+    );
+  };
+
+  /** If want to (in)validate a specific field for any reason */
+  validateField = (
+    field_name: keyof ModelType,
+    withMessage?: string,
+    callbacks?: ValidationCallback[]
+  ): void => {
+    const field = _get(field_name, this.fields);
+    if (!withMessage) {
+      _executeValidationEvent(this, this.required_fields, field, callbacks);
+    } else {
+      const err = new ValidationError(
+        field_name as string,
+        { error: withMessage },
+        { value: get(field.value) }
+      );
+      this.errors.push(err);
+      _linkAllErrors(
+        this.errors,
+        this.fields,
+        this.validation_options.field_error_link_name
+      );
+    }
+  };
+
+  /**
+   * Attach a callback to a field or array of fields.
+   * If the callback if type ValidationCallback it will be added
+   * to the validation handler
+   */
+  attachCallbacks = (
+    event: keyof HTMLElementEventMap,
+    callback: Callback | ValidationCallback,
+    field_names: keyof ModelType | Array<keyof ModelType>
+  ): void => {
+    if (Array.isArray(field_names)) {
+      const fields = field_names.map((f) => _get(f, this.fields));
+      fields.forEach((f) => {
+        _addCallbackToField(this, f, event, callback, this.required_fields);
+      });
+    } else {
+      const field = _get(field_names, this.fields);
+      _addCallbackToField(this, field, event, callback, this.required_fields);
+    }
+  };
+
+  /** Clear ALL the errors. */
+  clearErrors = (): void => {
+    this.errors = [];
+    this.fields.forEach((f) => {
+      f.errors.set(undefined);
+    });
+  };
+
+  //#endregion
+
+  // #region - Utility Methods
+
+  /** Get Field by name */
+  get = (field_name: keyof ModelType): FieldConfig<ModelType> => {
+    return _get(field_name, this.fields);
   };
 
   /**
@@ -327,105 +418,6 @@ export class Form<ModelType extends Object> {
       });
     }
   };
-  //#endregion
-
-  // #region - Validation
-
-  /**
-   * Validate the form!
-   * You can pass in callbacks as needed.
-   * Callbacks can be called "before" or "after" validation.
-   */
-  validate = (
-    callbacks?: ValidationCallback[]
-  ): Promise<ValidationError[]> | undefined => {
-    return _executeValidationEvent(
-      this,
-      this.required_fields,
-      undefined,
-      callbacks
-    );
-  };
-
-  /**
-   * Validate the form!
-   * You can pass in callbacks as needed.
-   * Callbacks can be called "before" or "after" validation.
-   */
-  validateAsync = async (
-    callbacks?: ValidationCallback[]
-  ): Promise<ValidationError[] | undefined> => {
-    return await _executeValidationEvent(
-      this,
-      this.required_fields,
-      undefined,
-      callbacks
-    );
-  };
-
-  /**
-   * If want to (in)validate a specific field for any reason.
-   */
-  validateField = (
-    field_name: keyof ModelType,
-    withMessage?: string,
-    callbacks?: ValidationCallback[]
-  ): void => {
-    const field = _get(field_name, this.fields);
-    if (!withMessage) {
-      _executeValidationEvent(this, this.required_fields, field, callbacks);
-    } else {
-      const err = new ValidationError(
-        field_name as string,
-        { error: withMessage },
-        { value: get(field.value) }
-      );
-      this.errors.push(err);
-      _linkAllErrors(
-        this.errors,
-        this.fields,
-        this.validation_options.field_error_link_name
-      );
-    }
-  };
-
-  /**
-   * Attach a callback to a field or array of fields.
-   * If the callback if type ValidationCallback it will be added
-   * to the validation handler
-   */
-  attachCallbacks = (
-    event: keyof HTMLElementEventMap,
-    callback: Callback | ValidationCallback,
-    field_names: keyof ModelType | Array<keyof ModelType>
-  ): void => {
-    if (Array.isArray(field_names)) {
-      const fields = field_names.map((f) => _get(f, this.fields));
-      fields.forEach((f) => {
-        _addCallbackToField(this, f, event, callback, this.required_fields);
-      });
-    } else {
-      const field = _get(field_names, this.fields);
-      _addCallbackToField(this, field, event, callback, this.required_fields);
-    }
-  };
-
-  // Clear ALL the errors.
-  clearErrors = (): void => {
-    this.errors = [];
-    this.fields.forEach((f) => {
-      f.errors.set(undefined);
-    });
-  };
-
-  //#endregion
-
-  // #region - Utility Methods
-
-  // Get Field by name
-  get = (field_name: keyof ModelType): FieldConfig<ModelType> => {
-    return _get(field_name, this.fields);
-  };
 
   /**
    *! Make sure to call this when the component is unloaded/destroyed
@@ -436,13 +428,14 @@ export class Form<ModelType extends Object> {
       // For each field...
       this.fields.forEach((f) => {
         // Remove all the event listeners!
-        Object.keys(this.on_events).forEach((key) => {
-          f.node &&
-            f.node.removeEventListener(key, (ev) => {
-              (e: Event) =>
-                _executeValidationEvent(this, this.required_fields, f);
-            });
-        });
+        if (this.validation_options.on_events)
+          Object.keys(this.validation_options.on_events).forEach((key) => {
+            f.node &&
+              f.node.removeEventListener(key, (ev) => {
+                (e: Event) =>
+                  _executeValidationEvent(this, this.required_fields, f);
+              });
+          });
       });
     }
   };
@@ -492,11 +485,10 @@ export class Form<ModelType extends Object> {
   ): void => {
     if (names) {
       if (Array.isArray(names)) {
-        _setFieldAttributes(names, this.field_names, this.fields, attributes);
+        _setFieldAttributes(names, this.fields, attributes);
       } else {
         _setFieldAttributes(
           [names as keyof ModelType],
-          this.field_names,
           this.fields,
           attributes
         );

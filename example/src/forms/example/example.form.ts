@@ -1,7 +1,7 @@
 import { get, Writable, writable } from "svelte/store";
 import { Form, OnEvents, RefData, ValidationCallback } from "@formvana";
 import { ExampleModel } from "../../models/ExampleClass";
-import { validate } from "class-validator";
+import { validate, ValidationError } from "class-validator";
 //@ts-ignore
 import ExampleTemplate from "../../templates/ExampleTemplate.svelte";
 
@@ -26,7 +26,7 @@ const ref_data: RefData = {
   ],
 };
 
-async function vali(model: any, options: any) {
+async function vali(model: any, options: any): Promise<ValidationError[]> {
   return [];
 }
 
@@ -34,13 +34,12 @@ function initStore() {
   // Set up the form(vana) class
   let form = new Form(
     new ExampleModel(),
-    { validator: validate },
+    { validator: validate, on_events: new OnEvents({ focus: false }) },
     {
       template: ExampleTemplate,
-      on_events: new OnEvents({ focus: false }),
       refs: ref_data,
-      hidden_fields: ["description_99", "status_97"],
-      disabled_fields: ["email_96", "email_94"],
+      hidden_fields: ["description_3"],
+      disabled_fields: ["email_2", "email_8"],
     }
   );
 
@@ -83,7 +82,8 @@ export const init = () => {
       },
       {
         callback: () => {
-          get(formState).get("name_100").value.set("some value jfkdsalfjdsk");
+          console.log(get(formState));
+          get(formState).get("name_10").value.set("some value jfkdsalfjdsk");
           get(formState).validate();
         },
         when: "before",
@@ -94,8 +94,6 @@ export const init = () => {
 
   setTimeout(() => {
     get(formState).updateInitialState();
-
-    console.log(get(formState));
   }, 3000);
 
   // get(formState).value_changes.subscribe((val) => {

@@ -1,7 +1,7 @@
 import { Writable } from "svelte/store";
 import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
 import { FieldConfig } from ".";
-import { OnEvents, LinkOnEvent, RefData, ValidationError, ValidationCallback, Callback, ValidationOptions, InitialFormState } from "./types";
+import { RefData, ValidationError, ValidationCallback, Callback, ValidationOptions, InitialFormState } from "./types";
 /**
  * @Recomended_Use
  *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
@@ -26,12 +26,12 @@ import { OnEvents, LinkOnEvent, RefData, ValidationError, ValidationCallback, Ca
 /**
  * Formvana Form Class
  *
- * Form is NOT valid, initially.
- *
  * Main Concept: fields and model are separate.
  * Fields are built using the model, via the @field() decorator.
  * We keep the fields and the model in sync via your model property names
  * and field[name].
+ *
+ * Form is NOT valid, initially.
  */
 export declare class Form<ModelType extends Object> {
     constructor(model: ModelType, validation_options: Partial<ValidationOptions>, init?: Partial<Form<ModelType>>);
@@ -50,8 +50,9 @@ export declare class Form<ModelType extends Object> {
     /**
      * validation_options contains the logic and configuration for
      * validating the form as well as linking errors to fields.
+     * If you're using class-validator, just pass in the validate func
      */
-    validation_options: Partial<ValidationOptions>;
+    validation_options: ValidationOptions;
     /**
      * Errors are attached to their corresponding fields.
      * This pattern adds flexibility at the cost of a little complexity.
@@ -98,19 +99,12 @@ export declare class Form<ModelType extends Object> {
      *
      * Similar to Angular form.valueChanges
      */
-    value_changes: Writable<Record<keyof ModelType | any, any>>;
+    value_changes: Writable<Record<keyof ModelType | any, ModelType[keyof ModelType]>>;
     /**
      * This is the model's initial state.
      * Shove the stateful_items into the inital state for a decent snapshot.
      */
     initial_state: InitialFormState<ModelType>;
-    /**
-     * Which events should the form do things on?
-     * (validate, link values, hide/disable fields)
-     */
-    on_events: OnEvents<HTMLElementEventMap>;
-    /** When to link this.field values to this.model values */
-    link_fields_to_model: LinkOnEvent;
     /**
      * Use the NAME of the field (field.name) to disable/hide the field.
      */
@@ -120,10 +114,9 @@ export declare class Form<ModelType extends Object> {
      * Determines the ordering of this.fields.
      * Simply an array of field names (or group names or stepper names)
      * in the order to be displayed
+     *
      */
     private field_order?;
-    /** Used to make checking for disabled/hidden fields faster */
-    private field_names;
     /**
      * We keep track of required fields because we let class-validator handle everything
      * except *required* (field.required)
@@ -155,6 +148,30 @@ export declare class Form<ModelType extends Object> {
         name: keyof ModelType;
     }) => void;
     /**
+     * Validate the form!
+     * You can pass in callbacks as needed.
+     * Callbacks can be called "before" or "after" validation.
+     */
+    validate: (callbacks?: ValidationCallback[] | undefined) => Promise<ValidationError[]> | undefined;
+    /**
+     * Validate the form!
+     * You can pass in callbacks as needed.
+     * Callbacks can be applied "before" or "after" validation.
+     */
+    validateAsync: (callbacks?: ValidationCallback[] | undefined) => Promise<ValidationError[] | undefined>;
+    /** If want to (in)validate a specific field for any reason */
+    validateField: (field_name: keyof ModelType, withMessage?: string | undefined, callbacks?: ValidationCallback[] | undefined) => void;
+    /**
+     * Attach a callback to a field or array of fields.
+     * If the callback if type ValidationCallback it will be added
+     * to the validation handler
+     */
+    attachCallbacks: (event: keyof HTMLElementEventMap, callback: Callback | ValidationCallback, field_names: keyof ModelType | Array<keyof ModelType>) => void;
+    /** Clear ALL the errors. */
+    clearErrors: () => void;
+    /** Get Field by name */
+    get: (field_name: keyof ModelType) => FieldConfig<ModelType>;
+    /**
      * Load new data into the form and build the fields.
      * Data is updated IN PLACE by default.
      * Reinitialize is set to false, by default.
@@ -166,30 +183,6 @@ export declare class Form<ModelType extends Object> {
      * Pass in the reference data to add options to fields.
      */
     attachRefData: (refs?: Record<string, import("./types").RefDataItem[]> | undefined) => void;
-    /**
-     * Validate the form!
-     * You can pass in callbacks as needed.
-     * Callbacks can be called "before" or "after" validation.
-     */
-    validate: (callbacks?: ValidationCallback[] | undefined) => Promise<ValidationError[]> | undefined;
-    /**
-     * Validate the form!
-     * You can pass in callbacks as needed.
-     * Callbacks can be called "before" or "after" validation.
-     */
-    validateAsync: (callbacks?: ValidationCallback[] | undefined) => Promise<ValidationError[] | undefined>;
-    /**
-     * If want to (in)validate a specific field for any reason.
-     */
-    validateField: (field_name: keyof ModelType, withMessage?: string | undefined, callbacks?: ValidationCallback[] | undefined) => void;
-    /**
-     * Attach a callback to a field or array of fields.
-     * If the callback if type ValidationCallback it will be added
-     * to the validation handler
-     */
-    attachCallbacks: (event: keyof HTMLElementEventMap, callback: Callback | ValidationCallback, field_names: keyof ModelType | Array<keyof ModelType>) => void;
-    clearErrors: () => void;
-    get: (field_name: keyof ModelType) => FieldConfig<ModelType>;
     /**
      *! Make sure to call this when the component is unloaded/destroyed
      * Removes all event listeners and clears the form state.
