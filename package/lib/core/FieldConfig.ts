@@ -1,5 +1,5 @@
 import { SvelteComponent } from "svelte";
-import { writable, Writable } from "svelte/store";
+import { get, writable, Writable } from "svelte/store";
 import {
   Callback,
   FieldAttributes,
@@ -80,14 +80,15 @@ export class FieldConfig<T extends Object> {
 
     /**
      * I'm doing this because there's not enough thought about accessibility
-     * in Forms. Better to have SOME kind of default than none at all.
+     * in Forms or for libraries. Better to have SOME kind of default than none
+     * at all.
      * So, if there's no aria-label and the title attribute is present...
      */
     if (!this.attributes["aria-label"] && this.attributes["title"]) {
-      // Set aria-label = title
+      /** Set aria-label = title */
       this.attributes["aria-label"] = this.attributes["title"];
     } else if (!this.attributes["aria-label"]) {
-      // If no aria-label then set it to the label or if !label then name
+      /** If no aria-label then set it to the label or if !label then name */
       this.attributes["aria-label"] = this.label || this.name;
     }
   }
@@ -148,7 +149,7 @@ export class FieldConfig<T extends Object> {
 
   /**
    * Attributes uses a fairly exhaustive map of most HTML Field-ish
-   * attributes. 
+   * attributes.
    * You also have the option to use a plain JSON Object, for
    * extra flexibility.
    *
@@ -181,7 +182,9 @@ export class FieldConfig<T extends Object> {
     if (this.node) {
       this.node.addEventListener(
         event,
+        /** Check if the callback is directly executable */
         (e) => (callback instanceof Function ? callback(e) : callback),
+        /** No extra options being passed in */
         false
       );
     } else {
@@ -190,4 +193,39 @@ export class FieldConfig<T extends Object> {
       );
     }
   };
+}
+
+type FieldDictionary = Record<number | string, FieldConfig<Object>>;
+
+export class FieldStepper {
+  constructor(fields: FieldDictionary, active_index?: keyof FieldDictionary) {
+    this.fields = fields;
+
+    if (active_index) {
+      this.active_step = active_index;
+    } else {
+      /** Get the first set, and set the active_index */
+      let k: keyof FieldDictionary,
+        first = true;
+      for (k in fields) {
+        if (first) this.active_step = k;
+      }
+    }
+  }
+
+  active_step: keyof FieldDictionary | undefined;
+
+  fields: FieldDictionary;
+
+  public get fields_valid(): Writable<boolean> {
+    let valid = true,
+      k: keyof FieldDictionary;
+    for (k in this.fields) {
+      /** If there's an error, set valid to false. */
+      if (get(this.fields[k].errors)) {
+        valid = false;
+      }
+    }
+    return writable(valid);
+  }
 }

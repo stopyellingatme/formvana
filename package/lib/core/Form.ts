@@ -61,11 +61,11 @@ export class Form<ModelType extends Object> {
   constructor(
     model: ModelType,
     validation_options: Partial<ValidationOptions>,
-    init?: Partial<Form<ModelType>>
+    form_options?: Partial<Form<ModelType>>
   ) {
-    if (init) Object.assign(this, init);
+    if (form_options) Object.assign(this, form_options);
 
-    // If there's a model, set the inital state's and build the fields
+    /** If there's a model, set the inital state's and build the fields */
     if (model) {
       this.model = model;
       this.buildFields();
@@ -80,10 +80,10 @@ export class Form<ModelType extends Object> {
         "Please add a validator with ReturnType<Promise<ValidationError[]>>"
       );
     }
-    // If they passed in a field order, set the order.
+    /** If they passed in a field order, set the order. */
     if (this.field_order) this.setFieldOrder(this.field_order);
 
-    // Well well, reference data. Better attach that to the fields.
+    /** Well well, reference data. Better attach that to the fields. */
     if (this.refs) this.attachRefData();
 
     if (this.disabled_fields)
@@ -97,7 +97,7 @@ export class Form<ModelType extends Object> {
         hidden: true,
       });
 
-    // Wait until everything is initalized then set the inital state.
+    /** Wait until everything is initalized then set the inital state. */
     _setInitialState(this, this.initial_state);
   }
 
@@ -115,7 +115,7 @@ export class Form<ModelType extends Object> {
    * Fields are built from the model's metadata using reflection.
    * If model is set, call buildFields().
    */
-  fields: FieldConfig<ModelType>[] = [];
+  fields: Array<FieldConfig<ModelType>> = [];
 
   /**
    * validation_options contains the logic and configuration for
@@ -200,17 +200,17 @@ export class Form<ModelType extends Object> {
 
   /**
    * This is the model's initial state.
-   * Shove the stateful_items into the inital state for a decent snapshot.
+   * It's only initial model and errors.
+   * We're keeping this simple.
    */
   initial_state: InitialFormState<ModelType> = {
     model: undefined,
     errors: undefined,
   };
 
-  /**
-   * Use the NAME of the field (field.name) to disable/hide the field.
-   */
+  /** Use the NAME of the field (field.name) to disable/hide the field. */
   hidden_fields?: Array<keyof ModelType>;
+  /** Use the NAME of the field (field.name) to disable/hide the field. */
   disabled_fields?: Array<keyof ModelType>;
 
   /**

@@ -12,14 +12,6 @@ import {
 
 // #region Utility Functions
 
-/** Get the form field by name */
-export function _get<T extends Object>(
-  name: keyof T,
-  fields: FieldConfig<T>[]
-): FieldConfig<T> {
-  return fields.filter((f) => f.name === name)[0];
-}
-
 /**
  * Build the field configs from this.model using metadata-reflection.
  * Grab the editableProperties from the @field decorator.
@@ -42,6 +34,14 @@ export function _buildFormFields<T extends Object>(
     return field;
   });
   return fields;
+}
+
+/** Get the form field by name */
+export function _get<T extends Object>(
+  name: keyof T,
+  fields: FieldConfig<T>[]
+): FieldConfig<T> {
+  return fields.filter((f) => f.name === name)[0];
 }
 
 /**
@@ -151,6 +151,7 @@ export function _linkFieldErrors<T extends Object>(
   if (error && error.length > 0) {
     field.errors.set(error[0]);
   } else {
+    /**  Very important! Don't change! */
     field.errors.set(undefined);
   }
 }
@@ -453,7 +454,7 @@ export function _resetState<T extends Object>(
 
 //#endregion
 
-// #region - Styling
+// #region Styling
 
 /**
  * Using this.field_order, rearrange the order of the fields.
@@ -541,5 +542,9 @@ function setFieldProperty<T extends Object, K extends keyof FieldConfig<T>>(
 ) {
   f[key] = value;
 }
+
+//#endregion
+
+//#region Form Manager
 
 //#endregion
