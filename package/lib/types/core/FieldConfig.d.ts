@@ -77,3 +77,11 @@ export declare class FieldConfig<T extends Object> {
     clear: () => void | undefined;
     addEventListener: (event: keyof HTMLElementEventMap, callback: ValidationCallback | Callback) => void;
 }
+declare type FieldDictionary = Array<FieldConfig<Object>>;
+export declare class FieldStepper {
+    constructor(fields: FieldDictionary, active_index?: keyof FieldDictionary);
+    fields: FieldDictionary;
+    active_step: keyof FieldDictionary | undefined;
+    get fields_valid(): Writable<boolean>;
+}
+export {};

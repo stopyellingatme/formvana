@@ -34,7 +34,7 @@ import { RefData, ValidationError, ValidationCallback, Callback, ValidationOptio
  * Form is NOT valid, initially.
  */
 export declare class Form<ModelType extends Object> {
-    constructor(model: ModelType, validation_options: Partial<ValidationOptions>, init?: Partial<Form<ModelType>>);
+    constructor(model: ModelType, validation_options: Partial<ValidationOptions>, form_options?: Partial<Form<ModelType>>);
     /**
      * This is your form Model/Schema.
      * It's used to build the form.fields.
@@ -46,7 +46,7 @@ export declare class Form<ModelType extends Object> {
      * Fields are built from the model's metadata using reflection.
      * If model is set, call buildFields().
      */
-    fields: FieldConfig<ModelType>[];
+    fields: Array<FieldConfig<ModelType>>;
     /**
      * validation_options contains the logic and configuration for
      * validating the form as well as linking errors to fields.
@@ -77,7 +77,7 @@ export declare class Form<ModelType extends Object> {
      *
      * Render the form into a custom svelte template!
      * Use a svelte component. Or use a string as the selector.
-     * * The component/template must accept {form} prop
+     * * The template/component must accept {form} prop
      *
      * Note: add ` types": ["svelte"] ` to tsconfig compilerOptions
      * to remove TS import error of .svelte files (for your template)
@@ -102,13 +102,13 @@ export declare class Form<ModelType extends Object> {
     value_changes: Writable<Record<keyof ModelType | any, ModelType[keyof ModelType]>>;
     /**
      * This is the model's initial state.
-     * Shove the stateful_items into the inital state for a decent snapshot.
+     * It's only initial model and errors.
+     * We're keeping this simple.
      */
     initial_state: InitialFormState<ModelType>;
-    /**
-     * Use the NAME of the field (field.name) to disable/hide the field.
-     */
+    /** Use the NAME of the field (field.name) to disable/hide the field. */
     hidden_fields?: Array<keyof ModelType>;
+    /** Use the NAME of the field (field.name) to disable/hide the field. */
     disabled_fields?: Array<keyof ModelType>;
     /**
      * Determines the ordering of this.fields.

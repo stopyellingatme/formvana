@@ -96,9 +96,9 @@ export const init = () => {
     get(formState).updateInitialState();
   }, 3000);
 
-  // get(formState).value_changes.subscribe((val) => {
-  //   console.log("CHANGE: ", val);
-  // });
+  get(formState).value_changes.subscribe((val) => {
+    console.log("CHANGE: ", val);
+  });
 
   /**
    * Update form with backend data

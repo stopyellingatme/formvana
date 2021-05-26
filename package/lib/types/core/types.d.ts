@@ -1,14 +1,3 @@
-import { Form } from "./Form";
-/**
- * Base interface for managing multiple instances of Form
- * classes.
- *
- * @TODO Class for FormGroup and FormStepper
- */
-export interface FormManager {
-    forms: Array<Form<Object>>;
-    validateForms: (forms: number[]) => void;
-}
 /** Using "when" gives us a little more flexibilty. */
 export interface ValidationCallback {
     callback: Callback;

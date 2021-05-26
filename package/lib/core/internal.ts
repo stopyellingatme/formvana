@@ -1,4 +1,4 @@
-import { get, writable, Writable } from "svelte/store";
+import { get, Writable } from "svelte/store";
 import { FieldConfig } from "./FieldConfig";
 import { Form } from "./Form";
 import {
@@ -448,7 +448,7 @@ export function _resetState<T extends Object>(
     );
   }
   /** Reset the value changes and the "changed" store */
-  form.value_changes = writable({});
+  form.value_changes.set({});
   form.changed.set(false);
 }
 

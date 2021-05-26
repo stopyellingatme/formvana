@@ -195,7 +195,7 @@ export class FieldConfig<T extends Object> {
   };
 }
 
-type FieldDictionary = Record<number | string, FieldConfig<Object>>;
+type FieldDictionary = Array<FieldConfig<Object>>;
 
 export class FieldStepper {
   constructor(fields: FieldDictionary, active_index?: keyof FieldDictionary) {
@@ -213,9 +213,9 @@ export class FieldStepper {
     }
   }
 
-  active_step: keyof FieldDictionary | undefined;
-
   fields: FieldDictionary;
+
+  active_step: keyof FieldDictionary | undefined;
 
   public get fields_valid(): Writable<boolean> {
     let valid = true,

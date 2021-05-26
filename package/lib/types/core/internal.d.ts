@@ -2,8 +2,6 @@ import { Writable } from "svelte/store";
 import { FieldConfig } from "./FieldConfig";
 import { Form } from "./Form";
 import { Callback, OnEvents, ValidationCallback, ValidationError, InitialFormState, LinkOnEvent } from "./types";
-/** Get the form field by name */
-export declare function _get<T extends Object>(name: keyof T, fields: FieldConfig<T>[]): FieldConfig<T>;
 /**
  * Build the field configs from this.model using metadata-reflection.
  * Grab the editableProperties from the @field decorator.
@@ -11,6 +9,8 @@ export declare function _get<T extends Object>(name: keyof T, fields: FieldConfi
  * @TODO Create method to use plain JSON as model, fields and validation schema
  */
 export declare function _buildFormFields<T extends Object>(model: T, props?: string[]): FieldConfig<T>[];
+/** Get the form field by name */
+export declare function _get<T extends Object>(name: keyof T, fields: FieldConfig<T>[]): FieldConfig<T>;
 /**
  * Helper function for value_change emitter.
  * Write the form's value changes to form.value_changes.

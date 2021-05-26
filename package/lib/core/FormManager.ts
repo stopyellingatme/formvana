@@ -1,7 +1,7 @@
 import { get, writable, Writable } from "svelte/store";
 import { Form } from "./Form";
 
-type FormDictionary = Record<number | string, Form<Object>>;
+type FormDictionary = Array<Form<Object>>;
 
 /**
  * Base interface for managing multiple instances of Form
@@ -16,10 +16,10 @@ export class FormManager {
   }
 
   /** Collection of Forms */
-  forms: FormDictionary = {};
+  forms: FormDictionary = [];
 
   /** Are all of the forms valid? */
-  public get all_valid(): Writable<boolean> {
+  get all_valid(): Writable<boolean> {
     /** Set all_valid = true, then check if any forms are invalid */
     let valid = true,
       k: keyof FormDictionary;
@@ -31,6 +31,34 @@ export class FormManager {
     }
     return writable(valid);
   }
+
+	
+	public get all_changed() : Writable<boolean> {
+		/** Set all_changed = true, then check if any forms are invalid */
+    let changed = true,
+      k: keyof FormDictionary;
+    for (k in this.forms) {
+      /** If even one of them is invalid, set all_changed to false */
+      if (!get(this.forms[k].changed)) {
+        changed = false;
+      }
+    }
+    return writable(changed);
+	}
+
+	public get all_pristine() : Writable<boolean> {
+		/** Set all_pristine = true, then check if any forms are invalid */
+    let pristine = true,
+      k: keyof FormDictionary;
+    for (k in this.forms) {
+      /** If even one of them is invalid, set all_pristine to false */
+      if (!get(this.forms[k].pristine)) {
+        pristine = false;
+      }
+    }
+    return writable(pristine);
+	}
+	
 
   /** Get the Form given the identifier */
   get = (form_index: keyof FormDictionary) => {
@@ -53,16 +81,7 @@ export class FormManager {
 }
 
 /**
- * Group of Forms which extends the FormManager functionality.
- */
-export class FormGroup extends FormManager {
-  constructor(forms: FormDictionary, props?: Partial<FormManager>) {
-    super(forms, props);
-  }
-}
-
-/**
- * Collection of Forms used to manage as steps.
+ * Collection of Forms used as steps.
  * @example a data collection wizard with many fields or whatever
  */
 export class FormStepper extends FormManager {
@@ -70,5 +89,22 @@ export class FormStepper extends FormManager {
     super(forms, props);
   }
 
-  active_step: number | string = 0;
+  active_step: keyof FormDictionary = 0;
+
+  next = () => {
+    if (typeof this.active_step === "number") this.active_step++;
+  };
+
+  back = () => {
+    if (typeof this.active_step === "number") this.active_step--;
+  };
+}
+
+/**
+ * Group of Forms which extends the FormManager functionality.
+ */
+export class FormGroup extends FormManager {
+  constructor(forms: FormDictionary, props?: Partial<FormManager>) {
+    super(forms, props);
+  }
 }
