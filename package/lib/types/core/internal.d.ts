@@ -38,7 +38,7 @@ export declare function _linkFieldErrors<T extends Object>(errors: ValidationErr
  */
 export declare function _linkAllErrors<T extends Object>(errors: ValidationError[], fields: FieldConfig<T>[], field_error_link_name: ValidationError["property"]): void;
 /** When should we link the fields to the model?
- * "alwyas" | "valid" (when valid)
+ * "alwyas" || "valid" (when valid)
  */
 export declare function _hanldeValueLinking<T extends Object>(model: T, fields: FieldConfig<T>[], link_fields_to_model: LinkOnEvent | undefined): void;
 /**

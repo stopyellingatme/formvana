@@ -3,8 +3,6 @@
 
   export let field;
   export let useInput = null;
-  $: errorsStore = field.errors;
-  $: valueStore = field.value;
 
   let name = field.name;
   let label = field.label;
@@ -15,6 +13,8 @@
   let error_class =
     "block w-full px-3 py-2 placeholder-red-300 border border-red-300 appearance-none transition text-red-900 duration-150 ease-in-out rounded-md focus:outline-none focus:ring-red-500 focus:shadow-outline-red focus:border-red-300 sm:text-sm sm:leading-5 disabled:cursor-not-allowed";
 
+  $: valueStore = field.value;
+  $: errorsStore = field.errors;
   $: errors = $errorsStore && $errorsStore.constraints;
 
   $: input_attributes = Object.assign(

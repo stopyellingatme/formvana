@@ -1,6 +1,5 @@
 {
     "compilerOptions": {
-        "baseUrl": "./",
         "target": "esNext",
         "moduleResolution": "node",
         "allowJs": true,

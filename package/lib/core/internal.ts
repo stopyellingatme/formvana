@@ -83,7 +83,13 @@ export function _attachEventListeners<T extends Object>(
   Object.entries(on_events).forEach(([eventName, shouldListen]) => {
     /** If shouldListen true, then add the event listener */
     if (shouldListen) {
-      field.addEventListener(eventName as keyof HTMLElementEventMap, callback);
+      if (field.node?.nodeName === "SELECT" && eventName !== "input") {
+        field.addEventListener(eventName as keyof HTMLElementEventMap, callback);
+      }
+
+      if (field.node?.nodeName !== "SELECT") {
+        field.addEventListener(eventName as keyof HTMLElementEventMap, callback);
+      }
     }
   });
 }
@@ -177,7 +183,7 @@ export function _linkAllErrors<T extends Object>(
 }
 
 /** When should we link the fields to the model?
- * "alwyas" | "valid" (when valid)
+ * "alwyas" || "valid" (when valid)
  */
 export function _hanldeValueLinking<T extends Object>(
   model: T,
@@ -218,9 +224,10 @@ export function _executeValidationEvent<T extends Object>(
   /** Execute pre-validation callbacks */
   _executeCallbacks([
     /**
-     * Link the input from the field to the model.
-     * We aren't linking (only) the field value.
+     * Link new data from field to the model.
+     * We are not linking (only/just) the field value.
      * We link all values just in case the field change propigates other field changes.
+     * I've tried an approach that linked ONLY data to single field, negligable perf hit
      */
     _hanldeValueLinking(
       form.model,

@@ -1,7 +1,7 @@
 import { get, writable, Writable } from "svelte/store";
 import { Form } from "./Form";
 
-type FormDictionary = Array<Form<Object>>;
+type FormDictionary = Array<Form<any>>;
 
 /**
  * Base interface for managing multiple instances of Form
@@ -18,6 +18,28 @@ export class FormManager {
   /** Collection of Forms */
   forms: FormDictionary = [];
 
+  loading: Writable<boolean> = writable(false);
+
+  /** All value changes of all forms */
+  public get all_value_changes(): Writable<Object> {
+    /** Set all_valid = true, then check if any forms are invalid */
+    let changes: any = {},
+      k: keyof FormDictionary,
+      i = 0;
+    for (k in this.forms) {
+      /** If even one of them is invalid, set all_valid to false */
+      if (`${get(this.forms[k].value_changes)}` !== "{}") {
+        if (!changes[`form_${i}`]) {
+          changes[`form_${i}`] = {};
+        }
+        Object.assign(changes[`form_${i}`], get(this.forms[k].value_changes))
+      }
+      i++;
+    }
+    return writable(changes);
+  }
+
+
   /** Are all of the forms valid? */
   get all_valid(): Writable<boolean> {
     /** Set all_valid = true, then check if any forms are invalid */
@@ -32,9 +54,9 @@ export class FormManager {
     return writable(valid);
   }
 
-	
-	public get all_changed() : Writable<boolean> {
-		/** Set all_changed = true, then check if any forms are invalid */
+
+  public get all_changed(): Writable<boolean> {
+    /** Set all_changed = true, then check if any forms are invalid */
     let changed = true,
       k: keyof FormDictionary;
     for (k in this.forms) {
@@ -44,10 +66,10 @@ export class FormManager {
       }
     }
     return writable(changed);
-	}
+  }
 
-	public get all_pristine() : Writable<boolean> {
-		/** Set all_pristine = true, then check if any forms are invalid */
+  public get all_pristine(): Writable<boolean> {
+    /** Set all_pristine = true, then check if any forms are invalid */
     let pristine = true,
       k: keyof FormDictionary;
     for (k in this.forms) {
@@ -57,11 +79,11 @@ export class FormManager {
       }
     }
     return writable(pristine);
-	}
-	
+  }
+
 
   /** Get the Form given the identifier */
-  get = (form_index: keyof FormDictionary) => {
+  getForm = (form_index: keyof FormDictionary) => {
     return this.forms[form_index];
   };
 

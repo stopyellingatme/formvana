@@ -502,7 +502,6 @@ declare class FieldStepper {
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
  *
- * @TODO Create FormManager interface for dealing with FormGroup and FormStepper classes
  * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
  * @TODO Allow fields, model and validator to be passed in separately.
@@ -747,7 +746,7 @@ declare function _linkFieldErrors<T extends Object>(errors: ValidationError[], f
  */
 declare function _linkAllErrors<T extends Object>(errors: ValidationError[], fields: FieldConfig<T>[], field_error_link_name: ValidationError["property"]): void;
 /** When should we link the fields to the model?
- * "alwyas" | "valid" (when valid)
+ * "alwyas" || "valid" (when valid)
  */
 declare function _hanldeValueLinking<T extends Object>(model: T, fields: FieldConfig<T>[], link_fields_to_model: LinkOnEvent | undefined): void;
 //#endregion
@@ -809,4 +808,65 @@ declare function _setFieldAttributes<T extends Object>(target_fields: Array<keyo
  * Set any attributes on the given field.
  */
 declare function _setFieldAttribute<T extends Object>(name: keyof T, fields: FieldConfig<T>[], attributes: Partial<FieldConfig<T>>): void;
-export { FieldConfig, FieldStepper, Form, field, _buildFormFields, _get, _setValueChanges, _attachEventListeners, _addCallbackToField, _linkValues, _linkFieldErrors, _linkAllErrors, _hanldeValueLinking, _executeValidationEvent, _executeCallbacks, _handleValidationSideEffects, _requiredFieldsValid, _hasStateChanged, _setInitialState, _resetState, _setFieldOrder, _setFieldAttributes, _setFieldAttribute, ValidationCallback, ValidatorFunction, ValidationErrorType, ValidationError, ValidationOptions, ClassValidatorOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, InitialFormState, RefDataItem, RefData, FieldAttributes, ElementAttributesMap, Callback };
+type FormDictionary = Array<Form<any>>;
+/**
+ * Base interface for managing multiple instances of Form
+ * classes.
+ *
+ * @TODO Class for FormGroup and FormStepper
+ */
+declare class FormManager {
+    constructor(forms: FormDictionary, props?: Partial<FormManager>);
+    /** Collection of Forms */
+    forms: FormDictionary;
+    loading: Writable<boolean>;
+    /**
+     * @TODO Add a all_value_changes merged store
+     */
+    get all_value_changes(): Writable<Object>;
+    /** Are all of the forms valid? */
+    get all_valid(): Writable<boolean>;
+    get all_changed(): Writable<boolean>;
+    get all_pristine(): Writable<boolean>;
+    /** Get the Form given the identifier */
+    getForm: (form_index: keyof FormDictionary) => number | Form<any> | (() => string) | (() => string) | (() => Form<any> | undefined) | ((...items: Form<any>[]) => number) | {
+        (...items: ConcatArray<Form<any>>[]): Form<any>[];
+        (...items: (Form<any> | ConcatArray<Form<any>>)[]): Form<any>[];
+    } | ((separator?: string | undefined) => string) | (() => Form<any>[]) | (() => Form<any> | undefined) | ((start?: number | undefined, end?: number | undefined) => Form<any>[]) | ((compareFn?: ((a: Form<any>, b: Form<any>) => number) | undefined) => FormDictionary) | {
+        (start: number, deleteCount?: number | undefined): Form<any>[];
+        (start: number, deleteCount: number, ...items: Form<any>[]): Form<any>[];
+    } | ((...items: Form<any>[]) => number) | ((searchElement: Form<any>, fromIndex?: number | undefined) => number) | ((searchElement: Form<any>, fromIndex?: number | undefined) => number) | ((callbackfn: (value: Form<any>, index: number, array: Form<any>[]) => unknown, thisArg?: any) => boolean) | ((callbackfn: (value: Form<any>, index: number, array: Form<any>[]) => unknown, thisArg?: any) => boolean) | ((callbackfn: (value: Form<any>, index: number, array: Form<any>[]) => void, thisArg?: any) => void) | (<U>(callbackfn: (value: Form<any>, index: number, array: Form<any>[]) => U, thisArg?: any) => U[]) | {
+        <S extends Form<any>>(callbackfn: (value: Form<any>, index: number, array: Form<any>[]) => value is S, thisArg?: any): S[];
+        (callbackfn: (value: Form<any>, index: number, array: Form<any>[]) => unknown, thisArg?: any): Form<any>[];
+    } | {
+        (callbackfn: (previousValue: Form<any>, currentValue: Form<any>, currentIndex: number, array: Form<any>[]) => Form<any>): Form<any>;
+        (callbackfn: (previousValue: Form<any>, currentValue: Form<any>, currentIndex: number, array: Form<any>[]) => Form<any>, initialValue: Form<any>): Form<any>;
+        <U_1>(callbackfn: (previousValue: U_1, currentValue: Form<any>, currentIndex: number, array: Form<any>[]) => U_1, initialValue: U_1): U_1;
+    } | {
+        (callbackfn: (previousValue: Form<any>, currentValue: Form<any>, currentIndex: number, array: Form<any>[]) => Form<any>): Form<any>;
+        (callbackfn: (previousValue: Form<any>, currentValue: Form<any>, currentIndex: number, array: Form<any>[]) => Form<any>, initialValue: Form<any>): Form<any>;
+        <U_2>(callbackfn: (previousValue: U_2, currentValue: Form<any>, currentIndex: number, array: Form<any>[]) => U_2, initialValue: U_2): U_2;
+    } | {
+        <S_1 extends Form<any>>(predicate: (this: void, value: Form<any>, index: number, obj: Form<any>[]) => value is S_1, thisArg?: any): S_1 | undefined;
+        (predicate: (value: Form<any>, index: number, obj: Form<any>[]) => unknown, thisArg?: any): Form<any> | undefined;
+    } | ((predicate: (value: Form<any>, index: number, obj: Form<any>[]) => unknown, thisArg?: any) => number) | ((value: Form<any>, start?: number | undefined, end?: number | undefined) => FormDictionary) | ((target: number, start: number, end?: number | undefined) => FormDictionary) | (() => IterableIterator<[number, Form<any>]>) | (() => IterableIterator<number>) | (() => IterableIterator<Form<any>>) | ((searchElement: Form<any>, fromIndex?: number | undefined) => boolean) | (<U_3, This = undefined>(callback: (this: This, value: Form<any>, index: number, array: Form<any>[]) => U_3 | readonly U_3[], thisArg?: This | undefined) => U_3[]) | (<A, D extends number = 1>(this: A, depth?: D | undefined) => FlatArray<A, D>[]);
+    /** Validate a given form, a number of forms, or all forms */
+    validateAll: (form_indexes?: number[] | undefined) => void;
+}
+/**
+ * Collection of Forms used as steps.
+ * @example a data collection wizard with many fields or whatever
+ */
+declare class FormStepper extends FormManager {
+    constructor(forms: FormDictionary, props?: Partial<FormManager>);
+    active_step: keyof FormDictionary;
+    next: () => void;
+    back: () => void;
+}
+/**
+ * Group of Forms which extends the FormManager functionality.
+ */
+declare class FormGroup extends FormManager {
+    constructor(forms: FormDictionary, props?: Partial<FormManager>);
+}
+export { FieldConfig, FieldStepper, Form, field, _buildFormFields, _get, _setValueChanges, _attachEventListeners, _addCallbackToField, _linkValues, _linkFieldErrors, _linkAllErrors, _hanldeValueLinking, _executeValidationEvent, _executeCallbacks, _handleValidationSideEffects, _requiredFieldsValid, _hasStateChanged, _setInitialState, _resetState, _setFieldOrder, _setFieldAttributes, _setFieldAttribute, ValidationCallback, ValidatorFunction, ValidationErrorType, ValidationError, ValidationOptions, ClassValidatorOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, InitialFormState, RefDataItem, RefData, FieldAttributes, ElementAttributesMap, Callback, FormManager, FormStepper, FormGroup };

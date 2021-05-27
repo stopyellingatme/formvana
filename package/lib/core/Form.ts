@@ -40,7 +40,6 @@ import {
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
  *
- * @TODO Create FormManager interface for dealing with FormGroup and FormStepper classes
  * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
  * @TODO Allow fields, model and validator to be passed in separately.

@@ -33,7 +33,7 @@
 </script>
 
 <div
-  class="py-20 pb-10 mx-auto max-w-7xl lg:py-36 xl:py-36 2xl:py-36 md:py-24 lg:px-8"
+  class="py-12 pb-10 mx-auto max-w-7xl lg:py-36 xl:py-36 2xl:py-36 md:py-24 lg:px-8"
 >
   <div class="flex items-start justify-center">
     <div class="w-full space-y-6">

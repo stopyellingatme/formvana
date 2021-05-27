@@ -1,7 +1,10 @@
 // Script to generate 100's of inputs for testing.
 const fs = require("fs");
 
-const output_path = `./example/src/models/ExampleClass.ts`;
+const output_path1 = `./example/src/models/ExampleClass.ts`;
+const output_path2 = `./example/src/models/ExampleClass2.ts`;
+const output_path3 = `./example/src/models/ExampleClass3.ts`;
+const output_path4 = `./example/src/models/ExampleClass4.ts`;
 
 const test_class_string = (fields) => `
 import {
@@ -71,33 +74,6 @@ const field = (
   ${name}${initial_val ? " = " + initial_val : ""};
 `;
 
-function generateFields() {
-  let fields = [];
-  let i = 1,
-    len = 11;
-  for (; len > i; ++i) {
-    if (i <= 10) {
-      fields.push(psudoRandomGetField(i));
-    } else if (i >= 11) {
-      fields.push(psudoRandomGetField(i));
-    } else if (i <= 20) {
-      fields.push(psudoRandomGetField(i));
-    } else if (i >= 21) {
-      fields.push(psudoRandomGetField(i));
-    } else if (i <= 30) {
-      fields.push(psudoRandomGetField(i));
-    } else if (i >= 30) {
-      fields.push(psudoRandomGetField(i));
-    } else {
-      fields.push(psudoRandomGetField(i));
-    }
-  }
-
-  const model = test_class_string(fields);
-
-  fs.writeFile(output_path, model, null, fwcb);
-}
-
 function psudoRandomGetField(i) {
   let f = null;
   if (i % 5 === 0) {
@@ -163,6 +139,33 @@ function psudoRandomGetField(i) {
   return f;
 }
 
+function generateFields(out_path, num_of_fields) {
+  let fields = [];
+  let i = 1,
+    len = num_of_fields;
+  for (; len > i; ++i) {
+    if (i <= 10) {
+      fields.push(psudoRandomGetField(i));
+    } else if (i >= 11) {
+      fields.push(psudoRandomGetField(i));
+    } else if (i <= 20) {
+      fields.push(psudoRandomGetField(i));
+    } else if (i >= 21) {
+      fields.push(psudoRandomGetField(i));
+    } else if (i <= 30) {
+      fields.push(psudoRandomGetField(i));
+    } else if (i >= 30) {
+      fields.push(psudoRandomGetField(i));
+    } else {
+      fields.push(psudoRandomGetField(i));
+    }
+  }
+
+  const model = test_class_string(fields);
+
+  fs.writeFile(out_path, model, null, fwcb);
+}
+
 function fwcb(path, err) {
   if (err) {
     return console.log(err);
@@ -170,4 +173,7 @@ function fwcb(path, err) {
   console.log(`File was saved! \n${path}`);
 }
 
-(() => generateFields())();
+(() => generateFields(output_path1, 101))();
+(() => generateFields(output_path2, 11))();
+(() => generateFields(output_path3, 11))();
+(() => generateFields(output_path4, 11))();
