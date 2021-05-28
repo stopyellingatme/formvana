@@ -60,14 +60,14 @@ export class Form<ModelType extends Object> {
   constructor(
     model: ModelType,
     validation_options: Partial<ValidationOptions>,
-    form_options?: Partial<Form<ModelType>>
+    form_properties?: Partial<Form<ModelType>>
   ) {
-    if (form_options) Object.assign(this, form_options);
+    if (form_properties) Object.assign(this, form_properties);
 
     /** If there's a model, set the inital state's and build the fields */
     if (model) {
       this.model = model;
-      this.buildFields();
+      this.#buildFields();
     } else {
       throw new Error("Model is not valid. Please use a valid model.");
     }
@@ -80,7 +80,7 @@ export class Form<ModelType extends Object> {
       );
     }
     /** If they passed in a field order, set the order. */
-    if (this.field_order) this.setFieldOrder(this.field_order);
+    if (this.#field_order) this.setFieldOrder(this.#field_order);
 
     /** Well well, reference data. Better attach that to the fields. */
     if (this.refs) this.attachRefData();
@@ -112,7 +112,7 @@ export class Form<ModelType extends Object> {
 
   /**
    * Fields are built from the model's metadata using reflection.
-   * If model is set, call buildFields().
+   * If model is set, call #buildFields().
    */
   fields: Array<FieldConfig<ModelType>> = [];
 
@@ -127,6 +127,7 @@ export class Form<ModelType extends Object> {
     /** When to link this.field values to this.model values */
     link_fields_to_model: "always",
     field_error_link_name: "property",
+    /** These options come from class-validator, thats why Pascal Case */
     options: {
       skipMissingProperties: false,
       dismissDefaultMessages: false,
@@ -218,7 +219,7 @@ export class Form<ModelType extends Object> {
    * in the order to be displayed
    *
    */
-  private field_order?: Array<keyof ModelType>;
+  #field_order?: Array<keyof ModelType>;
 
   /**
    * We keep track of required fields because we let class-validator handle everything
@@ -227,7 +228,7 @@ export class Form<ModelType extends Object> {
    * valid. This is the mechanism to help keep track of that.
    * Keep track of the fields so we can validate faster.
    */
-  private required_fields: Array<keyof ModelType> = [];
+  #required_fields: Array<keyof ModelType> = [];
 
   //#endregion ^^ Fields ^^
 
@@ -241,10 +242,10 @@ export class Form<ModelType extends Object> {
    *
    * @TODO Allow plain JSON model, fields and schema validation/setup
    */
-  private buildFields = (model: ModelType = this.model): void => {
+  #buildFields = (model: ModelType = this.model): void => {
     this.fields = _buildFormFields(model);
 
-    this.required_fields = this.fields
+    this.#required_fields = this.fields
       .filter((f) => f.required)
       .map((f) => f.name as keyof ModelType);
   };
@@ -270,7 +271,7 @@ export class Form<ModelType extends Object> {
       _attachEventListeners(
         field,
         this.validation_options.on_events,
-        (e: Event) => _executeValidationEvent(this, this.required_fields, field)
+        (e: Event) => _executeValidationEvent(this, this.#required_fields, field)
       );
   };
 
@@ -288,7 +289,7 @@ export class Form<ModelType extends Object> {
   ): Promise<ValidationError[]> | undefined => {
     return _executeValidationEvent(
       this,
-      this.required_fields,
+      this.#required_fields,
       undefined,
       callbacks
     );
@@ -304,7 +305,7 @@ export class Form<ModelType extends Object> {
   ): Promise<ValidationError[] | undefined> => {
     return await _executeValidationEvent(
       this,
-      this.required_fields,
+      this.#required_fields,
       undefined,
       callbacks
     );
@@ -318,7 +319,7 @@ export class Form<ModelType extends Object> {
   ): void => {
     const field = _get(field_name, this.fields);
     if (!withMessage) {
-      _executeValidationEvent(this, this.required_fields, field, callbacks);
+      _executeValidationEvent(this, this.#required_fields, field, callbacks);
     } else {
       const err = new ValidationError(
         field_name as string,
@@ -347,11 +348,11 @@ export class Form<ModelType extends Object> {
     if (Array.isArray(field_names)) {
       const fields = field_names.map((f) => _get(f, this.fields));
       fields.forEach((f) => {
-        _addCallbackToField(this, f, event, callback, this.required_fields);
+        _addCallbackToField(this, f, event, callback, this.#required_fields);
       });
     } else {
       const field = _get(field_names, this.fields);
-      _addCallbackToField(this, field, event, callback, this.required_fields);
+      _addCallbackToField(this, field, event, callback, this.#required_fields);
     }
   };
 
@@ -386,7 +387,7 @@ export class Form<ModelType extends Object> {
   ): Form<ModelType> => {
     if (reinitialize) {
       this.model = model;
-      this.buildFields();
+      this.#buildFields();
     } else {
       let key: keyof ModelType;
       for (key in this.model) {
@@ -432,7 +433,7 @@ export class Form<ModelType extends Object> {
             f.node &&
               f.node.removeEventListener(key, (ev) => {
                 (e: Event) =>
-                  _executeValidationEvent(this, this.required_fields, f);
+                  _executeValidationEvent(this, this.#required_fields, f);
               });
           });
       });
@@ -466,8 +467,8 @@ export class Form<ModelType extends Object> {
    */
   setFieldOrder = (order: Array<keyof ModelType>): void => {
     if (order && order.length > 0) {
-      this.field_order = order;
-      this.fields = _setFieldOrder(this.field_order, this.fields);
+      this.#field_order = order;
+      this.fields = _setFieldOrder(this.#field_order, this.fields);
     }
   };
 

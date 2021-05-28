@@ -33,7 +33,8 @@ import { RefData, ValidationError, ValidationCallback, Callback, ValidationOptio
  * Form is NOT valid, initially.
  */
 export declare class Form<ModelType extends Object> {
-    constructor(model: ModelType, validation_options: Partial<ValidationOptions>, form_options?: Partial<Form<ModelType>>);
+    #private;
+    constructor(model: ModelType, validation_options: Partial<ValidationOptions>, form_properties?: Partial<Form<ModelType>>);
     /**
      * This is your form Model/Schema.
      * It's used to build the form.fields.
@@ -43,7 +44,7 @@ export declare class Form<ModelType extends Object> {
     model: ModelType;
     /**
      * Fields are built from the model's metadata using reflection.
-     * If model is set, call buildFields().
+     * If model is set, call #buildFields().
      */
     fields: Array<FieldConfig<ModelType>>;
     /**
@@ -110,28 +111,6 @@ export declare class Form<ModelType extends Object> {
     /** Use the NAME of the field (field.name) to disable/hide the field. */
     disabled_fields?: Array<keyof ModelType>;
     /**
-     * Determines the ordering of this.fields.
-     * Simply an array of field names (or group names or stepper names)
-     * in the order to be displayed
-     *
-     */
-    private field_order?;
-    /**
-     * We keep track of required fields because we let class-validator handle everything
-     * except *required* (field.required)
-     * So if there are no required fields, but there are errors, the form is still
-     * valid. This is the mechanism to help keep track of that.
-     * Keep track of the fields so we can validate faster.
-     */
-    private required_fields;
-    /**
-     * Builds the fields from the model.
-     * Builds the field configs via this.model using metadata-reflection.
-     *
-     * @TODO Allow plain JSON model, fields and schema validation/setup
-     */
-    private buildFields;
-    /**
      * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!
      * This hooks up the event listeners!
      *
@@ -181,7 +160,7 @@ export declare class Form<ModelType extends Object> {
     /**
      * Pass in the reference data to add options to fields.
      */
-    attachRefData: (refs?: Record<string, import("./types").RefDataItem[]> | undefined) => void;
+    attachRefData: (refs?: RefData | undefined) => void;
     /**
      *! Make sure to call this when the component is unloaded/destroyed
      * Removes all event listeners and clears the form state.

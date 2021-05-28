@@ -2,6 +2,7 @@
   import "tailwindcss/dist/tailwind.css";
   import "tailwindcss/dist/components.css";
   import ExampleForm from "./forms/basic/ExampleForm.svelte";
+  import FormGroup from "./forms/group/FormGroup.svelte";
 
   const examples = ["basic", "group", "stepper"];
   $: selected = examples[0];
@@ -23,9 +24,10 @@
   {#if selected === examples[0]}
     <ExampleForm />
   {:else if selected === examples[1]}
-    <div class="flex items-center justify-center w-full">
+    <!-- <div class="flex items-center justify-center w-full">
       <p class="m-10 font-mono text-lg capitalize">Group Goes Here</p>
-    </div>
+    </div> -->
+    <FormGroup />
   {:else if selected === examples[2]}
     <div class="flex items-center justify-center w-full">
       <p class="m-10 font-mono text-lg capitalize">Stepper Goes Here</p>

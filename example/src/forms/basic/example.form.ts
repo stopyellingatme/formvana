@@ -76,13 +76,13 @@ export const init = () => {
     const callbacks: ValidationCallback[] = [
       {
         callback: () => {
-          console.log("Weeehoo!");
+          // console.log("Weeehoo!");
         },
         when: "after",
       },
       {
         callback: () => {
-          console.log(get(formState));
+          // console.log(get(formState));
           get(formState).get("name_10").value.set("some value jfkdsalfjdsk");
           get(formState).validate();
         },
@@ -96,9 +96,9 @@ export const init = () => {
     get(formState).updateInitialState();
   }, 3000);
 
-  get(formState).value_changes.subscribe((val) => {
-    console.log("CHANGE: ", val);
-  });
+  // get(formState).value_changes.subscribe((val) => {
+  //   console.log("CHANGE: ", val);
+  // });
 
   /**
    * Update form with backend data

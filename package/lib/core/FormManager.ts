@@ -1,5 +1,6 @@
 import { get, writable, Writable } from "svelte/store";
 import { Form } from "./Form";
+import { ValidationCallback } from "./types";
 
 type FormDictionary = Array<Form<any>>;
 
@@ -13,6 +14,11 @@ export class FormManager {
   constructor(forms: FormDictionary, props?: Partial<FormManager>) {
     if (forms) this.forms = forms;
     if (props) Object.assign(this, props);
+
+    this.#getAllValueChanges();
+    this.#getAllValid();
+    this.#getAllChanged();
+    this.#getAllPristine();
   }
 
   /** Collection of Forms */
@@ -20,84 +26,114 @@ export class FormManager {
 
   loading: Writable<boolean> = writable(false);
 
-  /** All value changes of all forms */
-  public get all_value_changes(): Writable<Object> {
-    /** Set all_valid = true, then check if any forms are invalid */
-    let changes: any = {},
-      k: keyof FormDictionary,
-      i = 0;
-    for (k in this.forms) {
-      /** If even one of them is invalid, set all_valid to false */
-      if (`${get(this.forms[k].value_changes)}` !== "{}") {
-        if (!changes[`form_${i}`]) {
-          changes[`form_${i}`] = {};
-        }
-        Object.assign(changes[`form_${i}`], get(this.forms[k].value_changes))
-      }
-      i++;
-    }
-    return writable(changes);
-  }
+  all_value_changes: Writable<Record<string, any>> = writable({});
 
+  all_valid: Writable<boolean> = writable(false);
 
-  /** Are all of the forms valid? */
-  get all_valid(): Writable<boolean> {
-    /** Set all_valid = true, then check if any forms are invalid */
-    let valid = true,
-      k: keyof FormDictionary;
-    for (k in this.forms) {
-      /** If even one of them is invalid, set all_valid to false */
-      if (!get(this.forms[k].valid)) {
-        valid = false;
-      }
-    }
-    return writable(valid);
-  }
+  all_changed: Writable<boolean> = writable(false);
 
+  all_pristine: Writable<boolean> = writable(false);
 
-  public get all_changed(): Writable<boolean> {
-    /** Set all_changed = true, then check if any forms are invalid */
-    let changed = true,
-      k: keyof FormDictionary;
-    for (k in this.forms) {
-      /** If even one of them is invalid, set all_changed to false */
-      if (!get(this.forms[k].changed)) {
-        changed = false;
-      }
-    }
-    return writable(changed);
-  }
-
-  public get all_pristine(): Writable<boolean> {
-    /** Set all_pristine = true, then check if any forms are invalid */
-    let pristine = true,
-      k: keyof FormDictionary;
-    for (k in this.forms) {
-      /** If even one of them is invalid, set all_pristine to false */
-      if (!get(this.forms[k].pristine)) {
-        pristine = false;
-      }
-    }
-    return writable(pristine);
-  }
-
-
-  /** Get the Form given the identifier */
-  getForm = (form_index: keyof FormDictionary) => {
-    return this.forms[form_index];
-  };
+  #all_valid_list: Record<number, boolean> = {};
+  #all_changed_list: Record<number, boolean> = {};
+  #all_pristine_list: Record<number, boolean> = {};
 
   /** Validate a given form, a number of forms, or all forms */
-  validateAll = (form_indexes?: number[]): void => {
+  validateAll = (
+    callbacks?: ValidationCallback[],
+    form_indexes?: number[]
+  ): void => {
     if (form_indexes) {
       form_indexes.forEach((index) => {
-        this.forms && this.forms[index].validate();
+        this.forms && this.forms[index].validate(callbacks);
       });
     } else {
       let k: keyof FormDictionary;
       for (k in this.forms) {
-        this.forms[k].validate();
+        this.forms[k].validate(callbacks);
       }
+    }
+  };
+
+  /** All value changes of all forms */
+  #getAllValueChanges = (): void => {
+    /** Set all_valid = true, then check if any forms are invalid */
+    // let changes: Writable<Record<string, any>> = writable({}),
+    let k: keyof FormDictionary,
+      i = 0;
+    for (k in this.forms) {
+      const id = `form_${i}`;
+
+      /** If even one of them is invalid, set all_valid to false */
+      if (`${get(this.forms[k].value_changes)}` !== "{}") {
+        const previous_changes = get(this.all_value_changes);
+
+        if (!previous_changes[id]) {
+          this.all_value_changes.set({ ...previous_changes, [id]: {} });
+        }
+
+        this.forms[k].value_changes.subscribe((_changes) => {
+          const _previous_changes = get(this.all_value_changes);
+          this.all_value_changes.set({ ..._previous_changes, [id]: _changes });
+        });
+      }
+
+      i++;
+    }
+  };
+
+  /** Are all of the forms valid? */
+  #getAllValid = (): void => {
+    let k: keyof FormDictionary,
+      i = 0;
+    for (k in this.forms) {
+      const index = i;
+      this.forms[k].valid.subscribe((valid) => {
+        this.#all_valid_list[index] = valid;
+
+        if (Object.values(this.#all_valid_list).includes(false)) {
+          this.all_valid.set(false);
+        } else {
+          this.all_valid.set(true);
+        }
+      });
+      i++;
+    }
+  };
+
+  #getAllChanged = (): void => {
+    let k: keyof FormDictionary,
+      i = 0;
+    for (k in this.forms) {
+      const index = i;
+      this.forms[k].changed.subscribe((valid) => {
+        this.#all_changed_list[index] = valid;
+
+        if (Object.values(this.#all_changed_list).includes(false)) {
+          this.all_changed.set(false);
+        } else {
+          this.all_changed.set(true);
+        }
+      });
+      i++;
+    }
+  };
+
+  #getAllPristine = (): void => {
+    let k: keyof FormDictionary,
+      i = 0;
+    for (k in this.forms) {
+      const index = i;
+      this.forms[k].pristine.subscribe((valid) => {
+        this.#all_pristine_list[index] = valid;
+
+        if (Object.values(this.#all_pristine_list).includes(false)) {
+          this.all_pristine.set(false);
+        } else {
+          this.all_pristine.set(true);
+        }
+      });
+      i++;
     }
   };
 }
