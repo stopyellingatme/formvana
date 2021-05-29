@@ -1,557 +1,492 @@
-import { get, Writable } from "svelte/store";
-import { FieldConfig } from "./FieldConfig";
-import { Form } from "./Form";
-import {
-  Callback,
-  OnEvents,
-  ValidationCallback,
-  ValidationError,
-  InitialFormState,
-  LinkOnEvent,
-} from "./types";
+// #region Validation
 
-// #region Utility Functions
-
-/**
- * Build the field configs from this.model using metadata-reflection.
- * Grab the editableProperties from the @field decorator.
- *
- * @TODO Create method to use plain JSON as model, fields and validation schema
- */
-export function _buildFormFields<T extends Object>(
-  model: T,
-  props: string[] = Reflect.getMetadata("editableProperties", model)
-): FieldConfig<T>[] {
-  /** Map the @field fields to the form.fields */
-  const fields = props.map((prop: string) => {
-    /** Get the @FieldConfig using metadata reflection */
-    const field: FieldConfig<T> = new FieldConfig<T>(prop as keyof T, {
-      ...Reflect.getMetadata("fieldConfig", model, prop),
-      value: model[prop as keyof T],
-    });
-
-    /** We made it. Return the field config and let's generate some inputs! */
-    return field;
-  });
-  return fields;
-}
-
-/** Get the form field by name */
-export function _get<T extends Object>(
-  name: keyof T,
-  fields: FieldConfig<T>[]
-): FieldConfig<T> {
-  return fields.filter((f) => f.name === name)[0];
-}
-
-/**
- * Helper function for value_change emitter.
- * Write the form's value changes to form.value_changes.
- *
- * @param changes incoming value changes
- * @param field field emitting the changes
- */
-export function _setValueChanges<T extends Object>(
-  changes: Writable<Record<keyof T | any, T[keyof T]>>,
-  field: FieldConfig<T>
-): void {
-  const _changes = get(changes);
-
-  /** Is the change is on the same field? */
-  if (_changes[field.name]) {
-    _changes[field.name] = get(field.value);
-    changes.set({ ..._changes });
-  } else {
-    /** Or is the change on a different field? */
-    changes.set({ ..._changes, [field.name]: get(field.value) });
-  }
-}
-
-//#endregion
-
-// #region HTML Event Helpers
-
-/**
- * Attach the OnEvents events to each form.field.
- * Parent: form.useField(...)
- */
-export function _attachEventListeners<T extends Object>(
-  field: FieldConfig<T>,
-  on_events: OnEvents<HTMLElementEventMap>,
-  callback: Callback
-): void {
-  Object.entries(on_events).forEach(([eventName, shouldListen]) => {
-    /** If shouldListen true, then add the event listener */
-    if (shouldListen) {
-      if (field.node?.nodeName === "SELECT" && eventName !== "input") {
-        field.addEventListener(eventName as keyof HTMLElementEventMap, callback);
-      }
-
-      if (field.node?.nodeName !== "SELECT") {
-        field.addEventListener(eventName as keyof HTMLElementEventMap, callback);
-      }
-    }
-  });
-}
-
-export function _addCallbackToField<T extends Object>(
-  form: Form<T>,
-  field: FieldConfig<T>,
-  event: keyof HTMLElementEventMap,
-  callback: ValidationCallback | Callback,
-  required_fields: Array<keyof T>
-): void {
-  /** Check if callback is of type ValidationCallback */
-  if (callback && (<ValidationCallback>callback).when) {
-    field.addEventListener(
-      event,
-      _executeValidationEvent(form, required_fields, undefined, [
-        <ValidationCallback>callback,
-      ])
-    );
-  } else {
-    field.addEventListener(event, <Callback>callback);
-  }
-}
-
-//#endregion
-
-// #region Linking Utilities
-
-/**  Link values from FIELDS to MODEL or MODEL to FIELDS */
-export function _linkValues<T extends Object>(
-  from_fields_to_model: boolean,
-  fields: FieldConfig<T>[],
-  model: T
-): void {
-  /** Still the fastest way i've seen to loop in JS. */
-  let i = 0,
-    len = fields.length;
-  for (; len > i; ++i) {
-    /** Get name and value of the field */
-    const name = fields[i].name,
-      val = fields[i].value;
-    /**  Link field[values] to model[values] */
-    if (from_fields_to_model) {
-      model[name as keyof T] = get(val);
-    } else {
-      /**  Link form.model[values] to the form.fields[values] */
-      val.set(model[name as keyof T]);
-    }
-  }
-}
-
-/**
- * Link form.errors to it's corresponding field.errors
- * Via error[field_name]
- */
-export function _linkFieldErrors<T extends Object>(
-  errors: ValidationError[],
-  field: FieldConfig<T>,
-  field_name: ValidationError["property"]
-): void {
-  const error = errors.filter(
-    (e) => e[field_name as keyof ValidationError] === field.name
-  );
-  // Check if there's an error for the field
-  if (error && error.length > 0) {
-    field.errors.set(error[0]);
-  } else {
-    /**  Very important! Don't change! */
-    field.errors.set(undefined);
-  }
-}
-
-/**
- * Link all Validation Errors on Form.errors to each field via the
- * field_error_link_name.
- */
-export function _linkAllErrors<T extends Object>(
-  errors: ValidationError[],
-  fields: FieldConfig<T>[],
-  field_error_link_name: ValidationError["property"]
-): void {
-  errors.forEach((err) => {
-    let k: keyof typeof err;
-    for (k in err) {
-      if (k === field_error_link_name) {
-        const f = _get(err[field_error_link_name], fields);
-        f.errors.set(err);
-      }
-    }
-  });
-}
-
-/** When should we link the fields to the model?
- * "alwyas" || "valid" (when valid)
- */
-export function _hanldeValueLinking<T extends Object>(
-  model: T,
-  fields: FieldConfig<T>[],
-  link_fields_to_model: LinkOnEvent | undefined
-): void {
+/** Using "when" gives us a little more flexibilty. */
+export interface ValidationCallback {
+  callback: Callback;
   /**
-   * Link the input from the field to the model.
-   * We dont't link (just) the field value.
-   * We link all values just in case the field change propigates
-   * to other field changes.
+   * When should the callback fire?
+   * "before" or "after" validation?
    */
-  if (link_fields_to_model === "always") {
-    _linkValues(true, fields, model);
-  } else if (link_fields_to_model === "valid") {
-    _linkValues(true, fields, model);
-  }
+  when: "before" | "after";
 }
 
-//#endregion
-
-// #region Validation Helpers
+/** Pretty much any funciton as long as it returns a Promise with
+ * Validation Error array.
+ */
+export type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
 
 /**
- * Hanlde the events that will fire for each field.
- * Corresponds to the form.on_events field.
- *
+ * @param model_property_key, which model field are we linking this to?
+ * @param errors essentially Record<string #1, string #2>
+ * with #1 being the name of the error (minlength, pattern)
+ * and #2 being the error message
+ * @param options, anything else part of the ValidationErrorType
  */
-export function _executeValidationEvent<T extends Object>(
-  form: Form<T>,
-  required_fields: Array<keyof T>,
-  field?: FieldConfig<T>,
-  callbacks?: ValidationCallback[]
-): Promise<ValidationError[]> | undefined {
-  /** The form has been altered (no longer pristine) */
-  form.pristine.set(false);
-
-  /** Execute pre-validation callbacks */
-  _executeCallbacks([
-    /**
-     * Link new data from field to the model.
-     * We are not linking (only/just) the field value.
-     * We link all values just in case the field change propigates other field changes.
-     * I've tried an approach that linked ONLY data to single field, negligable perf hit
-     */
-    _hanldeValueLinking(
-      form.model,
-      form.fields,
-      form.validation_options.link_fields_to_model
-    ),
-    // Execution step may need work
-    field && _setValueChanges(form.value_changes, field),
-    callbacks && _executeValidationCallbacks("before", callbacks),
-  ]);
-
-  return form.validation_options
-    .validator(form.model, form.validation_options.options)
-    .then((errors: ValidationError[]) => {
-      _executeCallbacks([
-        _handleValidationSideEffects(form, errors, required_fields, field),
-        _hasStateChanged(form.value_changes, form.changed),
-        callbacks && _executeValidationCallbacks("after", callbacks),
-      ]);
-      return errors;
-    });
-}
-
-/** Execute validation callbacks, depending on when_to_call */
-function _executeValidationCallbacks(
-  when_to_call: "before" | "after",
-  callbacks: ValidationCallback[]
-): void {
-  if (callbacks && callbacks.length > 0)
-    callbacks.forEach((cb) => {
-      if (cb.when === when_to_call) {
-        _callFunction(cb.callback);
-      }
-    });
-}
-
-/** Check if the callback is a function and execute it accordingly */
-function _callFunction(cb: Callback) {
-  if (cb instanceof Function) {
-    cb();
-  } else {
-    () => cb;
-  }
-}
-
-/**
- * This is used to add functions and callbacks to the OnEvent
- * handler. Functions can be added in a plugin-style manner now.
- */
-export function _executeCallbacks(callbacks: Callback | Callback[]): void {
-  /** Is it an Array of callbacks? */
-  if (Array.isArray(callbacks)) {
-    callbacks.forEach((cb) => {
-      _callFunction(cb);
-    });
-  } else {
-    _callFunction(callbacks);
-  }
-}
-
-/**
- * Handle all the things associated with validation!
- * Link the errors to the fields.
- * Check if all required fields are valid.
- * Link values from fields to model if
- * form.link_fields_to_model === LinkOnEvent.Valid is true.
- */
-export async function _handleValidationSideEffects<T extends Object>(
-  form: Form<T>,
-  errors: ValidationError[],
-  required_fields: Array<keyof T>,
-  field?: FieldConfig<T>
-): Promise<ValidationError[]> {
-  /**  There are errors! */
-  if (errors && errors.length > 0) {
-    form.errors = errors;
-
-    /**  Are we validating the whole form or just the fields? */
-    if (field) {
-      /**  Link errors to field (to show validation errors) */
-      if (form.validation_options.field_error_link_name) {
-        _linkFieldErrors(
-          errors,
-          field,
-          form.validation_options.field_error_link_name
-        );
-      }
-    } else {
-      /**  This is validatino for the whole form! */
-      _linkAllErrors(
-        errors,
-        form.fields,
-        form.validation_options.field_error_link_name
-      );
+export class ValidationError implements ValidationErrorType {
+  constructor(
+    model_property_key?: string,
+    errors?: { [type: string]: string },
+    options?: Partial<ValidationErrorType>
+  ) {
+    if (model_property_key) this.property = model_property_key;
+    if (errors) {
+      this.constraints = errors;
     }
-
-    /**  All required fields are valid? */
-    if (_requiredFieldsValid(errors, required_fields)) {
-      form.valid.set(true);
-    } else {
-      form.valid.set(false);
+    if (options) {
+      let k: keyof typeof options;
+      for (k in options) {
+        this[k] = options[k];
+      }
     }
-  } else {
-    /** We can't get here unless the errors we see are for non-required fields */
-
-    /**
-     * If the config tells us to link the values only when the form
-     * is valid, then link them here.
-     */
-    _hanldeValueLinking(
-      form.model,
-      form.fields,
-      form.validation_options.link_fields_to_model
-    );
-    form.clearErrors(); /** Clear form errors */
-    form.valid.set(true); /** Form is valid! */
   }
-  return errors;
+
+  target?: Object; // Object that was validated.
+  property?: string; // Object's property that didn't pass validation.
+  value?: any; // Value that didn't pass a validation.
+  constraints?: {
+    // Constraints that failed validation with error messages.
+    [type: string]: string;
+  };
+  children?: ValidationErrorType[];
 }
 
-/**
- * TODO: Clean up this requiredFieldsValid implementation. Seems too clunky.
- *
- * Check if there are any required fields in the errors.
- * If there are no required fields in the errors, the form is valid
- */
-export function _requiredFieldsValid<T extends Object>(
-  errors: ValidationError[],
-  required_fields: Array<keyof T>
-): boolean {
-  if (errors.length === 0) return true;
-  // Go ahead and return if there are no errors
-  let i = 0,
-    len = required_fields.length;
-  // If there are no required fields, just go ahead and return
-  if (len === 0) return true;
+export interface ValidationErrorType {
+  target?: Object; // Object that was validated.
+  property?: string; // Object's property that didn't pass validation.
+  value?: any; // Value that didn't pass a validation.
+  constraints?: {
+    // Constraints that failed validation with error messages.
+    [type: string]: string;
+  };
+  children?: ValidationErrorType[];
+}
+
+/** Form Validation Options  */
+export interface ValidationOptions {
   /**
-   * Otherwise we have to map the names of the errors so we can
-   * check if they're for a required field
+   * PLEASE PASS IN A VALIDATOR FUNCTION!
+   *
+   * This is the (validation) function that will be called when validating.
+   * You can use any validation library you like, as long as this function
+   * returns Promise<ValidationError[]>
    */
-  const errs = errors.map((e) => e.property);
-  for (; len > i; ++i) {
-    if (errs.indexOf(required_fields[i] as keyof ValidationError) !== -1) {
-      return false;
-    }
-  }
-  return true;
-}
-
-//#endregion
-
-// #region Form State
-
-/**
- * Is the current form state different than the initial state?
- *
- * I've tested it with > 1000 fields in a single class with very slight input lag.
- */
-export function _hasStateChanged(
-  value_changes: Writable<Record<string, any>>,
-  changed: Writable<boolean>
-): void {
-  const changes = get(value_changes) !== {} ? get(value_changes) : null;
-
-  if (changes && Object.keys(changes).length > 0) {
-    changed.set(true);
-    return;
-  }
-  changed.set(false);
-}
-
-/**
- * Grab a snapshot of several items that generally define the state of the form
- * and serialize them into a format that's easy-ish to check/deserialize (for resetting)
- */
-export function _setInitialState<T extends Object>(
-  form: Form<T>,
-  initial_state: InitialFormState<T>
-): InitialFormState<T> {
-  initial_state.model = Object.assign({}, form.model);
-
-  if (form.errors && form.errors.length > 0) {
-    initial_state.errors = [...form.errors];
-  } else {
-    initial_state.errors = [];
-  }
-  return initial_state;
-}
-
-/**
- * Reset form to inital state.
- */
-export function _resetState<T extends Object>(
-  form: Form<T>,
-  initial_state: InitialFormState<T>
-): void {
-  /** !CANNOT OVERWRITE MODEL. VALIDATION GETS FUCKED UP! */
-  let k: keyof T;
-  if (initial_state.model) {
-    for (k in initial_state.model) {
-      form.model[k] = initial_state.model[k];
-    }
-  }
-
-  /** Clear the form errors before assigning initial_state.errors */
-  form.clearErrors();
-  if (initial_state.errors && initial_state.errors.length > 0) {
-    form.errors = [...initial_state.errors];
-  } else {
-    form.errors = [];
-  }
-  /** Done serializing the initial_state */
-
-  /** Link the values, now */
-  _linkValues(false, form.fields, form.model);
-
-  /** If there were errors in the inital_state
-   *  link them to each field
+  validator: ValidatorFunction;
+  /**
+   * Validation options come from class-validator ClassValidatorOptions.
+   *
+   * Biggest perf increase comes from setting validationError.target = false
+   * (so the whole model is not attached to each error message)
    */
-  if (form.errors && form.errors.length > 0) {
-    _linkAllErrors(
-      form.errors,
-      form.fields,
-      form.validation_options.field_error_link_name
-    );
-  }
-  /** Reset the value changes and the "changed" store */
-  form.value_changes.set({});
-  form.changed.set(false);
+  options?: Partial<ClassValidatorOptions>;
+
+  /**
+   * Optional validation schema.
+   * "no-class" method of validating the model.
+   *
+   * @TODO Create a way to validate JSON model
+   */
+  schema?: Object;
+  /**
+   * Name of the property which links ERRORS to fields.
+   * Error.property_or_name_or_whatever must match field.name.
+   */
+  field_error_link_name: ValidationError["property"];
+
+  /** When to link this.field values to this.model values */
+  link_fields_to_model?: LinkOnEvent;
+
+  /**
+   * Which events should the form do things on?
+   * @examples validate, link values, hide/disable fields, callbacks
+   */
+  on_events: OnEvents<HTMLElementEventMap>;
+}
+
+/**
+ * Options passed to validator during validation.
+ * Note: this interface used by class-validator
+ */
+export interface ClassValidatorOptions extends Record<string, unknown> {
+  /**
+   * If set to true then class-validator will print extra warning messages to the console when something is not right.
+   */
+  enableDebugMessages?: boolean;
+  /**
+   * If set to true then validator will skip validation of all properties that are undefined in the validating object.
+   */
+  skipUndefinedProperties?: boolean;
+  /**
+   * If set to true then validator will skip validation of all properties that are null in the validating object.
+   */
+  skipNullProperties?: boolean;
+  /**
+   * If set to true then validator will skip validation of all properties that are null or undefined in the validating object.
+   */
+  skipMissingProperties?: boolean;
+  /**
+   * If set to true validator will strip validated object of any properties that do not have any decorators.
+   *
+   * Tip: if no other decorator is suitable for your property use @Allow decorator.
+   */
+  whitelist?: boolean;
+  /**
+   * If set to true, instead of stripping non-whitelisted properties validator will throw an error
+   */
+  forbidNonWhitelisted?: boolean;
+  /**
+   * Groups to be used during validation of the object.
+   */
+  groups?: string[];
+  /**
+   * Set default for `always` option of decorators. Default can be overridden in decorator options.
+   */
+  always?: boolean;
+  /**
+   * If [groups]{@link ClassValidatorOptions#groups} is not given or is empty,
+   * ignore decorators with at least one group.
+   */
+  strictGroups?: boolean;
+  /**
+   * If set to true, the validation will not use default messages.
+   * Error message always will be undefined if its not explicitly set.
+   */
+  dismissDefaultMessages?: boolean;
+  /**
+   * ValidationError special options.
+   */
+  validationError?: {
+    /**
+     * Indicates if target should be exposed in ValidationError.
+     */
+    target?: boolean;
+    /**
+     * Indicates if validated value should be exposed in ValidationError.
+     */
+    value?: boolean;
+  };
+  /**
+   * Settings true will cause fail validation of unknown objects.
+   */
+  forbidUnknownValues?: boolean;
+  /**
+   * When set to true, validation of the given property will stop after encountering the first error. Defaults to false.
+   */
+  stopAtFirstError?: boolean;
 }
 
 //#endregion
 
-// #region Styling
-
+// #region Events
 /**
- * Using this.field_order, rearrange the order of the fields.
+ * Determines which events to validate on.
+ * You can insert event listeners just by adding a [string]: boolean
+ * to the constructor's init object.
+ * Enabled By Default: blue, change, focus, input, submit
  */
-export function _setFieldOrder<T extends Object>(
-  field_order: Array<keyof T>,
-  fields: FieldConfig<T>[]
-): FieldConfig<T>[] {
-  let newLayout: FieldConfig<T>[] = [];
-  let leftovers: FieldConfig<T>[] = [];
-  // Loop over the order...
-  field_order.forEach((name) => {
-    const field = _get(name, fields);
-    // If the field.name and the order name match...
-    if (field.name === name) {
-      // Then push it to the fields array
-      newLayout.push(field);
-    } else if (
-      leftovers.indexOf(field) === -1 &&
-      field_order.indexOf(field.name as keyof T) === -1
-    ) {
-      // Field is not in the order, so push it to bottom of order.
-      leftovers.push(field);
+export class OnEvents<T extends HTMLElementEventMap> {
+  constructor(init?: Partial<OnEvents<T>>, disableAll: boolean = false) {
+    // If disableAll is false, turn off all event listeners
+    if (disableAll) {
+      let k: keyof OnEvents<T> | string;
+      for (k in this) {
+        this[k as keyof OnEvents<T>] = false;
+      }
     }
-  });
-  fields = [...newLayout, ...leftovers];
-  return fields;
-}
-
-/**
- * Set any attributes on the given fields.
- */
-export function _setFieldAttributes<T extends Object>(
-  target_fields: Array<keyof T>,
-  fields: FieldConfig<T>[],
-  attributes: Partial<FieldConfig<T>>
-): void {
-  let i = 0,
-    len = target_fields.length;
-  if (len === 0) return;
-  const all_field_names = fields.map((f) => f.name);
-
-  for (; len > i; ++i) {
-    const field_index = all_field_names.indexOf(target_fields[i]);
-
-    if (field_index !== -1) {
-      const field_name = all_field_names[field_index];
-
-      _setFieldAttribute(field_name, fields, attributes);
-    }
+    Object.assign(this, init);
   }
+
+  blur: boolean = true;
+  change: boolean = true;
+  click: boolean = false;
+  dblclick: boolean = false;
+  focus: boolean = true;
+  input: boolean = true;
+  keydown: boolean = false;
+  keypress: boolean = false;
+  keyup: boolean = false;
+  mount: boolean = false;
+  mousedown: boolean = false;
+  mouseenter: boolean = false;
+  mouseleave: boolean = false;
+  mousemove: boolean = false;
+  mouseout: boolean = false;
+  mouseover: boolean = false;
+  mouseup: boolean = false;
+  submit: boolean = true;
 }
 
 /**
- * Set any attributes on the given field.
+ * Should we link the values always?
+ * Or only if the form is valid?
  */
-export function _setFieldAttribute<T extends Object>(
-  name: keyof T,
-  fields: FieldConfig<T>[],
-  attributes: Partial<FieldConfig<T>>
-): void {
-  // Get field config
-  const f: FieldConfig<T> = _get(name, fields);
-  // Loop over key of Partial FieldConfig
-  let k: keyof typeof attributes;
-  for (k in attributes) {
-    // If we hit the attributes property then we set the field.attributes
-    if (k === "attributes") {
-      Object.assign(f.attributes, attributes[k]);
-    } else if (k !== "name") {
-      // "name" is readonly on FieldConfig
-      setFieldProperty(f, k, attributes[k]);
-    }
-  }
-}
+export type LinkOnEvent = "always" | "valid";
 
-/**
- * Initially created to deal with TS compiler errors.
- * Dynamically assigning a value to f[key] wouldn't play nice.
- */
-function setFieldProperty<T extends Object, K extends keyof FieldConfig<T>>(
-  f: FieldConfig<T>,
-  key: K,
-  value: FieldConfig<T>[K]
-) {
-  f[key] = value;
-}
+export type LinkValuesOnEvent = "all" | "field";
 
 //#endregion
 
-//#region Form Manager
+// #region Misc
+
+/**
+ * Keeping it simple. Just keep up with model and errors.
+ */
+export type InitialFormState<ModelType extends Object> = {
+  model: ModelType | undefined;
+  errors: ValidationError[] | undefined;
+};
+
+/**
+ * Data format for the reference data items
+ * Form.refs are of type Record<string, RefDataItem[]>
+ */
+export interface RefDataItem {
+  label: string;
+  value: any;
+  data?: any;
+}
+
+/** Helpful shape for loading in reference data for the Form */
+export type RefData = Record<string, RefDataItem[]>;
+
+/** This gives us a pretty exhaustive typesafe map of element attributes */
+export type FieldAttributes = Record<ElementAttributesMap & string, any>;
+
+export type ElementAttributesMap =
+  | keyof HTMLElement
+  | keyof HTMLInputElement
+  | keyof HTMLSelectElement
+  | keyof HTMLFieldSetElement
+  | keyof HTMLImageElement
+  | keyof HTMLButtonElement
+  | keyof HTMLCanvasElement
+  | keyof HTMLOptionElement
+  | keyof AriaAttributes;
+
+/** Catchall type for giving callbacks a bit more typesafety */
+export type Callback =
+  | ((...args: any[]) => any)
+  | (() => any)
+  | void
+  | undefined
+  | boolean
+  | string
+  | Promise<any>;
+
+/**
+ * All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/
+ * This is here because there is no AriaAttrubutes type in the default library.
+ */
+interface AriaAttributes {
+  /** Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. */
+  "aria-activedescendant"?: string;
+  /** Indicates whether assistive technologies will present all, or only parts of, the changed region based on the change notifications defined by the aria-relevant attribute. */
+  "aria-atomic"?: boolean | "false" | "true";
+  /**
+   * Indicates whether inputting text could trigger display of one or more predictions of the user's intended value for an input and specifies how predictions would be
+   * presented if they are made.
+   */
+  "aria-autocomplete"?: "none" | "inline" | "list" | "both";
+  /** Indicates an element is being modified and that assistive technologies MAY want to wait until the modifications are complete before exposing them to the user. */
+  "aria-busy"?: boolean | "false" | "true";
+  /**
+   * Indicates the current "checked" state of checkboxes, radio buttons, and other widgets.
+   * @see aria-pressed @see aria-selected.
+   */
+  "aria-checked"?: boolean | "false" | "mixed" | "true";
+  /**
+   * Defines the total number of columns in a table, grid, or treegrid.
+   * @see aria-colindex.
+   */
+  "aria-colcount"?: number;
+  /**
+   * Defines an element's column index or position with respect to the total number of columns within a table, grid, or treegrid.
+   * @see aria-colcount @see aria-colspan.
+   */
+  "aria-colindex"?: number;
+  /**
+   * Defines the number of columns spanned by a cell or gridcell within a table, grid, or treegrid.
+   * @see aria-colindex @see aria-rowspan.
+   */
+  "aria-colspan"?: number;
+  /**
+   * Identifies the element (or elements) whose contents or presence are controlled by the current element.
+   * @see aria-owns.
+   */
+  "aria-controls"?: string;
+  /** Indicates the element that represents the current item within a container or set of related elements. */
+  "aria-current"?:
+    | boolean
+    | "false"
+    | "true"
+    | "page"
+    | "step"
+    | "location"
+    | "date"
+    | "time";
+  /**
+   * Identifies the element (or elements) that describes the object.
+   * @see aria-labelledby
+   */
+  "aria-describedby"?: string;
+  /**
+   * Identifies the element that provides a detailed, extended description for the object.
+   * @see aria-describedby.
+   */
+  "aria-details"?: string;
+  /**
+   * Indicates that the element is perceivable but disabled, so it is not editable or otherwise operable.
+   * @see aria-hidden @see aria-readonly.
+   */
+  "aria-disabled"?: boolean | "false" | "true";
+  /**
+   * Indicates what functions can be performed when a dragged object is released on the drop target.
+   * @deprecated in ARIA 1.1
+   */
+  "aria-dropeffect"?: "none" | "copy" | "execute" | "link" | "move" | "popup";
+  /**
+   * Identifies the element that provides an error message for the object.
+   * @see aria-invalid @see aria-describedby.
+   */
+  "aria-errormessage"?: string;
+  /** Indicates whether the element, or another grouping element it controls, is currently expanded or collapsed. */
+  "aria-expanded"?: boolean | "false" | "true";
+  /**
+   * Identifies the next element (or elements) in an alternate reading order of content which, at the user's discretion,
+   * allows assistive technology to override the general default of reading in document source order.
+   */
+  "aria-flowto"?: string;
+  /**
+   * Indicates an element's "grabbed" state in a drag-and-drop operation.
+   * @deprecated in ARIA 1.1
+   */
+  "aria-grabbed"?: boolean | "false" | "true";
+  /** Indicates the availability and type of interactive popup element, such as menu or dialog, that can be triggered by an element. */
+  "aria-haspopup"?:
+    | boolean
+    | "false"
+    | "true"
+    | "menu"
+    | "listbox"
+    | "tree"
+    | "grid"
+    | "dialog";
+  /**
+   * Indicates whether the element is exposed to an accessibility API.
+   * @see aria-disabled.
+   */
+  "aria-hidden"?: boolean | "false" | "true";
+  /**
+   * Indicates the entered value does not conform to the format expected by the application.
+   * @see aria-errormessage.
+   */
+  "aria-invalid"?: boolean | "false" | "true" | "grammar" | "spelling";
+  /** Indicates keyboard shortcuts that an author has implemented to activate or give focus to an element. */
+  "aria-keyshortcuts"?: string;
+  /**
+   * Defines a string value that labels the current element.
+   * @see aria-labelledby.
+   */
+  "aria-label"?: string;
+  /**
+   * Identifies the element (or elements) that labels the current element.
+   * @see aria-describedby.
+   */
+  "aria-labelledby"?: string;
+  /** Defines the hierarchical level of an element within a structure. */
+  "aria-level"?: number;
+  /** Indicates that an element will be updated, and describes the types of updates the user agents, assistive technologies, and user can expect from the live region. */
+  "aria-live"?: "off" | "assertive" | "polite";
+  /** Indicates whether an element is modal when displayed. */
+  "aria-modal"?: boolean | "false" | "true";
+  /** Indicates whether a text box accepts multiple lines of input or only a single line. */
+  "aria-multiline"?: boolean | "false" | "true";
+  /** Indicates that the user may select more than one item from the current selectable descendants. */
+  "aria-multiselectable"?: boolean | "false" | "true";
+  /** Indicates whether the element's orientation is horizontal, vertical, or unknown/ambiguous. */
+  "aria-orientation"?: "horizontal" | "vertical";
+  /**
+   * Identifies an element (or elements) in order to define a visual, functional, or contextual parent/child relationship
+   * between DOM elements where the DOM hierarchy cannot be used to represent the relationship.
+   * @see aria-controls.
+   */
+  "aria-owns"?: string;
+  /**
+   * Defines a short hint (a word or short phrase) intended to aid the user with data entry when the control has no value.
+   * A hint could be a sample value or a brief description of the expected format.
+   */
+  "aria-placeholder"?: string;
+  /**
+   * Defines an element's number or position in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM.
+   * @see aria-setsize.
+   */
+  "aria-posinset"?: number;
+  /**
+   * Indicates the current "pressed" state of toggle buttons.
+   * @see aria-checked @see aria-selected.
+   */
+  "aria-pressed"?: boolean | "false" | "mixed" | "true";
+  /**
+   * Indicates that the element is not editable, but is otherwise operable.
+   * @see aria-disabled.
+   */
+  "aria-readonly"?: boolean | "false" | "true";
+  /**
+   * Indicates what notifications the user agent will trigger when the accessibility tree within a live region is modified.
+   * @see aria-atomic.
+   */
+  "aria-relevant"?:
+    | "additions"
+    | "additions removals"
+    | "additions text"
+    | "all"
+    | "removals"
+    | "removals additions"
+    | "removals text"
+    | "text"
+    | "text additions"
+    | "text removals";
+  /** Indicates that user input is required on the element before a form may be submitted. */
+  "aria-required"?: boolean | "false" | "true";
+  /** Defines a human-readable, author-localized description for the role of an element. */
+  "aria-roledescription"?: string;
+  /**
+   * Defines the total number of rows in a table, grid, or treegrid.
+   * @see aria-rowindex.
+   */
+  "aria-rowcount"?: number;
+  /**
+   * Defines an element's row index or position with respect to the total number of rows within a table, grid, or treegrid.
+   * @see aria-rowcount @see aria-rowspan.
+   */
+  "aria-rowindex"?: number;
+  /**
+   * Defines the number of rows spanned by a cell or gridcell within a table, grid, or treegrid.
+   * @see aria-rowindex @see aria-colspan.
+   */
+  "aria-rowspan"?: number;
+  /**
+   * Indicates the current "selected" state of various widgets.
+   * @see aria-checked @see aria-pressed.
+   */
+  "aria-selected"?: boolean | "false" | "true";
+  /**
+   * Defines the number of items in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM.
+   * @see aria-posinset.
+   */
+  "aria-setsize"?: number;
+  /** Indicates if items in a table or grid are sorted in ascending or descending order. */
+  "aria-sort"?: "none" | "ascending" | "descending" | "other";
+  /** Defines the maximum allowed value for a range widget. */
+  "aria-valuemax"?: number;
+  /** Defines the minimum allowed value for a range widget. */
+  "aria-valuemin"?: number;
+  /**
+   * Defines the current value for a range widget.
+   * @see aria-valuetext.
+   */
+  "aria-valuenow"?: number;
+  /** Defines the human readable text alternative of aria-valuenow for a range widget. */
+  "aria-valuetext"?: string;
+}
 
 //#endregion

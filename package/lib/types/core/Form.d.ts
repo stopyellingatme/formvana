@@ -1,7 +1,7 @@
 import { Writable } from "svelte/store";
 import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
 import { FieldConfig } from ".";
-import { RefData, ValidationError, ValidationCallback, Callback, ValidationOptions, InitialFormState } from "./types";
+import { RefData, ValidationError, ValidationCallback, Callback, ValidationOptions, InitialFormState } from "./internal";
 /**
  * @Recomended_Use
  *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
@@ -19,6 +19,8 @@ import { RefData, ValidationError, ValidationCallback, Callback, ValidationOptio
  *
  * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
+ * @TODO add a super-struct validation example. Could end up being more ergonomic.
+ *
  * @TODO Allow fields, model and validator to be passed in separately.
  *  - This will allow for a more "dynamic" form building experience
  */
@@ -31,20 +33,23 @@ import { RefData, ValidationError, ValidationCallback, Callback, ValidationOptio
  * and field[name].
  *
  * Form is NOT valid, initially.
+ *
+ * Functions are camelCase.
+ * Variables and stores are snake_case.
+ * I'm sure everyone will love it.
+ *
  */
 export declare class Form<ModelType extends Object> {
     #private;
     constructor(model: ModelType, validation_options: Partial<ValidationOptions>, form_properties?: Partial<Form<ModelType>>);
     /**
      * This is your form Model/Schema.
-     * It's used to build the form.fields.
-     *
-     * The meat and potatos, some would say.
+     * Used to build the form.fields.
      */
     model: ModelType;
     /**
-     * Fields are built from the model's metadata using reflection.
-     * If model is set, call #buildFields().
+     * Fields are built using model's reflection metadata.
+     * Or using an array of field configuration objects.
      */
     fields: Array<FieldConfig<ModelType>>;
     /**
@@ -111,6 +116,29 @@ export declare class Form<ModelType extends Object> {
     /** Use the NAME of the field (field.name) to disable/hide the field. */
     disabled_fields?: Array<keyof ModelType>;
     /**
+     * Any extra data you may want to pass around.
+     * @examples description, name, type, header, label, classes, etc.
+     *
+     * * If you're using the field.for_form propery, set form name here.
+     */
+    meta?: Record<string, string | number | boolean | Object>;
+    /**
+     * Aim for "no-class" initialization model:
+     *
+     * take Array<Partial<FieldConfig>> &
+     *
+     *      validation schema &
+     *
+     *      JSON model
+     *
+     *  => Form<Object>
+     *
+     * Model keys must match fieldConfig name & validation schema
+     * property keys.
+     *
+     *
+     */
+    /**
      * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!
      * This hooks up the event listeners!
      *
@@ -132,7 +160,7 @@ export declare class Form<ModelType extends Object> {
      */
     validate: (callbacks?: ValidationCallback[] | undefined) => Promise<ValidationError[]> | undefined;
     /**
-     * Validate the form!
+     * Validate the form, async!
      * You can pass in callbacks as needed.
      * Callbacks can be applied "before" or "after" validation.
      */

@@ -5,7 +5,7 @@
   import FormGroup from "./forms/group/FormGroup.svelte";
 
   const examples = ["basic", "group", "stepper"];
-  $: selected = examples[0];
+  $: selected = examples[1];
 </script>
 
 <main>

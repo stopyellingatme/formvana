@@ -62,45 +62,47 @@ const updateState = (state, updates) => {
  */
 export const formState = initStore();
 
+let initialized = false;
 /**
  * Used to initialize the form on first load.
  */
 export const init = () => {
-  get(formState).loading.set(true);
+  if (!initialized) {
+    get(formState).loading.set(true);
 
-  setTimeout(() => {
-    get(formState).loading.set(false);
-  }, 1000);
+    setTimeout(() => {
+      get(formState).loading.set(false);
+    }, 1000);
 
-  setTimeout(() => {
-    const callbacks: ValidationCallback[] = [
-      {
-        callback: () => {
-          // console.log("Weeehoo!");
+    setTimeout(() => {
+      const callbacks: ValidationCallback[] = [
+        {
+          callback: () => {
+            // console.log("Weeehoo!");
+          },
+          when: "after",
         },
-        when: "after",
-      },
-      {
-        callback: () => {
-          // console.log(get(formState));
-          get(formState).get("name_10").value.set("some value jfkdsalfjdsk");
-          get(formState).validate();
+        {
+          callback: () => {
+            // console.log(get(formState));
+            get(formState).get("name_10").value.set("some value jfkdsalfjdsk");
+            get(formState).validate();
+          },
+          when: "before",
         },
-        when: "before",
-      },
-    ];
-    get(formState).validate(callbacks);
-  }, 2000);
+      ];
+      get(formState).validate(callbacks);
+    }, 2000);
 
-  setTimeout(() => {
-    get(formState).updateInitialState();
-  }, 3000);
+    setTimeout(() => {
+      get(formState).updateInitialState();
+    }, 3000);
 
-  // get(formState).value_changes.subscribe((val) => {
-  //   console.log("CHANGE: ", val);
-  // });
+    get(formState).value_changes.subscribe((val) => {
+      console.log("CHANGE: ", val);
+    });
 
-  /**
+    /**
    * Update form with backend data
    * 
         getDBO(SOME_STATE.ITEM_ID).then((data) => {
@@ -113,6 +115,9 @@ export const init = () => {
         formState.updateState({ form: form });
       });
    */
+
+    initialized = true;
+  }
 };
 
 export const onSubmit = (ev) => {

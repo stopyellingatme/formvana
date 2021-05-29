@@ -5,8 +5,6 @@
   export let useInput = null;
 
   let name = field.name;
-  let label = field.label;
-  let attrs = field.attributes || {};
 
   let default_class =
     "block w-full px-3 py-2 placeholder-gray-400 border border-gray-300 appearance-none transition duration-150 ease-in-out rounded-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300 sm:text-sm sm:leading-5 disabled:cursor-not-allowed";
@@ -17,13 +15,14 @@
   $: errorsStore = field.errors;
   $: errors = $errorsStore && $errorsStore.constraints;
 
-  $: input_attributes = Object.assign(
+  /** This allows us to update attributes dynamically */
+  $: attributes = Object.assign(
     {
       autocomplete: "off",
       autocorrect: "off",
       spellcheck: false,
     },
-    attrs
+    field.attributes || {}
   );
 
   $: cls =
@@ -32,12 +31,12 @@
 
 <div>
   <label for={name} class="block text-sm font-medium leading-5 text-gray-700">
-    {label}
+    {field.label}
   </label>
   <div class="relative mt-1 rounded-md shadow-sm">
     <input
       {name}
-      {...input_attributes}
+      {...attributes}
       class={cls}
       bind:value={$valueStore}
       use:useInput

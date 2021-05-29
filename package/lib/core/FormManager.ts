@@ -1,6 +1,6 @@
 import { get, writable, Writable } from "svelte/store";
 import { Form } from "./Form";
-import { ValidationCallback } from "./types";
+import { ValidationCallback } from "./internal";
 
 type FormDictionary = Array<Form<any>>;
 
@@ -30,7 +30,7 @@ export class FormManager {
 
   all_valid: Writable<boolean> = writable(false);
 
-  all_changed: Writable<boolean> = writable(false);
+  any_changed: Writable<boolean> = writable(false);
 
   all_pristine: Writable<boolean> = writable(false);
 
@@ -53,6 +53,12 @@ export class FormManager {
         this.forms[k].validate(callbacks);
       }
     }
+  };
+
+  destroy = () => {};
+
+  resetAll = () => {
+    this.forms.forEach((f) => f.reset());
   };
 
   /** All value changes of all forms */
@@ -106,13 +112,13 @@ export class FormManager {
       i = 0;
     for (k in this.forms) {
       const index = i;
-      this.forms[k].changed.subscribe((valid) => {
-        this.#all_changed_list[index] = valid;
+      this.forms[k].changed.subscribe((changed) => {
+        this.#all_changed_list[index] = changed;
 
-        if (Object.values(this.#all_changed_list).includes(false)) {
-          this.all_changed.set(false);
+        if (Object.values(this.#all_changed_list).includes(true)) {
+          this.any_changed.set(true);
         } else {
-          this.all_changed.set(true);
+          this.any_changed.set(false);
         }
       });
       i++;
@@ -124,8 +130,8 @@ export class FormManager {
       i = 0;
     for (k in this.forms) {
       const index = i;
-      this.forms[k].pristine.subscribe((valid) => {
-        this.#all_pristine_list[index] = valid;
+      this.forms[k].pristine.subscribe((pristine) => {
+        this.#all_pristine_list[index] = pristine;
 
         if (Object.values(this.#all_pristine_list).includes(false)) {
           this.all_pristine.set(false);

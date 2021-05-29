@@ -6,7 +6,7 @@ import {
   RefDataItem,
   ValidationCallback,
   ValidationError,
-} from "./types";
+} from "./internal";
 
 /**
  * FieldConfig is used to help with the form auto generation functionality.
@@ -121,7 +121,7 @@ export class FieldConfig<T extends Object> {
   required?: boolean;
 
   label?: string;
-  hint?: string;
+  hint?: string | string[];
 
   /**
    * Validation Errors!
@@ -156,6 +156,17 @@ export class FieldConfig<T extends Object> {
    * @example attrubutes["description"] is ok without being a FieldAttribute
    */
   attributes?: Partial<FieldAttributes> | Record<string | number | symbol, any>;
+  /** Element.dataset hook, so you can do the really wild things! */
+  data_set?: string[];
+
+  /** In case you'd like to filter some fields for a specific form */
+  for_form?: string | string[];
+
+  /**
+   * If you're using a validation library that supports
+   * a validation rules, validation pattern.
+   */
+  validation_rules?: Object;
 
   /**
    * Group is optional.

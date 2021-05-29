@@ -1,6 +1,6 @@
 import { SvelteComponent } from "svelte";
 import { Writable } from "svelte/store";
-import { Callback, FieldAttributes, RefDataItem, ValidationCallback, ValidationError } from "./types";
+import { Callback, FieldAttributes, RefDataItem, ValidationCallback, ValidationError } from "./internal";
 /**
  * FieldConfig is used to help with the form auto generation functionality.
  *
@@ -34,7 +34,7 @@ export declare class FieldConfig<T extends Object> {
     type: string;
     required?: boolean;
     label?: string;
-    hint?: string;
+    hint?: string | string[];
     /**
      * Validation Errors!
      * We're mainly looking for the "constraints".
@@ -64,6 +64,15 @@ export declare class FieldConfig<T extends Object> {
      * @example attrubutes["description"] is ok without being a FieldAttribute
      */
     attributes?: Partial<FieldAttributes> | Record<string | number | symbol, any>;
+    /** Element.dataset hook, so you can do the really wild things! */
+    data_set?: string[];
+    /** In case you'd like to filter some fields for a specific form */
+    for_form?: string | string[];
+    /**
+     * If you're using a validation library that supports
+     * a validation rules, validation pattern.
+     */
+    validation_rules?: Object;
     /**
      * Group is optional.
      * Use when you'd like to group multiple fields togethter.

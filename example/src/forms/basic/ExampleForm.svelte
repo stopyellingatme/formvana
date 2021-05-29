@@ -1,12 +1,15 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { onSubmit, init, formState } from "./example.form";
   import DynamicForm from "../DynamicForm.svelte";
 
+  let inited = false;
   onMount(() => {
-    setTimeout(() => {
+    tick();
+    if (!inited) {
       init();
-    }, 0);
+      inited = true;
+    }
   });
 
   const handleSubmit = (e) => {

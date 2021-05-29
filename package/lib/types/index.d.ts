@@ -16,9 +16,19 @@ interface ValidationCallback {
  * Validation Error array.
  */
 type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
-interface ValidationErrorType {
+/**
+ * @param model_property_key, which model field are we linking this to?
+ * @param errors essentially Record<string #1, string #2>
+ * with #1 being the name of the error (minlength, pattern)
+ * and #2 being the error message
+ * @param options, anything else part of the ValidationErrorType
+ */
+declare class ValidationError implements ValidationErrorType {
+    constructor(model_property_key?: string, errors?: {
+        [type: string]: string;
+    }, options?: Partial<ValidationErrorType>);
     target?: Object; // Object that was validated.
-    property: string; // Object's property that didn't pass validation.
+    property?: string; // Object's property that didn't pass validation.
     value?: any; // Value that didn't pass a validation.
     constraints?: {
         // Constraints that failed validation with error messages.
@@ -26,18 +36,7 @@ interface ValidationErrorType {
     };
     children?: ValidationErrorType[];
 }
-/** This makes it easier to create validation errors. */
-declare class ValidationError {
-    /**
-     * @param errors essentially Record<string #1, string #2>
-     * with #1 being the name of the error constraint
-     * and #2 being the error message
-     * @param model_property_key, which model field are we linking this to?
-     * @param options, anything else part of the ValidationErrorType
-     */
-    constructor(model_property_key?: string, errors?: {
-        [type: string]: string;
-    }, options?: Partial<ValidationErrorType>);
+interface ValidationErrorType {
     target?: Object; // Object that was validated.
     property?: string; // Object's property that didn't pass validation.
     value?: any; // Value that didn't pass a validation.
@@ -66,7 +65,7 @@ interface ValidationOptions {
     options?: Partial<ClassValidatorOptions>;
     /**
      * Optional validation schema.
-     * Decorator free method of validating the model.
+     * "no-class" method of validating the model.
      *
      * @TODO Create a way to validate JSON model
      */
@@ -215,7 +214,8 @@ type FieldAttributes = Record<ElementAttributesMap & string, any>;
 type ElementAttributesMap = keyof HTMLElement | keyof HTMLInputElement | keyof HTMLSelectElement | keyof HTMLFieldSetElement | keyof HTMLImageElement | keyof HTMLButtonElement | keyof HTMLCanvasElement | keyof HTMLOptionElement | keyof AriaAttributes;
 /** Catchall type for giving callbacks a bit more typesafety */
 type Callback = ((...args: any[]) => any) | (() => any) | void | undefined | boolean | string | Promise<any>;
-/** All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/
+/**
+ * All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/
  * This is here because there is no AriaAttrubutes type in the default library.
  */
 interface AriaAttributes {
@@ -437,7 +437,7 @@ declare class FieldConfig<T extends Object> {
     type: string;
     required?: boolean;
     label?: string;
-    hint?: string;
+    hint?: string | string[];
     /**
      * Validation Errors!
      * We're mainly looking for the "constraints".
@@ -467,6 +467,15 @@ declare class FieldConfig<T extends Object> {
      * @example attrubutes["description"] is ok without being a FieldAttribute
      */
     attributes?: Partial<FieldAttributes> | Record<string | number | symbol, any>;
+    /** Element.dataset hook, so you can do the really wild things! */
+    data_set?: string[];
+    /** In case you'd like to filter some fields for a specific form */
+    for_form?: string | string[];
+    /**
+     * If you're using a validation library that supports
+     * a validation rules, validation pattern.
+     */
+    validation_rules?: Object;
     /**
      * Group is optional.
      * Use when you'd like to group multiple fields togethter.
@@ -504,6 +513,8 @@ declare class FieldStepper {
  *
  * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
+ * @TODO add a super-struct validation example. Could end up being more ergonomic.
+ *
  * @TODO Allow fields, model and validator to be passed in separately.
  *  - This will allow for a more "dynamic" form building experience
  */
@@ -516,6 +527,11 @@ declare class FieldStepper {
  * and field[name].
  *
  * Form is NOT valid, initially.
+ *
+ * Functions are camelCase.
+ * Variables and stores are snake_case.
+ * I'm sure everyone will love it.
+ *
  */
 declare class Form<ModelType extends Object> {
     #private;
@@ -523,14 +539,12 @@ declare class Form<ModelType extends Object> {
     //#region ** Fields **
     /**
      * This is your form Model/Schema.
-     * It's used to build the form.fields.
-     *
-     * The meat and potatos, some would say.
+     * Used to build the form.fields.
      */
     model: ModelType;
     /**
-     * Fields are built from the model's metadata using reflection.
-     * If model is set, call #buildFields().
+     * Fields are built using model's reflection metadata.
+     * Or using an array of field configuration objects.
      */
     fields: Array<FieldConfig<ModelType>>;
     /**
@@ -597,6 +611,29 @@ declare class Form<ModelType extends Object> {
     /** Use the NAME of the field (field.name) to disable/hide the field. */
     disabled_fields?: Array<keyof ModelType>;
     /**
+     * Any extra data you may want to pass around.
+     * @examples description, name, type, header, label, classes, etc.
+     *
+     * * If you're using the field.for_form propery, set form name here.
+     */
+    meta?: Record<string, string | number | boolean | Object>;
+    /**
+     * Aim for "no-class" initialization model:
+     *
+     * take Array<Partial<FieldConfig>> &
+     *
+     *      validation schema &
+     *
+     *      JSON model
+     *
+     *  => Form<Object>
+     *
+     * Model keys must match fieldConfig name & validation schema
+     * property keys.
+     *
+     *
+     */
+    /**
      * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!
      * This hooks up the event listeners!
      *
@@ -620,7 +657,7 @@ declare class Form<ModelType extends Object> {
      */
     validate: (callbacks?: ValidationCallback[] | undefined) => Promise<ValidationError[]> | undefined;
     /**
-     * Validate the form!
+     * Validate the form, async!
      * You can pass in callbacks as needed.
      * Callbacks can be applied "before" or "after" validation.
      */
@@ -681,109 +718,6 @@ declare class Form<ModelType extends Object> {
     setFieldAttributes: (names: string | Array<keyof ModelType>, attributes: Partial<FieldConfig<ModelType>>) => void;
 }
 declare function field<T extends Object>(config: Partial<FieldConfig<T>>): (target: any, propertyKey: string) => void;
-// #region Utility Functions
-/**
- * Build the field configs from this.model using metadata-reflection.
- * Grab the editableProperties from the @field decorator.
- *
- * @TODO Create method to use plain JSON as model, fields and validation schema
- */
-declare function _buildFormFields<T extends Object>(model: T, props?: string[]): FieldConfig<T>[];
-/** Get the form field by name */
-declare function _get<T extends Object>(name: keyof T, fields: FieldConfig<T>[]): FieldConfig<T>;
-/**
- * Helper function for value_change emitter.
- * Write the form's value changes to form.value_changes.
- *
- * @param changes incoming value changes
- * @param field field emitting the changes
- */
-declare function _setValueChanges<T extends Object>(changes: Writable<Record<keyof T | any, T[keyof T]>>, field: FieldConfig<T>): void;
-//#endregion
-// #region HTML Event Helpers
-/**
- * Attach the OnEvents events to each form.field.
- * Parent: form.useField(...)
- */
-declare function _attachEventListeners<T extends Object>(field: FieldConfig<T>, on_events: OnEvents<HTMLElementEventMap>, callback: Callback): void;
-declare function _addCallbackToField<T extends Object>(form: Form<T>, field: FieldConfig<T>, event: keyof HTMLElementEventMap, callback: ValidationCallback | Callback, required_fields: Array<keyof T>): void;
-//#endregion
-// #region Linking Utilities
-/**  Link values from FIELDS to MODEL or MODEL to FIELDS */
-declare function _linkValues<T extends Object>(from_fields_to_model: boolean, fields: FieldConfig<T>[], model: T): void;
-/**
- * Link form.errors to it's corresponding field.errors
- * Via error[field_name]
- */
-declare function _linkFieldErrors<T extends Object>(errors: ValidationError[], field: FieldConfig<T>, field_name: ValidationError["property"]): void;
-/**
- * Link all Validation Errors on Form.errors to each field via the
- * field_error_link_name.
- */
-declare function _linkAllErrors<T extends Object>(errors: ValidationError[], fields: FieldConfig<T>[], field_error_link_name: ValidationError["property"]): void;
-/** When should we link the fields to the model?
- * "alwyas" || "valid" (when valid)
- */
-declare function _hanldeValueLinking<T extends Object>(model: T, fields: FieldConfig<T>[], link_fields_to_model: LinkOnEvent | undefined): void;
-//#endregion
-// #region Validation Helpers
-/**
- * Hanlde the events that will fire for each field.
- * Corresponds to the form.on_events field.
- *
- */
-declare function _executeValidationEvent<T extends Object>(form: Form<T>, required_fields: Array<keyof T>, field?: FieldConfig<T>, callbacks?: ValidationCallback[]): Promise<ValidationError[]> | undefined;
-/**
- * This is used to add functions and callbacks to the OnEvent
- * handler. Functions can be added in a plugin-style manner now.
- */
-declare function _executeCallbacks(callbacks: Callback | Callback[]): void;
-/**
- * Handle all the things associated with validation!
- * Link the errors to the fields.
- * Check if all required fields are valid.
- * Link values from fields to model if
- * form.link_fields_to_model === LinkOnEvent.Valid is true.
- */
-declare function _handleValidationSideEffects<T extends Object>(form: Form<T>, errors: ValidationError[], required_fields: Array<keyof T>, field?: FieldConfig<T>): Promise<ValidationError[]>;
-/**
- * TODO: Clean up this requiredFieldsValid implementation. Seems too clunky.
- *
- * Check if there are any required fields in the errors.
- * If there are no required fields in the errors, the form is valid
- */
-declare function _requiredFieldsValid<T extends Object>(errors: ValidationError[], required_fields: Array<keyof T>): boolean;
-//#endregion
-// #region Form State
-/**
- * Is the current form state different than the initial state?
- *
- * I've tested it with > 1000 fields in a single class with very slight input lag.
- */
-declare function _hasStateChanged(value_changes: Writable<Record<string, any>>, changed: Writable<boolean>): void;
-/**
- * Grab a snapshot of several items that generally define the state of the form
- * and serialize them into a format that's easy-ish to check/deserialize (for resetting)
- */
-declare function _setInitialState<T extends Object>(form: Form<T>, initial_state: InitialFormState<T>): InitialFormState<T>;
-/**
- * Reset form to inital state.
- */
-declare function _resetState<T extends Object>(form: Form<T>, initial_state: InitialFormState<T>): void;
-//#endregion
-// #region Styling
-/**
- * Using this.field_order, rearrange the order of the fields.
- */
-declare function _setFieldOrder<T extends Object>(field_order: Array<keyof T>, fields: FieldConfig<T>[]): FieldConfig<T>[];
-/**
- * Set any attributes on the given fields.
- */
-declare function _setFieldAttributes<T extends Object>(target_fields: Array<keyof T>, fields: FieldConfig<T>[], attributes: Partial<FieldConfig<T>>): void;
-/**
- * Set any attributes on the given field.
- */
-declare function _setFieldAttribute<T extends Object>(name: keyof T, fields: FieldConfig<T>[], attributes: Partial<FieldConfig<T>>): void;
 type FormDictionary = Array<Form<any>>;
 /**
  * Base interface for managing multiple instances of Form
@@ -799,10 +733,12 @@ declare class FormManager {
     loading: Writable<boolean>;
     all_value_changes: Writable<Record<string, any>>;
     all_valid: Writable<boolean>;
-    all_changed: Writable<boolean>;
+    any_changed: Writable<boolean>;
     all_pristine: Writable<boolean>;
     /** Validate a given form, a number of forms, or all forms */
     validateAll: (callbacks?: ValidationCallback[] | undefined, form_indexes?: number[] | undefined) => void;
+    destroy: () => void;
+    resetAll: () => void;
 }
 /**
  * Collection of Forms used as steps.
@@ -820,4 +756,4 @@ declare class FormStepper extends FormManager {
 declare class FormGroup extends FormManager {
     constructor(forms: FormDictionary, props?: Partial<FormManager>);
 }
-export { FieldConfig, FieldStepper, Form, field, _buildFormFields, _get, _setValueChanges, _attachEventListeners, _addCallbackToField, _linkValues, _linkFieldErrors, _linkAllErrors, _hanldeValueLinking, _executeValidationEvent, _executeCallbacks, _handleValidationSideEffects, _requiredFieldsValid, _hasStateChanged, _setInitialState, _resetState, _setFieldOrder, _setFieldAttributes, _setFieldAttribute, ValidationCallback, ValidatorFunction, ValidationErrorType, ValidationError, ValidationOptions, ClassValidatorOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, InitialFormState, RefDataItem, RefData, FieldAttributes, ElementAttributesMap, Callback, FormManager, FormStepper, FormGroup };
+export { FieldConfig, FieldStepper, Form, field, ValidationCallback, ValidatorFunction, ValidationError, ValidationErrorType, ValidationOptions, ClassValidatorOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, InitialFormState, RefDataItem, RefData, FieldAttributes, ElementAttributesMap, Callback, FormManager, FormStepper, FormGroup };

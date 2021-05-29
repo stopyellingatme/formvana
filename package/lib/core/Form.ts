@@ -9,7 +9,7 @@ import {
   Callback,
   ValidationOptions,
   InitialFormState,
-} from "./types";
+} from "./internal";
 import {
   _buildFormFields,
   _get,
@@ -23,7 +23,7 @@ import {
   _executeValidationEvent,
   _addCallbackToField,
   _setFieldAttributes,
-} from "./internal";
+} from "./formHelpers";
 
 /**
  * @Recomended_Use
@@ -42,6 +42,8 @@ import {
  *
  * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
+ * @TODO add a super-struct validation example. Could end up being more ergonomic.
+ *
  * @TODO Allow fields, model and validator to be passed in separately.
  *  - This will allow for a more "dynamic" form building experience
  */
@@ -55,6 +57,11 @@ import {
  * and field[name].
  *
  * Form is NOT valid, initially.
+ *
+ * Functions are camelCase.
+ * Variables and stores are snake_case.
+ * I'm sure everyone will love it.
+ *
  */
 export class Form<ModelType extends Object> {
   constructor(
@@ -79,10 +86,7 @@ export class Form<ModelType extends Object> {
         "Please add a validator with ReturnType<Promise<ValidationError[]>>"
       );
     }
-    /** If they passed in a field order, set the order. */
-    if (this.#field_order) this.setFieldOrder(this.#field_order);
 
-    /** Well well, reference data. Better attach that to the fields. */
     if (this.refs) this.attachRefData();
 
     if (this.disabled_fields)
@@ -96,7 +100,7 @@ export class Form<ModelType extends Object> {
         hidden: true,
       });
 
-    /** Wait until everything is initalized then set the inital state. */
+    /** Wait until everything is initalized, then set the inital state. */
     _setInitialState(this, this.initial_state);
   }
 
@@ -104,15 +108,13 @@ export class Form<ModelType extends Object> {
 
   /**
    * This is your form Model/Schema.
-   * It's used to build the form.fields.
-   *
-   * The meat and potatos, some would say.
+   * Used to build the form.fields.
    */
   model: ModelType;
 
   /**
-   * Fields are built from the model's metadata using reflection.
-   * If model is set, call #buildFields().
+   * Fields are built using model's reflection metadata.
+   * Or using an array of field configuration objects.
    */
   fields: Array<FieldConfig<ModelType>> = [];
 
@@ -127,7 +129,7 @@ export class Form<ModelType extends Object> {
     /** When to link this.field values to this.model values */
     link_fields_to_model: "always",
     field_error_link_name: "property",
-    /** These options come from class-validator, thats why Pascal Case */
+    /** These options from class-validator, thats why snake and camel case mixing */
     options: {
       skipMissingProperties: false,
       dismissDefaultMessages: false,
@@ -214,6 +216,14 @@ export class Form<ModelType extends Object> {
   disabled_fields?: Array<keyof ModelType>;
 
   /**
+   * Any extra data you may want to pass around.
+   * @examples description, name, type, header, label, classes, etc.
+   *
+   * * If you're using the field.for_form propery, set form name here.
+   */
+  meta?: Record<string, string | number | boolean | Object>;
+
+  /**
    * Determines the ordering of this.fields.
    * Simply an array of field names (or group names or stepper names)
    * in the order to be displayed
@@ -243,12 +253,29 @@ export class Form<ModelType extends Object> {
    * @TODO Allow plain JSON model, fields and schema validation/setup
    */
   #buildFields = (model: ModelType = this.model): void => {
-    this.fields = _buildFormFields(model);
+    this.fields = _buildFormFields(model, this.meta);
 
     this.#required_fields = this.fields
       .filter((f) => f.required)
       .map((f) => f.name as keyof ModelType);
   };
+
+  /**
+   * Aim for "no-class" initialization model:
+   *
+   * take Array<Partial<FieldConfig>> &
+   *
+   *      validation schema &
+   *
+   *      JSON model
+   *
+   *  => Form<Object>
+   *
+   * Model keys must match fieldConfig name & validation schema
+   * property keys.
+   *
+   *
+   */
 
   /**
    * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!
@@ -271,7 +298,8 @@ export class Form<ModelType extends Object> {
       _attachEventListeners(
         field,
         this.validation_options.on_events,
-        (e: Event) => _executeValidationEvent(this, this.#required_fields, field)
+        (e: Event) =>
+          _executeValidationEvent(this, this.#required_fields, field)
       );
   };
 
@@ -296,7 +324,7 @@ export class Form<ModelType extends Object> {
   };
 
   /**
-   * Validate the form!
+   * Validate the form, async!
    * You can pass in callbacks as needed.
    * Callbacks can be applied "before" or "after" validation.
    */

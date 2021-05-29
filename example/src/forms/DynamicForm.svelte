@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { createEventDispatcher } from "svelte";
+import App from "../App.svelte";
   const dispatch = createEventDispatcher();
 
   //* Form State
@@ -32,6 +33,7 @@
   <svelte:component
     this={$form.template}
     {form}
+    {...$$props}
     on:event={(e) => dispatch(e.detail.type, e)}
   />
 {:else}

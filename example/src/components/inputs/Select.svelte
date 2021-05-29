@@ -6,8 +6,6 @@
   export let useInput = null;
 
   let name = field.name;
-  let label = field.label;
-  let attrs = field.attributes || {};
 
   let default_class =
     "bg-white relative w-full border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm";
@@ -16,7 +14,7 @@
 
   $: valueStore = field.value;
   $: errorsStore = field.errors;
-  $: input_attributes = Object.assign({}, attrs);
+  $: attributes = Object.assign({}, field.attributes || {});
   $: errors = $errorsStore && $errorsStore.constraints;
   $: cls =
     $errorsStore && $errorsStore.constraints ? error_class : default_class;
@@ -31,15 +29,18 @@
 <div>
   <div>
     <label for={name} class="block text-sm font-medium leading-5 text-gray-700">
-      {label}
+      {field.label}
     </label>
     <div class="relative m-1 rounded-md shadow-sm">
-      <!-- on:input={(e) => handleChange(e)} -->
-      <!-- bind:value={$valueStore} -->
+      <!-- 
+        Ok, i wish i could just bind:value={$valueStore} and see it in
+        value_changes. But using on:input produces a value change with the proper 
+        value. 
+      -->
       <!-- svelte-ignore a11y-no-onchange -->
       <select
         {name}
-        {...input_attributes}
+        {...attributes}
         class={cls}
         use:useInput
         on:input={(e) => handleChange(e)}
@@ -48,11 +49,9 @@
           <option selected value={undefined}> -- </option>
         {/if}
         {#each options as option}
-          {#if $valueStore === option.value}
-            <option selected value={option.value}>{option.label}</option>
-          {:else}
-            <option value={option.value}>{option.label}</option>
-          {/if}
+          <option selected={$valueStore === option.value} value={option.value}
+            >{option.label}</option
+          >
         {/each}
       </select>
     </div>
