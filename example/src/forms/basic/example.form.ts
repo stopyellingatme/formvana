@@ -2,7 +2,6 @@ import { get, Writable, writable } from "svelte/store";
 import { Form, OnEvents, RefData, ValidationCallback } from "@formvana";
 import { ExampleModel } from "../../models/ExampleClass";
 import { validate, ValidationError } from "class-validator";
-//@ts-ignore
 import ExampleTemplate from "../../templates/ExampleTemplate.svelte";
 
 const ref_data: RefData = {
@@ -74,29 +73,29 @@ export const init = () => {
       get(formState).loading.set(false);
     }, 1000);
 
-    setTimeout(() => {
-      const callbacks: ValidationCallback[] = [
-        {
-          callback: () => {
-            // console.log("Weeehoo!");
-          },
-          when: "after",
-        },
-        {
-          callback: () => {
-            // console.log(get(formState));
-            get(formState).get("name_10").value.set("some value jfkdsalfjdsk");
-            get(formState).validate();
-          },
-          when: "before",
-        },
-      ];
-      get(formState).validate(callbacks);
-    }, 2000);
+    // setTimeout(() => {
+    //   const callbacks: ValidationCallback[] = [
+    //     {
+    //       callback: () => {
+    //         // console.log("Weeehoo!");
+    //       },
+    //       when: "after",
+    //     },
+    //     {
+    //       callback: () => {
+    //         // console.log(get(formState));
+    //         get(formState).get("name_10").value.set("some value jfkdsalfjdsk");
+    //         get(formState).validate();
+    //       },
+    //       when: "before",
+    //     },
+    //   ];
+    //   get(formState).validate(callbacks);
+    // }, 2000);
 
-    setTimeout(() => {
-      get(formState).updateInitialState();
-    }, 3000);
+    // setTimeout(() => {
+    //   get(formState).updateInitialState();
+    // }, 3000);
 
     get(formState).value_changes.subscribe((val) => {
       console.log("CHANGE: ", val);

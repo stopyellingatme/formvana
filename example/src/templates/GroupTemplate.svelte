@@ -31,7 +31,7 @@
   let fw, fh;
 </script>
 
-<div class="py-2 mx-auto max-w-7xl lg:px-8">
+<div class="px-8 py-2 mx-auto max-w-7xl">
   <div class="flex items-start justify-center">
     <div class="w-full space-y-6">
       <section>
