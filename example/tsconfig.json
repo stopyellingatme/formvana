@@ -9,8 +9,8 @@
         "pretty": true,
         "downlevelIteration": true,
         "esModuleInterop": true,
-        "importHelpers": false,
-        "noEmitHelpers": true,
+        "importHelpers": true,
+        "noEmitHelpers": false,
         "lib": [
             "es2018",
             "dom"

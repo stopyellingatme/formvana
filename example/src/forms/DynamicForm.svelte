@@ -1,11 +1,13 @@
+<!-- 
+  This component is not necessary.
+  It just makes using template components easier.
+ -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { createEventDispatcher } from "svelte";
-import App from "../App.svelte";
   const dispatch = createEventDispatcher();
 
-  //* Form State
-  export let form;
+  export let form; /** Form State */
 
   onMount(() => {
     dispatch("mount", true);
@@ -15,21 +17,12 @@ import App from "../App.svelte";
     dispatch("destroy", true);
     $form.destroy();
   });
-
-  /**
-   * Well, it looks like we're gonna have to
-   * make this thing handle the FormGroup and
-   * FormStepper stuff.
-   *
-   * $: fields are_of_type {
-   *      type: "default | group | stepper",
-   *      item: FieldConfig | FieldGroup | FieldStepper
-   *    }
-   */
 </script>
 
 {#if $form.template}
-  <!-- Use a Template -->
+  <!-- 
+    Bind the form.template the dynamically rendered svelte:component
+   -->
   <svelte:component
     this={$form.template}
     {form}
@@ -37,7 +30,10 @@ import App from "../App.svelte";
     on:event={(e) => dispatch(e.detail.type, e)}
   />
 {:else}
-  <!-- Or pass in a custom form as a child - takes {form} prop -->
-  <!-- But it's easier to just pass in a template, honestly -->
-  <slot {form} />
+  <!-- 
+    Or pass in a custom form as a child - takes {form} prop,
+
+    But it's easier to just pass in a template, honestly
+   -->
+  <slot {form} {...$$props} />
 {/if}

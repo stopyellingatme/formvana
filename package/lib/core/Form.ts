@@ -40,13 +40,14 @@ import {
  * Just break it up into 100 or so fields per form (max 250) if its a huge form.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
+ * @TODO Time to redo the readme.md file! Lots have changed since then!
  *
  * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
- * @TODO add a super-struct validation example. Could end up being more ergonomic.
- *
- * @TODO Allow fields, model and validator to be passed in separately.
- *  - This will allow for a more "dynamic" form building experience
+ * @TODO Do the stepper example and clean up the Form Manager interface
+ * @TODO More robust testing with different input types
+ * @TODO Add several plain html/css examples (without tailwind)
+ * @TODO Clean up form control creation/binding - too complex, currently.
  */
 
 /**
@@ -142,7 +143,7 @@ export class Form<ModelType extends Object> {
     on_events: new OnEvents(),
     /** When to link this.field values to this.model values */
     link_fields_to_model: "always",
-    /** These options from class-validator, thats why snake and camel case mixing */
+    /** Options from class-validator, thats why snake and camel case mixing */
     // options: {},
   };
 
@@ -201,7 +202,7 @@ export class Form<ModelType extends Object> {
    * We're keeping this simple.
    */
   initial_state: InitialFormState<ModelType> = {
-    model: undefined,
+    model: {},
     errors: undefined,
   };
 
@@ -431,6 +432,26 @@ export class Form<ModelType extends Object> {
     if (update_initial_state) this.updateInitialState();
 
     return this;
+  };
+
+  /** Set the value for a field or set of fields */
+  setValue = (
+    field_names: Array<keyof ModelType> | keyof ModelType,
+    value: any
+  ): void => {
+    if (Array.isArray(field_names)) {
+      field_names.forEach((f) => {
+        const field = _get(f, this.fields);
+        field.value.set(value);
+
+        this.model[f] = value;
+      });
+    } else {
+      const field = _get(field_names, this.fields);
+      field.value.set(value);
+
+      this.model[field_names] = value;
+    }
   };
 
   /**

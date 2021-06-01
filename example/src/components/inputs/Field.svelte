@@ -1,6 +1,6 @@
 <script lang="ts">
   import Input from "./Input.svelte";
-  import Dropdown from "./Dropdown.svelte";
+  // import Dropdown from "./Dropdown.svelte";
   import Textarea from "./Textarea.svelte";
   import Select from "./Select.svelte";
 

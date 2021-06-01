@@ -24,14 +24,14 @@ export declare function _addCallbackToField<T extends Object>(form: Form<T>, fie
  *
  * @Hotpath
  */
-export declare function _linkFieldErrors<T extends Object>(errors: ValidationError[], field: FieldConfig<T>, field_name: ValidationError["property"]): void;
+export declare function _linkFieldErrors<T extends Object>(errors: ValidationError[], field: FieldConfig<T>): void;
 /**
  * Link all Validation Errors on Form.errors to each field via the
  * field_error_link_name.
  *
  * @Hotpath
  */
-export declare function _linkAllErrors<T extends Object>(errors: ValidationError[], fields: FieldConfig<T>[], field_error_link_name: ValidationError["property"]): void;
+export declare function _linkAllErrors<T extends Object>(errors: ValidationError[], fields: FieldConfig<T>[]): void;
 /** When should we link the fields to the model?
  * "alwyas" || "valid" (when valid)
  *
@@ -76,7 +76,7 @@ export declare function _handleValidationSideEffects<T extends Object>(form: For
  *
  * @Hotpath
  */
-export declare function _requiredFieldsValid<T extends Object>(errors: ValidationError[], required_fields: Array<keyof T>, field_error_link_name: string | undefined): boolean;
+export declare function _requiredFieldsValid<T extends Object>(errors: ValidationError[], required_fields: Array<keyof T>): boolean;
 /**
  * Helper function for value_change emitter.
  * Write the form's value changes to form.value_changes.

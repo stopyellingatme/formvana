@@ -103,7 +103,6 @@ export const init = () => {
         },
         {
           callback: () => {
-            // console.log(get(form_state));
             get(form_state).get("name_10").value.set("some value jfkdsalfjdsk");
             get(form_state).validate();
           },
@@ -117,10 +116,10 @@ export const init = () => {
     //   get(form_state).updateInitialState();
     // }, 3000);
 
-    get(form_state).value_changes.subscribe((val) => {
+    // get(form_state).value_changes.subscribe((val) => {
       // console.log('CHANGE: ', val);
-      console.log(get(form_state));
-    });
+    //   console.log(get(form_state));
+    // });
 
     /**
    * Update form with backend data

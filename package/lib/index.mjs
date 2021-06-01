@@ -110,27 +110,27 @@ class FieldConfig {
          * The text "This is a descriptor." will be linked to the FieldConfig.value
          * when the fields are built from the model (in Form.buildFields();)
          */
-        switch (this.type) {
-            case "text"   :
-                this.value.set("");
-                break;
-            case "decimal" :
-                this.value.set(0.0);
-                break;
-            case "number"  :
-                this.value.set(0);
-                break;
-            case "boolean"   :
-                this.value.set(false);
-                this.options = [];
-                break;
-            case "select" :
-                this.options = [];
-                break;
-            default:
-                this.value.set(undefined);
-                break;
-        }
+        // switch (this.type) {
+        //   case "text" || "email" || "password" || "string":
+        //     this.value.set("");
+        //     break;
+        //   case "decimal" || "double":
+        //     this.value.set(0.0);
+        //     break;
+        //   case "number" || "int" || "integer":
+        //     this.value.set(0);
+        //     break;
+        //   case "boolean" || "choice" || "radio" || "checkbox":
+        //     this.value.set(false);
+        //     this.options = [];
+        //     break;
+        //   case "select" || "dropdown":
+        //     this.options = [];
+        //     break;
+        //   default:
+        //     this.value.set(undefined);
+        //     break;
+        // }
         /**
          * I'm doing this because there's not enough thought about accessibility
          * in Forms or for libraries. Better to have SOME kind of default than none
@@ -422,8 +422,8 @@ function _addCallbackToField(form, field, event, callback, required_fields) {
  *
  * @Hotpath
  */
-function _linkFieldErrors(errors, field, field_name) {
-    const error = errors.filter((e) => e[field_name] === field.name);
+function _linkFieldErrors(errors, field) {
+    const error = errors.filter((e) => e["property"] === field.name);
     // Check if there's an error for the field
     if (error && error.length > 0) {
         field.errors.set(error[0]);
@@ -439,18 +439,18 @@ function _linkFieldErrors(errors, field, field_name) {
  *
  * @Hotpath
  */
-function _linkAllErrors(errors, fields, field_error_link_name) {
+function _linkAllErrors(errors, fields) {
     errors.forEach((err) => {
         if (Array.isArray(err)) {
             err = err[0];
-            if (err[field_error_link_name]) {
-                const f = _get(err[field_error_link_name], fields);
+            if (err["property"]) {
+                const f = _get(err["property"], fields);
                 f.errors.set(err);
             }
         }
         else {
-            if (err[field_error_link_name]) {
-                const f = _get(err[field_error_link_name], fields);
+            if (err["property"]) {
+                const f = _get(err["property"], fields);
                 f.errors.set(err);
             }
         }
@@ -481,22 +481,27 @@ function _hanldeValueLinking(model, fields, link_fields_to_model, event) {
  * @Hotpath
  */
 function _linkValues(from_fields_to_model, fields, model, event) {
-    /** Still the fastest way i've seen to loop in JS. */
-    let i = 0, len = fields.length;
-    for (; len > i; ++i) {
+    fields.forEach((field) => {
         /** Get name and value of the field */
-        const name = fields[i].name, val = fields[i].value, value = getValueFromEvent(event);
+        const name = field.name, val = field.value, value = 
+        /** @ts-ignore */
+        event?.target?.name === name ? getValueFromEvent(event) : undefined;
         /**  Link field[values] to model[values] */
         if (from_fields_to_model) {
-            // model[name as keyof T] = get<typeof model[keyof T]>(val);
-            model[name] = value;
+            model[name] = parseInt(value) || parseInt(get_store_value(val));
         }
         else {
             /**  Link form.model[values] to the form.fields[values] */
             val.set(model[name]);
-            // val.set(value);
         }
+    });
+}
+function parseInt(value) {
+    if (Number.isInteger(value) || Number.isSafeInteger(value)) {
+        return Number.parseInt(value);
     }
+    else
+        return value;
 }
 function getValueFromEvent(event) {
     let result;
@@ -616,16 +621,14 @@ async function _handleValidationSideEffects(form, errors, required_fields, field
         /**  Are we validating the whole form or just the fields? */
         if (field) {
             /**  Link errors to field (to show validation errors) */
-            if (form.validation_options.field_error_link_name) {
-                _linkFieldErrors(errors, field, form.validation_options.field_error_link_name);
-            }
+            _linkFieldErrors(errors, field);
         }
         else {
             /**  This is validation for the whole form! */
-            _linkAllErrors(errors, form.fields, form.validation_options.field_error_link_name);
+            _linkAllErrors(errors, form.fields);
         }
         /**  All required fields are valid? */
-        if (_requiredFieldsValid(errors, required_fields, form.validation_options.field_error_link_name)) {
+        if (_requiredFieldsValid(errors, required_fields)) {
             form.valid.set(true);
         }
         else {
@@ -652,7 +655,7 @@ async function _handleValidationSideEffects(form, errors, required_fields, field
  *
  * @Hotpath
  */
-function _requiredFieldsValid(errors, required_fields, field_error_link_name) {
+function _requiredFieldsValid(errors, required_fields) {
     if (errors.length === 0)
         return true;
     // Go ahead and return if there are no errors
@@ -664,7 +667,7 @@ function _requiredFieldsValid(errors, required_fields, field_error_link_name) {
      * Otherwise we have to map the names of the errors so we can
      * check if they're for a required field
      */
-    const errs = errors.map((e) => e[field_error_link_name]);
+    const errs = errors.map((e) => e["property"]);
     for (; len > i; ++i) {
         if (errs.indexOf(required_fields[i]) !== -1) {
             return false;
@@ -716,7 +719,7 @@ function _hasStateChanged(value_changes, changed) {
  * and serialize them into a format that's easy-ish to check/deserialize (for resetting)
  */
 function _setInitialState(form, initial_state) {
-    initial_state.model = Object.assign({}, form.model);
+    Object.assign(initial_state.model, form.model);
     if (form.errors && form.errors.length > 0) {
         initial_state.errors = [...form.errors];
     }
@@ -730,12 +733,7 @@ function _setInitialState(form, initial_state) {
  */
 function _resetState(form, initial_state) {
     /** !CANNOT OVERWRITE MODEL. VALIDATION GETS FUCKED UP! */
-    let k;
-    if (initial_state.model) {
-        for (k in initial_state.model) {
-            form.model[k] = initial_state.model[k];
-        }
-    }
+    Object.assign(form.model, initial_state.model);
     /** Clear the form errors before assigning initial_state.errors */
     form.clearErrors();
     if (initial_state.errors && initial_state.errors.length > 0) {
@@ -744,14 +742,14 @@ function _resetState(form, initial_state) {
     else {
         form.errors = [];
     }
-    /** Done serializing the initial_state */
+    /** Done serializing the initial_state, now link everything. */
     /** Link the values, now */
     _linkValues(false, form.fields, form.model);
     /** If there were errors in the inital_state
      *  link them to each field
      */
     if (form.errors && form.errors.length > 0) {
-        _linkAllErrors(form.errors, form.fields, form.validation_options.field_error_link_name);
+        _linkAllErrors(form.errors, form.fields);
     }
     /** Reset the value changes and the "changed" store */
     form.value_changes.set({});
@@ -842,13 +840,14 @@ function setFieldProperty(f, key, value) {
  * Just break it up into 100 or so fields per form (max 250) if its a huge form.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
+ * @TODO Time to redo the readme.md file! Lots have changed since then!
  *
  * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
- * @TODO add a super-struct validation example. Could end up being more ergonomic.
- *
- * @TODO Allow fields, model and validator to be passed in separately.
- *  - This will allow for a more "dynamic" form building experience
+ * @TODO Do the stepper example and clean up the Form Manager interface
+ * @TODO More robust testing with different input types
+ * @TODO Add several plain html/css examples (without tailwind)
+ * @TODO Clean up form control creation/binding - too complex, currently.
  */
 /**
  * Formvana Form Class
@@ -929,8 +928,7 @@ class Form {
         on_events: new OnEvents(),
         /** When to link this.field values to this.model values */
         link_fields_to_model: "always",
-        field_error_link_name: "property",
-        /** These options from class-validator, thats why snake and camel case mixing */
+        /** Options from class-validator, thats why snake and camel case mixing */
         // options: {},
     };
     /** Is the form valid? */
@@ -978,7 +976,7 @@ class Form {
      * We're keeping this simple.
      */
     initial_state = {
-        model: undefined,
+        model: {},
         errors: undefined,
     };
     /** Use the NAME of the field (field.name) to disable/hide the field. */
@@ -1089,7 +1087,7 @@ class Form {
         else {
             const err = new ValidationError(field_name, { error: with_message }, { value: get_store_value(field.value) });
             this.errors.push(err);
-            _linkAllErrors(this.errors, this.fields, this.validation_options.field_error_link_name);
+            _linkAllErrors(this.errors, this.fields);
         }
     };
     /**
@@ -1144,6 +1142,21 @@ class Form {
         if (update_initial_state)
             this.updateInitialState();
         return this;
+    };
+    /** Set the value for a field or set of fields */
+    setValue = (field_names, value) => {
+        if (Array.isArray(field_names)) {
+            field_names.forEach((f) => {
+                const field = _get(f, this.fields);
+                field.value.set(value);
+                this.model[f] = value;
+            });
+        }
+        else {
+            const field = _get(field_names, this.fields);
+            field.value.set(value);
+            this.model[field_names] = value;
+        }
     };
     /**
      * Pass in the reference data to add options to fields.
@@ -2421,6 +2434,9 @@ class FormManager {
                 this.forms[k].validate(callbacks);
             }
         }
+    };
+    destroy = () => {
+        this.forms.forEach((f) => f.destroy());
     };
     destroySubscriptions = () => {
         if (this._subscriptions && this._subscriptions.length > 0) {

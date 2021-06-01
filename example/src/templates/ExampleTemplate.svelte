@@ -3,6 +3,7 @@
   import LoadingIndicator from "../components/inputs/LoadingIndicator.svelte";
   import Field from "../components/inputs/Field.svelte";
   import { createEventDispatcher } from "svelte";
+  import ButtonArea from "../components/ButtonArea.svelte";
   const dispatch = createEventDispatcher();
 
   /**
@@ -32,9 +33,7 @@
   let fw, fh;
 </script>
 
-<div
-  class="px-8 py-2 pb-10 mx-auto max-w-7xl"
->
+<div class="px-8 py-2 pb-10 mx-auto max-w-7xl">
   <div class="flex items-start justify-center">
     <div class="w-full space-y-6">
       <section>
@@ -56,62 +55,15 @@
                 </p>
               </div>
 
-              <!-- Form Wrapper Div (col num, col gaps, etc.) -->
+              <!-- This is where the Form Generator "Magic" happens! -->
               <div class="grid grid-cols-4 gap-6 mt-6">
-                <!-- This is where the Form Generator Magic happens! -->
                 {#each $form.fields as field, i}
                   <Field {field} {form} />
                 {/each}
               </div>
             </div>
-            <!-- Button Area -->
-            <div class="px-4 py-3 text-right bg-gray-50 sm:px-6">
-              {#if $changed}
-                <button
-                  on:click|preventDefault={$form.reset}
-                  class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-md shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
-                >
-                  Changed
-                </button>
-              {:else}
-                <button
-                  disabled
-                  class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md shadow-sm cursor-not-allowed focus:outline-none"
-                >
-                  Unchanged
-                </button>
-              {/if}
-              {#if $valid}
-                <button
-                  type="submit"
-                  class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-md shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
-                >
-                  Valid
-                </button>
-              {:else}
-                <button
-                  disabled
-                  class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md shadow-sm cursor-not-allowed focus:outline-none"
-                >
-                  Invalid
-                </button>
-              {/if}
-              {#if $valid && $changed}
-                <button
-                  type="submit"
-                  class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-md shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
-                >
-                  Valid &amp; Changed
-                </button>
-              {:else}
-                <button
-                  disabled
-                  class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md shadow-sm cursor-not-allowed focus:outline-none"
-                >
-                  Invalid OR Unchanged
-                </button>
-              {/if}
-            </div>
+
+            <ButtonArea reset={$form.reset} {valid} {changed} />
           </div>
         </form>
       </section>

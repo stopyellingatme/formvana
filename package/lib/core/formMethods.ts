@@ -222,25 +222,28 @@ export function _linkValues<T extends Object>(
   model: T,
   event?: Event
 ): void {
-  /** Still the fastest way i've seen to loop in JS. */
-  let i = 0,
-    len = fields.length;
-  for (; len > i; ++i) {
+  fields.forEach((field) => {
     /** Get name and value of the field */
-    const name = fields[i].name,
-      val = fields[i].value,
-      value = getValueFromEvent(event);
+    const name = field.name,
+      val = field.value,
+      value =
+        /** @ts-ignore */
+        event?.target?.name === name ? getValueFromEvent(event) : undefined;
 
     /**  Link field[values] to model[values] */
     if (from_fields_to_model) {
-      // model[name as keyof T] = get<typeof model[keyof T]>(val);
-      model[name as keyof T] = value;
+      model[name as keyof T] = parseInt(value) || parseInt(get(val));
     } else {
       /**  Link form.model[values] to the form.fields[values] */
       val.set(model[name as keyof T]);
-      // val.set(value);
     }
-  }
+  });
+}
+
+function parseInt(value: any) {
+  if (Number.isInteger(value) || Number.isSafeInteger(value)) {
+    return Number.parseInt(value);
+  } else return value;
 }
 
 function getValueFromEvent(event?: Event): any {
@@ -309,6 +312,11 @@ export function _executeValidationEvent<T extends Object>(
     callbacks && _executeValidationCallbacks("before", callbacks),
   ]);
 
+  /**
+   * @TODO This section needs a rework.
+   * Too many moving parts.
+   * Hard to pass in custom validation parameters.
+   */
   return form.validation_options
     .validator(
       form.model,
@@ -511,7 +519,7 @@ export function _setInitialState<T extends Object>(
   form: Form<T>,
   initial_state: InitialFormState<T>
 ): InitialFormState<T> {
-  initial_state.model = Object.assign({}, form.model);
+  Object.assign(initial_state.model, form.model);
 
   if (form.errors && form.errors.length > 0) {
     initial_state.errors = [...form.errors];
@@ -529,12 +537,7 @@ export function _resetState<T extends Object>(
   initial_state: InitialFormState<T>
 ): void {
   /** !CANNOT OVERWRITE MODEL. VALIDATION GETS FUCKED UP! */
-  let k: keyof T;
-  if (initial_state.model) {
-    for (k in initial_state.model) {
-      form.model[k] = initial_state.model[k];
-    }
-  }
+  Object.assign(form.model, initial_state.model);
 
   /** Clear the form errors before assigning initial_state.errors */
   form.clearErrors();
@@ -543,7 +546,7 @@ export function _resetState<T extends Object>(
   } else {
     form.errors = [];
   }
-  /** Done serializing the initial_state */
+  /** Done serializing the initial_state, now link everything. */
 
   /** Link the values, now */
   _linkValues(false, form.fields, form.model);

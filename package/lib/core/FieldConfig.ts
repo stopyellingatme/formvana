@@ -56,27 +56,27 @@ export class FieldConfig<T extends Object> {
      * The text "This is a descriptor." will be linked to the FieldConfig.value
      * when the fields are built from the model (in Form.buildFields();)
      */
-    switch (this.type) {
-      case "text" || "email" || "password" || "string":
-        this.value.set("");
-        break;
-      case "decimal" || "double":
-        this.value.set(0.0);
-        break;
-      case "number" || "int" || "integer":
-        this.value.set(0);
-        break;
-      case "boolean" || "choice" || "radio" || "checkbox":
-        this.value.set(false);
-        this.options = [];
-        break;
-      case "select" || "dropdown":
-        this.options = [];
-        break;
-      default:
-        this.value.set(undefined);
-        break;
-    }
+    // switch (this.type) {
+    //   case "text" || "email" || "password" || "string":
+    //     this.value.set("");
+    //     break;
+    //   case "decimal" || "double":
+    //     this.value.set(0.0);
+    //     break;
+    //   case "number" || "int" || "integer":
+    //     this.value.set(0);
+    //     break;
+    //   case "boolean" || "choice" || "radio" || "checkbox":
+    //     this.value.set(false);
+    //     this.options = [];
+    //     break;
+    //   case "select" || "dropdown":
+    //     this.options = [];
+    //     break;
+    //   default:
+    //     this.value.set(undefined);
+    //     break;
+    // }
 
     /**
      * I'm doing this because there's not enough thought about accessibility

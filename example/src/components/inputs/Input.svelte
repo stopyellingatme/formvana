@@ -1,7 +1,4 @@
 <script lang="ts">
-  import { loop_guard } from "svelte/internal";
-  import { get } from "svelte/store";
-
   import InputErrors from "./InputErrors.svelte";
 
   export let field;

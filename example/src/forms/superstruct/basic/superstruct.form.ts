@@ -18,7 +18,7 @@ import {
 } from "superstruct";
 import ExampleTemplate from "../../../templates/ExampleTemplate.svelte";
 
-/** 
+/**
  * All of the following is what's needed to configure a formvana instance
  * without using classes while using a different validator.
  */
@@ -83,31 +83,33 @@ const data = Object.assign(
  */
 const doValidation = async (model, struct): Promise<ValidationError[]> => {
   /** Validate the struct */
-  const _validate = validate(model, struct)
-    .map((error: StructError) => {
-      if (!error) return;
-
-      /** Map the failures into ValidationErrors */
-      let errors;
-      if (error.failures instanceof Function) {
-        errors = error.failures().map((fail) => {
-          /** Get/Format the validation contraints */
-          const constraints = Object.assign(
-            {},
-            ...error
-              .failures()
-              .filter((failure) => failure.key === fail.key)
-              .map((err) => ({ [err.type]: err.message }))
-          );
-          /** Add the validaiton error with the given field key and errors */
-          return new ValidationError(fail.key, constraints);
-        });
-      }
-      return errors;
-    })
-    .filter((e) => e);
   /** Flatten the array so it's not [[ValidationError], [ValidationError]] */
-  return [].concat([], ..._validate);
+  return [].concat(
+    [],
+    ...validate(model, struct)
+      .map((error: StructError) => {
+        if (!error) return;
+
+        /** Map the failures into ValidationErrors */
+        let errors;
+        if (error.failures instanceof Function) {
+          errors = error.failures().map((fail) => {
+            /** Get/Format the validation contraints */
+            const constraints = Object.assign(
+              {},
+              ...error
+                .failures()
+                .filter((failure) => failure.key === fail.key)
+                .map((err) => ({ [err.type]: err.message }))
+            );
+            /** Add the validaiton error with the given field key and errors */
+            return new ValidationError(fail.key, constraints);
+          });
+        }
+        return errors;
+      })
+      .filter((e) => e)
+  );
 };
 
 function initStore() {
@@ -164,19 +166,19 @@ export const init = () => {
       //   },
       //   {
       //     callback: () => {
-      //       // console.log(get(form_state));
-      //       // get(form_state).get("name_10").value.set("some value jfkdsalfjdsk");
+      //       get(form_state).get("title").value.set("some value jfkdsalfjdsk");
       //       get(form_state).validate();
       //     },
       //     when: "before",
       //   },
       // ];
+      // get(form_state).validate(callbacks);
       get(form_state).validate();
     }, 2000);
 
-    setTimeout(() => {
-      get(form_state).updateInitialState();
-    }, 3000);
+    // setTimeout(() => {
+    //   get(form_state).updateInitialState();
+    // }, 3000);
 
     // get(form_state).value_changes.subscribe((val) => {
     //   console.log("CHANGE: ", val);

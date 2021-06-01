@@ -67,11 +67,6 @@ export interface ValidationOptions {
     /**
      * Form layout when using plain JSON object.
      */
-    /**
-     * Name of the property which links ERRORS to fields.
-     * Error.property_or_name_or_whatever must match field.name.
-     */
-    field_error_link_name: ValidationError["property"];
     /** When to link this.field values to this.model values */
     link_fields_to_model?: LinkOnEvent;
     /**
@@ -188,7 +183,7 @@ export declare type LinkValuesOnEvent = "all" | "field";
  * Keeping it simple. Just keep up with model and errors.
  */
 export declare type InitialFormState<ModelType extends Object> = {
-    model: ModelType | undefined;
+    model: ModelType | Object | undefined;
     errors: ValidationError[] | undefined;
 };
 /**

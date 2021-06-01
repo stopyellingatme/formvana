@@ -1,4 +1,3 @@
-import { onDestroy } from "svelte";
 import { get, writable, Writable } from "svelte/store";
 import { Form } from "./Form";
 import { ValidationCallback } from "./Types";
@@ -56,6 +55,10 @@ export class FormManager {
         this.forms[k].validate(callbacks);
       }
     }
+  };
+
+  destroy = () => {
+    this.forms.forEach((f) => f.destroy());
   };
 
   destroySubscriptions = () => {

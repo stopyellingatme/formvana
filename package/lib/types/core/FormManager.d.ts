@@ -21,6 +21,7 @@ export declare class FormManager {
     _subscriptions: any[];
     /** Validate a given form, a number of forms, or all forms */
     validateAll: (callbacks?: ValidationCallback[] | undefined, form_indexes?: number[] | undefined) => void;
+    destroy: () => void;
     destroySubscriptions: () => void;
     resetAll: () => void;
 }

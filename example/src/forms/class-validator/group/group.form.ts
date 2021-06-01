@@ -120,9 +120,9 @@ export const init = () => {
     // }, 3000);
 
     /** Don't over subscribe to this bad boy */
-    get(form_state).all_value_changes.subscribe((val) => {
-      console.log("CHANGE: ", val);
-    });
+    // get(form_state).all_value_changes.subscribe((val) => {
+    //   console.log("CHANGE: ", val);
+    // });
 
     // get(form_state).all_valid.subscribe((val) => {
     //   console.log("ALL VALID: ", val);

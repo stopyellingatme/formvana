@@ -14,6 +14,8 @@ export interface ValidationCallback {
 
 /** Pretty much any funciton as long as it returns a Promise with
  * Validation Error array.
+ * 
+ * @TODO This needs work.
  */
 export type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
 
@@ -233,7 +235,7 @@ export type LinkValuesOnEvent = "all" | "field";
  * Keeping it simple. Just keep up with model and errors.
  */
 export type InitialFormState<ModelType extends Object> = {
-  model: ModelType | undefined;
+  model: ModelType | Object | undefined;
   errors: ValidationError[] | undefined;
 };
 

@@ -13,6 +13,10 @@
 </script>
 
 <main>
+  <!-- 
+    Selector section for the validator libraries supported via 
+    the examples.
+   -->
   <div class="flex items-center justify-center w-full">
     {#each validators as ex}
       <span
@@ -24,7 +28,10 @@
       >
     {/each}
   </div>
-  <!-- This is the example selector header -->
+
+  <!-- 
+    Selector for the type of form example.
+   -->
   <div class="flex items-center justify-center w-full">
     {#each examples as ex}
       <span
@@ -36,14 +43,16 @@
       >
     {/each}
   </div>
+
+  <!-- 
+    This is the beautiful nested if statement used to display the different
+    form generator/validation examples
+   -->
+
   {#if selected_validator === "class-validator"}
-    <!-- These are the form examples! -->
     {#if selected === examples[0]}
       <ExampleForm />
     {:else if selected === examples[1]}
-      <!-- <div class="flex items-center justify-center w-full">
-      <p class="m-10 font-mono text-lg capitalize">Group Goes Here</p>
-    </div> -->
       <FormGroup />
     {:else if selected === examples[2]}
       <div class="flex items-center justify-center w-full">
@@ -51,7 +60,6 @@
       </div>
     {/if}
   {:else if selected_validator === "superstruct"}
-    <!-- These are the form examples! -->
     {#if selected === examples[0]}
       <SuperstructForm />
     {:else if selected === examples[1]}
