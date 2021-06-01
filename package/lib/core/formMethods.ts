@@ -147,11 +147,10 @@ export function _addCallbackToField<T extends Object>(
  */
 export function _linkFieldErrors<T extends Object>(
   errors: ValidationError[],
-  field: FieldConfig<T>,
-  field_name: ValidationError["property"]
+  field: FieldConfig<T>
 ): void {
   const error = errors.filter(
-    (e) => e[field_name as keyof ValidationError] === field.name
+    (e) => e["property" as keyof ValidationError] === field.name
   );
   // Check if there's an error for the field
   if (error && error.length > 0) {
@@ -170,25 +169,18 @@ export function _linkFieldErrors<T extends Object>(
  */
 export function _linkAllErrors<T extends Object>(
   errors: ValidationError[],
-  fields: FieldConfig<T>[],
-  field_error_link_name: ValidationError["property"]
+  fields: FieldConfig<T>[]
 ): void {
   errors.forEach((err) => {
     if (Array.isArray(err)) {
       err = err[0];
-      if (err[field_error_link_name as keyof ValidationError]) {
-        const f = _get(
-          err[field_error_link_name as keyof ValidationError],
-          fields
-        );
+      if (err["property"]) {
+        const f = _get(err["property" as keyof ValidationError], fields);
         f.errors.set(err);
       }
     } else {
-      if (err[field_error_link_name as keyof ValidationError]) {
-        const f = _get(
-          err[field_error_link_name as keyof ValidationError],
-          fields
-        );
+      if (err["property"]) {
+        const f = _get(err["property" as keyof ValidationError], fields);
         f.errors.set(err);
       }
     }
@@ -400,30 +392,14 @@ export async function _handleValidationSideEffects<T extends Object>(
     /**  Are we validating the whole form or just the fields? */
     if (field) {
       /**  Link errors to field (to show validation errors) */
-      if (form.validation_options.field_error_link_name) {
-        _linkFieldErrors(
-          errors,
-          field,
-          form.validation_options.field_error_link_name
-        );
-      }
+      _linkFieldErrors(errors, field);
     } else {
       /**  This is validation for the whole form! */
-      _linkAllErrors(
-        errors,
-        form.fields,
-        form.validation_options.field_error_link_name
-      );
+      _linkAllErrors(errors, form.fields);
     }
 
     /**  All required fields are valid? */
-    if (
-      _requiredFieldsValid(
-        errors,
-        required_fields,
-        form.validation_options.field_error_link_name
-      )
-    ) {
+    if (_requiredFieldsValid(errors, required_fields)) {
       form.valid.set(true);
     } else {
       form.valid.set(false);
@@ -456,8 +432,7 @@ export async function _handleValidationSideEffects<T extends Object>(
  */
 export function _requiredFieldsValid<T extends Object>(
   errors: ValidationError[],
-  required_fields: Array<keyof T>,
-  field_error_link_name: string | undefined
+  required_fields: Array<keyof T>
 ): boolean {
   if (errors.length === 0) return true;
   // Go ahead and return if there are no errors
@@ -469,9 +444,7 @@ export function _requiredFieldsValid<T extends Object>(
    * Otherwise we have to map the names of the errors so we can
    * check if they're for a required field
    */
-  const errs = errors.map(
-    (e) => e[field_error_link_name as keyof ValidationError]
-  );
+  const errs = errors.map((e) => e["property" as keyof ValidationError]);
   for (; len > i; ++i) {
     if (errs.indexOf(required_fields[i] as keyof ValidationError) !== -1) {
       return false;
@@ -579,11 +552,7 @@ export function _resetState<T extends Object>(
    *  link them to each field
    */
   if (form.errors && form.errors.length > 0) {
-    _linkAllErrors(
-      form.errors,
-      form.fields,
-      form.validation_options.field_error_link_name
-    );
+    _linkAllErrors(form.errors, form.fields);
   }
   /** Reset the value changes and the "changed" store */
   form.value_changes.set({});
