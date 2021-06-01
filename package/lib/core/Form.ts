@@ -9,7 +9,7 @@ import {
   Callback,
   ValidationOptions,
   InitialFormState,
-} from "./internal";
+} from "./Types";
 import {
   _buildFormFields,
   _get,
@@ -23,7 +23,8 @@ import {
   _executeValidationEvent,
   _addCallbackToField,
   _setFieldAttributes,
-} from "./formHelpers";
+  _buildFormFieldsWithSchema,
+} from "./formMethods";
 
 /**
  * @Recomended_Use
@@ -60,7 +61,7 @@ import {
  *
  * Functions are camelCase.
  * Variables and stores are snake_case.
- * I'm sure everyone will love it.
+ * Everyone will love it.
  *
  */
 export class Form<ModelType extends Object> {
@@ -74,7 +75,6 @@ export class Form<ModelType extends Object> {
     /** If there's a model, set the inital state's and build the fields */
     if (model) {
       this.model = model;
-      this.#buildFields();
     } else {
       throw new Error("Model is not valid. Please use a valid model.");
     }
@@ -86,6 +86,8 @@ export class Form<ModelType extends Object> {
         "Please add a validator with ReturnType<Promise<ValidationError[]>>"
       );
     }
+
+    this.buildFields();
 
     if (this.refs) this.attachRefData();
 
@@ -119,6 +121,18 @@ export class Form<ModelType extends Object> {
   fields: Array<FieldConfig<ModelType>> = [];
 
   /**
+   * Errors are attached to their corresponding fields.
+   * This pattern adds flexibility at the cost of a little complexity and object size.
+   *
+   * When a single field is validated, the whole model is validated (if
+   * using class-validator).
+   * We just don't show all the errors to the user.
+   * This way, we know if the form is still invalid, even if we aren't
+   * showing the user any errors (like, pre-submit-button press).
+   */
+  errors: ValidationError[] = [];
+
+  /**
    * validation_options contains the logic and configuration for
    * validating the form as well as linking errors to fields.
    * If you're using class-validator, just pass in the validate func
@@ -128,31 +142,9 @@ export class Form<ModelType extends Object> {
     on_events: new OnEvents(),
     /** When to link this.field values to this.model values */
     link_fields_to_model: "always",
-    field_error_link_name: "property",
     /** These options from class-validator, thats why snake and camel case mixing */
-    options: {
-      skipMissingProperties: false,
-      dismissDefaultMessages: false,
-      validationError: {
-        target: false,
-        value: false,
-      },
-      forbidUnknownValues: true,
-      stopAtFirstError: false,
-    },
+    // options: {},
   };
-
-  /**
-   * Errors are attached to their corresponding fields.
-   * This pattern adds flexibility at the cost of a little complexity.
-   *
-   * When a single field is validated, the whole model is validated (if
-   * using class-validator).
-   * We just don't show all the errors to the user.
-   * This way, we know if the form is still invalid, even if we aren't
-   * showing the user any errors (like, pre-submit-button press).
-   */
-  errors: ValidationError[] = [];
 
   /** Is the form valid? */
   valid: Writable<boolean> = writable(false);
@@ -185,6 +177,9 @@ export class Form<ModelType extends Object> {
    *
    * If you did not set the model in constructor:
    * Call attachRefData() to link the data to the respective field
+   *
+   * * Format:
+   * * Record<ref_key: string, Array<{label: string, value: any, data?: any}>>
    *
    * * Fields & reference data are linked via field.ref_key
    */
@@ -234,8 +229,8 @@ export class Form<ModelType extends Object> {
   /**
    * We keep track of required fields because we let class-validator handle everything
    * except *required* (field.required)
-   * So if there are no required fields, but there are errors, the form is still
-   * valid. This is the mechanism to help keep track of that.
+   * If there are no required fields, but there ARE errors, the form is still
+   * valid. Get it?
    * Keep track of the fields so we can validate faster.
    */
   #required_fields: Array<keyof ModelType> = [];
@@ -252,8 +247,15 @@ export class Form<ModelType extends Object> {
    *
    * @TODO Allow plain JSON model, fields and schema validation/setup
    */
-  #buildFields = (model: ModelType = this.model): void => {
-    this.fields = _buildFormFields(model, this.meta);
+  buildFields = (model: ModelType = this.model): void => {
+    if (this.validation_options.schema) {
+      this.fields = _buildFormFieldsWithSchema(
+        this.validation_options.schema,
+        this.meta
+      );
+    } else {
+      this.fields = _buildFormFields(model, this.meta);
+    }
 
     this.#required_fields = this.fields
       .filter((f) => f.required)
@@ -299,7 +301,13 @@ export class Form<ModelType extends Object> {
         field,
         this.validation_options.on_events,
         (e: Event) =>
-          _executeValidationEvent(this, this.#required_fields, field)
+          _executeValidationEvent(
+            this,
+            this.#required_fields,
+            field,
+            undefined,
+            e
+          )
       );
   };
 
@@ -342,24 +350,20 @@ export class Form<ModelType extends Object> {
   /** If want to (in)validate a specific field for any reason */
   validateField = (
     field_name: keyof ModelType,
-    withMessage?: string,
+    with_message?: string,
     callbacks?: ValidationCallback[]
   ): void => {
     const field = _get(field_name, this.fields);
-    if (!withMessage) {
+    if (!with_message) {
       _executeValidationEvent(this, this.#required_fields, field, callbacks);
     } else {
       const err = new ValidationError(
         field_name as string,
-        { error: withMessage },
+        { error: with_message },
         { value: get(field.value) }
       );
       this.errors.push(err);
-      _linkAllErrors(
-        this.errors,
-        this.fields,
-        this.validation_options.field_error_link_name
-      );
+      _linkAllErrors(this.errors, this.fields);
     }
   };
 
@@ -397,7 +401,7 @@ export class Form<ModelType extends Object> {
   // #region - Utility Methods
 
   /** Get Field by name */
-  get = (field_name: keyof ModelType): FieldConfig<ModelType> => {
+  get = <T extends ModelType>(field_name: keyof T): FieldConfig<T> => {
     return _get(field_name, this.fields);
   };
 
@@ -415,7 +419,7 @@ export class Form<ModelType extends Object> {
   ): Form<ModelType> => {
     if (reinitialize) {
       this.model = model;
-      this.#buildFields();
+      this.buildFields();
     } else {
       let key: keyof ModelType;
       for (key in this.model) {

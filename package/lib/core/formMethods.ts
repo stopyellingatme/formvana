@@ -8,7 +8,7 @@ import {
   ValidationError,
   InitialFormState,
   LinkOnEvent,
-} from "./internal";
+} from "./Types";
 
 // #region Utility Functions
 
@@ -34,6 +34,37 @@ export function _buildFormFields<T extends Object>(
     /** We made it. Return the field config and let's generate some inputs! */
     return field;
   });
+
+  if (meta) {
+    /** Filter fields used in a specific form */
+    fields.filter((f) => meta["name"] === f.for_form);
+  }
+
+  return fields;
+}
+
+export function _buildFormFieldsWithSchema<T extends Object>(
+  props: Record<string, Partial<FieldConfig<T>>>,
+  meta?: Record<string, string | number | boolean | Object>
+): FieldConfig<T>[] {
+  let k: keyof Record<string, Partial<FieldConfig<Object>>>,
+    fields = [];
+  for (k in props) {
+    const field: FieldConfig<T> = new FieldConfig<T>(k as keyof T, {
+      ...props[k],
+    });
+    fields.push(field);
+  }
+  // const fields = props.map((prop: string) => {
+  //   /** Get the @FieldConfig using metadata reflection */
+  //   const field: FieldConfig<T> = new FieldConfig<T>(prop as keyof T, {
+  //     ...Reflect.getMetadata("fieldConfig", model, prop),
+  //     value: model[prop as keyof T],
+  //   });
+
+  /** We made it. Return the field config and let's generate some inputs! */
+  // return field;
+  // });
 
   if (meta) {
     /** Filter fields used in a specific form */
@@ -109,32 +140,6 @@ export function _addCallbackToField<T extends Object>(
 // #region Linking Utilities
 
 /**
- * Link values from FIELDS to MODEL or MODEL to FIELDS
- * @Hotpath
- */
-export function _linkValues<T extends Object>(
-  from_fields_to_model: boolean,
-  fields: FieldConfig<T>[],
-  model: T
-): void {
-  /** Still the fastest way i've seen to loop in JS. */
-  let i = 0,
-    len = fields.length;
-  for (; len > i; ++i) {
-    /** Get name and value of the field */
-    const name = fields[i].name,
-      val = fields[i].value;
-    /**  Link field[values] to model[values] */
-    if (from_fields_to_model) {
-      model[name as keyof T] = get(val);
-    } else {
-      /**  Link form.model[values] to the form.fields[values] */
-      val.set(model[name as keyof T]);
-    }
-  }
-}
-
-/**
  * Link form.errors to it's corresponding field.errors
  * Via error[field_name]
  *
@@ -169,10 +174,21 @@ export function _linkAllErrors<T extends Object>(
   field_error_link_name: ValidationError["property"]
 ): void {
   errors.forEach((err) => {
-    let k: keyof typeof err;
-    for (k in err) {
-      if (k === field_error_link_name) {
-        const f = _get(err[field_error_link_name], fields);
+    if (Array.isArray(err)) {
+      err = err[0];
+      if (err[field_error_link_name as keyof ValidationError]) {
+        const f = _get(
+          err[field_error_link_name as keyof ValidationError],
+          fields
+        );
+        f.errors.set(err);
+      }
+    } else {
+      if (err[field_error_link_name as keyof ValidationError]) {
+        const f = _get(
+          err[field_error_link_name as keyof ValidationError],
+          fields
+        );
         f.errors.set(err);
       }
     }
@@ -187,7 +203,8 @@ export function _linkAllErrors<T extends Object>(
 export function _hanldeValueLinking<T extends Object>(
   model: T,
   fields: FieldConfig<T>[],
-  link_fields_to_model: LinkOnEvent | undefined
+  link_fields_to_model: LinkOnEvent | undefined,
+  event?: Event
 ): void {
   /**
    * Link the input from the field to the model.
@@ -196,10 +213,69 @@ export function _hanldeValueLinking<T extends Object>(
    * to other field changes.
    */
   if (link_fields_to_model === "always") {
-    _linkValues(true, fields, model);
+    _linkValues(true, fields, model, event);
   } else if (link_fields_to_model === "valid") {
-    _linkValues(true, fields, model);
+    _linkValues(true, fields, model, event);
   }
+}
+
+/**
+ * Link values from FIELDS to MODEL or MODEL to FIELDS
+ *
+ * @Hotpath
+ */
+export function _linkValues<T extends Object>(
+  from_fields_to_model: boolean,
+  fields: FieldConfig<T>[],
+  model: T,
+  event?: Event
+): void {
+  /** Still the fastest way i've seen to loop in JS. */
+  let i = 0,
+    len = fields.length;
+  for (; len > i; ++i) {
+    /** Get name and value of the field */
+    const name = fields[i].name,
+      val = fields[i].value,
+      value = getValueFromEvent(event);
+
+    /**  Link field[values] to model[values] */
+    if (from_fields_to_model) {
+      // model[name as keyof T] = get<typeof model[keyof T]>(val);
+      model[name as keyof T] = value;
+    } else {
+      /**  Link form.model[values] to the form.fields[values] */
+      val.set(model[name as keyof T]);
+      // val.set(value);
+    }
+  }
+}
+
+function getValueFromEvent(event?: Event): any {
+  let result;
+  if (event) {
+    if (event.target) {
+      /** @ts-ignore */
+      if (event.target.valueAsDate) {
+        /** @ts-ignore */
+        result = event.target.valueAsDate;
+        /** @ts-ignore */
+      } else if (
+        /** @ts-ignore */
+        event.target.valueAsNumber ||
+        /** @ts-ignore */
+        event.target.valueAsNumber === 0
+      ) {
+        /** @ts-ignore */
+        result = event.target.valueAsNumber;
+        /** @ts-ignore */
+      } else if (event.target.value) {
+        /** @ts-ignore */
+        result = event.target.value;
+      }
+    }
+  }
+  return result;
 }
 
 //#endregion
@@ -216,7 +292,8 @@ export function _executeValidationEvent<T extends Object>(
   form: Form<T>,
   required_fields: Array<keyof T>,
   field?: FieldConfig<T>,
-  callbacks?: ValidationCallback[]
+  callbacks?: ValidationCallback[],
+  event?: Event
 ): Promise<ValidationError[]> | undefined {
   /** The form has been altered (no longer pristine) */
   form.pristine.set(false);
@@ -232,7 +309,8 @@ export function _executeValidationEvent<T extends Object>(
     _hanldeValueLinking(
       form.model,
       form.fields,
-      form.validation_options.link_fields_to_model
+      form.validation_options.link_fields_to_model,
+      event
     ),
     /** Execution step may need work */
     field && _setValueChanges(form.value_changes, field),
@@ -240,7 +318,11 @@ export function _executeValidationEvent<T extends Object>(
   ]);
 
   return form.validation_options
-    .validator(form.model, form.validation_options.options)
+    .validator(
+      form.model,
+      form.validation_options.options
+      // form.validation_options.schema && form.validation_options.schema
+    )
     .then((errors: ValidationError[]) => {
       _executeCallbacks([
         _handleValidationSideEffects(form, errors, required_fields, field),
@@ -326,7 +408,7 @@ export async function _handleValidationSideEffects<T extends Object>(
         );
       }
     } else {
-      /**  This is validatino for the whole form! */
+      /**  This is validation for the whole form! */
       _linkAllErrors(
         errors,
         form.fields,
@@ -335,7 +417,13 @@ export async function _handleValidationSideEffects<T extends Object>(
     }
 
     /**  All required fields are valid? */
-    if (_requiredFieldsValid(errors, required_fields)) {
+    if (
+      _requiredFieldsValid(
+        errors,
+        required_fields,
+        form.validation_options.field_error_link_name
+      )
+    ) {
       form.valid.set(true);
     } else {
       form.valid.set(false);
@@ -368,7 +456,8 @@ export async function _handleValidationSideEffects<T extends Object>(
  */
 export function _requiredFieldsValid<T extends Object>(
   errors: ValidationError[],
-  required_fields: Array<keyof T>
+  required_fields: Array<keyof T>,
+  field_error_link_name: string | undefined
 ): boolean {
   if (errors.length === 0) return true;
   // Go ahead and return if there are no errors
@@ -380,7 +469,9 @@ export function _requiredFieldsValid<T extends Object>(
    * Otherwise we have to map the names of the errors so we can
    * check if they're for a required field
    */
-  const errs = errors.map((e) => e.property);
+  const errs = errors.map(
+    (e) => e[field_error_link_name as keyof ValidationError]
+  );
   for (; len > i; ++i) {
     if (errs.indexOf(required_fields[i] as keyof ValidationError) !== -1) {
       return false;

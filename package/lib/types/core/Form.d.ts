@@ -1,7 +1,7 @@
 import { Writable } from "svelte/store";
 import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
 import { FieldConfig } from ".";
-import { RefData, ValidationError, ValidationCallback, Callback, ValidationOptions, InitialFormState } from "./internal";
+import { RefData, ValidationError, ValidationCallback, Callback, ValidationOptions, InitialFormState } from "./Types";
 /**
  * @Recomended_Use
  *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
@@ -36,7 +36,7 @@ import { RefData, ValidationError, ValidationCallback, Callback, ValidationOptio
  *
  * Functions are camelCase.
  * Variables and stores are snake_case.
- * I'm sure everyone will love it.
+ * Everyone will love it.
  *
  */
 export declare class Form<ModelType extends Object> {
@@ -53,14 +53,8 @@ export declare class Form<ModelType extends Object> {
      */
     fields: Array<FieldConfig<ModelType>>;
     /**
-     * validation_options contains the logic and configuration for
-     * validating the form as well as linking errors to fields.
-     * If you're using class-validator, just pass in the validate func
-     */
-    validation_options: ValidationOptions;
-    /**
      * Errors are attached to their corresponding fields.
-     * This pattern adds flexibility at the cost of a little complexity.
+     * This pattern adds flexibility at the cost of a little complexity and object size.
      *
      * When a single field is validated, the whole model is validated (if
      * using class-validator).
@@ -69,6 +63,12 @@ export declare class Form<ModelType extends Object> {
      * showing the user any errors (like, pre-submit-button press).
      */
     errors: ValidationError[];
+    /**
+     * validation_options contains the logic and configuration for
+     * validating the form as well as linking errors to fields.
+     * If you're using class-validator, just pass in the validate func
+     */
+    validation_options: ValidationOptions;
     /** Is the form valid? */
     valid: Writable<boolean>;
     /** Has the form state changed from it's initial value? */
@@ -94,6 +94,9 @@ export declare class Form<ModelType extends Object> {
      *
      * If you did not set the model in constructor:
      * Call attachRefData() to link the data to the respective field
+     *
+     * * Format:
+     * * Record<ref_key: string, Array<{label: string, value: any, data?: any}>>
      *
      * * Fields & reference data are linked via field.ref_key
      */
@@ -122,6 +125,13 @@ export declare class Form<ModelType extends Object> {
      * * If you're using the field.for_form propery, set form name here.
      */
     meta?: Record<string, string | number | boolean | Object>;
+    /**
+     * Builds the fields from the model.
+     * Builds the field configs via this.model using metadata-reflection.
+     *
+     * @TODO Allow plain JSON model, fields and schema validation/setup
+     */
+    buildFields: (model?: ModelType) => void;
     /**
      * Aim for "no-class" initialization model:
      *
@@ -166,7 +176,7 @@ export declare class Form<ModelType extends Object> {
      */
     validateAsync: (callbacks?: ValidationCallback[] | undefined) => Promise<ValidationError[] | undefined>;
     /** If want to (in)validate a specific field for any reason */
-    validateField: (field_name: keyof ModelType, withMessage?: string | undefined, callbacks?: ValidationCallback[] | undefined) => void;
+    validateField: (field_name: keyof ModelType, with_message?: string | undefined, callbacks?: ValidationCallback[] | undefined) => void;
     /**
      * Attach a callback to a field or array of fields.
      * If the callback if type ValidationCallback it will be added
@@ -176,7 +186,7 @@ export declare class Form<ModelType extends Object> {
     /** Clear ALL the errors. */
     clearErrors: () => void;
     /** Get Field by name */
-    get: (field_name: keyof ModelType) => FieldConfig<ModelType>;
+    get: <T extends ModelType>(field_name: keyof T) => FieldConfig<T>;
     /**
      * Load new data into the form and build the fields.
      * Data is updated IN PLACE by default.

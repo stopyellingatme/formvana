@@ -2,7 +2,6 @@ import { SvelteComponent } from "svelte";
 import { Writable } from "svelte/store";
 import { SvelteComponentDev } from "svelte/internal";
 import { SvelteComponent as SvelteComponent$0 } from "svelte/internal";
-// #region Validation
 /** Using "when" gives us a little more flexibilty. */
 interface ValidationCallback {
     callback: Callback;
@@ -62,14 +61,18 @@ interface ValidationOptions {
      * Biggest perf increase comes from setting validationError.target = false
      * (so the whole model is not attached to each error message)
      */
-    options?: Partial<ClassValidatorOptions>;
+    options?: Partial<ClassValidatorOptions> | Object;
     /**
      * Optional validation schema.
      * "no-class" method of validating the model.
      *
      * @TODO Create a way to validate JSON model
      */
-    schema?: Object;
+    schema?: Record<string, Partial<FieldConfig<Object>>>;
+    /**
+     * Form layout when using plain JSON object.
+     */
+    // schema_layout?: Record<string, Partial<FieldConfig<Object>>>;
     /**
      * Name of the property which links ERRORS to fields.
      * Error.property_or_name_or_whatever must match field.name.
@@ -530,7 +533,7 @@ declare class FieldStepper {
  *
  * Functions are camelCase.
  * Variables and stores are snake_case.
- * I'm sure everyone will love it.
+ * Everyone will love it.
  *
  */
 declare class Form<ModelType extends Object> {
@@ -548,14 +551,8 @@ declare class Form<ModelType extends Object> {
      */
     fields: Array<FieldConfig<ModelType>>;
     /**
-     * validation_options contains the logic and configuration for
-     * validating the form as well as linking errors to fields.
-     * If you're using class-validator, just pass in the validate func
-     */
-    validation_options: ValidationOptions;
-    /**
      * Errors are attached to their corresponding fields.
-     * This pattern adds flexibility at the cost of a little complexity.
+     * This pattern adds flexibility at the cost of a little complexity and object size.
      *
      * When a single field is validated, the whole model is validated (if
      * using class-validator).
@@ -564,6 +561,12 @@ declare class Form<ModelType extends Object> {
      * showing the user any errors (like, pre-submit-button press).
      */
     errors: ValidationError[];
+    /**
+     * validation_options contains the logic and configuration for
+     * validating the form as well as linking errors to fields.
+     * If you're using class-validator, just pass in the validate func
+     */
+    validation_options: ValidationOptions;
     /** Is the form valid? */
     valid: Writable<boolean>;
     /** Has the form state changed from it's initial value? */
@@ -589,6 +592,9 @@ declare class Form<ModelType extends Object> {
      *
      * If you did not set the model in constructor:
      * Call attachRefData() to link the data to the respective field
+     *
+     * * Format:
+     * * Record<ref_key: string, Array<{label: string, value: any, data?: any}>>
      *
      * * Fields & reference data are linked via field.ref_key
      */
@@ -617,6 +623,16 @@ declare class Form<ModelType extends Object> {
      * * If you're using the field.for_form propery, set form name here.
      */
     meta?: Record<string, string | number | boolean | Object>;
+    //#endregion ^^ Fields ^^
+    // #region ** Form API **
+    // #region - Form Setup
+    /**
+     * Builds the fields from the model.
+     * Builds the field configs via this.model using metadata-reflection.
+     *
+     * @TODO Allow plain JSON model, fields and schema validation/setup
+     */
+    buildFields: (model?: ModelType) => void;
     /**
      * Aim for "no-class" initialization model:
      *
@@ -663,7 +679,7 @@ declare class Form<ModelType extends Object> {
      */
     validateAsync: (callbacks?: ValidationCallback[] | undefined) => Promise<ValidationError[] | undefined>;
     /** If want to (in)validate a specific field for any reason */
-    validateField: (field_name: keyof ModelType, withMessage?: string | undefined, callbacks?: ValidationCallback[] | undefined) => void;
+    validateField: (field_name: keyof ModelType, with_message?: string | undefined, callbacks?: ValidationCallback[] | undefined) => void;
     /**
      * Attach a callback to a field or array of fields.
      * If the callback if type ValidationCallback it will be added
@@ -675,7 +691,7 @@ declare class Form<ModelType extends Object> {
     //#endregion
     // #region - Utility Methods
     /** Get Field by name */
-    get: (field_name: keyof ModelType) => FieldConfig<ModelType>;
+    get: <T extends ModelType>(field_name: keyof T) => FieldConfig<T>;
     /**
      * Load new data into the form and build the fields.
      * Data is updated IN PLACE by default.
@@ -735,9 +751,10 @@ declare class FormManager {
     all_valid: Writable<boolean>;
     any_changed: Writable<boolean>;
     all_pristine: Writable<boolean>;
+    _subscriptions: any[];
     /** Validate a given form, a number of forms, or all forms */
     validateAll: (callbacks?: ValidationCallback[] | undefined, form_indexes?: number[] | undefined) => void;
-    destroy: () => void;
+    destroySubscriptions: () => void;
     resetAll: () => void;
 }
 /**

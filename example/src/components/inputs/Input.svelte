@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { loop_guard } from "svelte/internal";
+  import { get } from "svelte/store";
+
   import InputErrors from "./InputErrors.svelte";
 
   export let field;
@@ -11,7 +14,7 @@
   let error_class =
     "block w-full px-3 py-2 placeholder-red-300 border border-red-300 appearance-none transition text-red-900 duration-150 ease-in-out rounded-md focus:outline-none focus:ring-red-500 focus:shadow-outline-red focus:border-red-300 sm:text-sm sm:leading-5 disabled:cursor-not-allowed";
 
-  $: valueStore = field.value;
+  $: value = field.value;
   $: errorsStore = field.errors;
   $: errors = $errorsStore && $errorsStore.constraints;
 
@@ -38,7 +41,7 @@
       {name}
       {...attributes}
       class={cls}
-      bind:value={$valueStore}
+      bind:value={$value}
       use:useInput
     />
     {#if errors}

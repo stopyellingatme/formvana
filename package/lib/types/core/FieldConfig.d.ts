@@ -1,6 +1,6 @@
 import { SvelteComponent } from "svelte";
 import { Writable } from "svelte/store";
-import { Callback, FieldAttributes, RefDataItem, ValidationCallback, ValidationError } from "./internal";
+import { Callback, FieldAttributes, RefDataItem, ValidationCallback, ValidationError } from "./Types";
 /**
  * FieldConfig is used to help with the form auto generation functionality.
  *

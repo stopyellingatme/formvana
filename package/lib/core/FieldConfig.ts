@@ -6,7 +6,7 @@ import {
   RefDataItem,
   ValidationCallback,
   ValidationError,
-} from "./internal";
+} from "./Types";
 
 /**
  * FieldConfig is used to help with the form auto generation functionality.

@@ -1,6 +1,6 @@
 import { Writable } from "svelte/store";
 import { Form } from "./Form";
-import { ValidationCallback } from "./internal";
+import { ValidationCallback } from "./Types";
 declare type FormDictionary = Array<Form<any>>;
 /**
  * Base interface for managing multiple instances of Form
@@ -18,9 +18,10 @@ export declare class FormManager {
     all_valid: Writable<boolean>;
     any_changed: Writable<boolean>;
     all_pristine: Writable<boolean>;
+    _subscriptions: any[];
     /** Validate a given form, a number of forms, or all forms */
     validateAll: (callbacks?: ValidationCallback[] | undefined, form_indexes?: number[] | undefined) => void;
-    destroy: () => void;
+    destroySubscriptions: () => void;
     resetAll: () => void;
 }
 /**

@@ -1,5 +1,7 @@
 // #region Validation
 
+import { FieldConfig } from "./FieldConfig";
+
 /** Using "when" gives us a little more flexibilty. */
 export interface ValidationCallback {
   callback: Callback;
@@ -77,7 +79,7 @@ export interface ValidationOptions {
    * Biggest perf increase comes from setting validationError.target = false
    * (so the whole model is not attached to each error message)
    */
-  options?: Partial<ClassValidatorOptions>;
+  options?: Partial<ClassValidatorOptions> | Object;
 
   /**
    * Optional validation schema.
@@ -85,12 +87,12 @@ export interface ValidationOptions {
    *
    * @TODO Create a way to validate JSON model
    */
-  schema?: Object;
+  schema?: Record<string, Partial<FieldConfig<Object>>>;
+
   /**
-   * Name of the property which links ERRORS to fields.
-   * Error.property_or_name_or_whatever must match field.name.
+   * Form layout when using plain JSON object.
    */
-  field_error_link_name: ValidationError["property"];
+  // schema_layout?: Record<string, Partial<FieldConfig<Object>>>;
 
   /** When to link this.field values to this.model values */
   link_fields_to_model?: LinkOnEvent;

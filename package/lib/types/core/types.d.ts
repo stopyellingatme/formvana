@@ -1,3 +1,4 @@
+import { FieldConfig } from "./FieldConfig";
 /** Using "when" gives us a little more flexibilty. */
 export interface ValidationCallback {
     callback: Callback;
@@ -11,27 +12,26 @@ export interface ValidationCallback {
  * Validation Error array.
  */
 export declare type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
-export interface ValidationErrorType {
+/**
+ * @param model_property_key, which model field are we linking this to?
+ * @param errors essentially Record<string #1, string #2>
+ * with #1 being the name of the error (minlength, pattern)
+ * and #2 being the error message
+ * @param options, anything else part of the ValidationErrorType
+ */
+export declare class ValidationError implements ValidationErrorType {
+    constructor(model_property_key?: string, errors?: {
+        [type: string]: string;
+    }, options?: Partial<ValidationErrorType>);
     target?: Object;
-    property: string;
+    property?: string;
     value?: any;
     constraints?: {
         [type: string]: string;
     };
     children?: ValidationErrorType[];
 }
-/** This makes it easier to create validation errors. */
-export declare class ValidationError {
-    /**
-     * @param errors essentially Record<string #1, string #2>
-     * with #1 being the name of the error constraint
-     * and #2 being the error message
-     * @param model_property_key, which model field are we linking this to?
-     * @param options, anything else part of the ValidationErrorType
-     */
-    constructor(model_property_key?: string, errors?: {
-        [type: string]: string;
-    }, options?: Partial<ValidationErrorType>);
+export interface ValidationErrorType {
     target?: Object;
     property?: string;
     value?: any;
@@ -56,14 +56,17 @@ export interface ValidationOptions {
      * Biggest perf increase comes from setting validationError.target = false
      * (so the whole model is not attached to each error message)
      */
-    options?: Partial<ClassValidatorOptions>;
+    options?: Partial<ClassValidatorOptions> | Object;
     /**
      * Optional validation schema.
-     * Decorator free method of validating the model.
+     * "no-class" method of validating the model.
      *
      * @TODO Create a way to validate JSON model
      */
-    schema?: Object;
+    schema?: Record<string, Partial<FieldConfig<Object>>>;
+    /**
+     * Form layout when using plain JSON object.
+     */
     /**
      * Name of the property which links ERRORS to fields.
      * Error.property_or_name_or_whatever must match field.name.
@@ -204,7 +207,8 @@ export declare type FieldAttributes = Record<ElementAttributesMap & string, any>
 export declare type ElementAttributesMap = keyof HTMLElement | keyof HTMLInputElement | keyof HTMLSelectElement | keyof HTMLFieldSetElement | keyof HTMLImageElement | keyof HTMLButtonElement | keyof HTMLCanvasElement | keyof HTMLOptionElement | keyof AriaAttributes;
 /** Catchall type for giving callbacks a bit more typesafety */
 export declare type Callback = ((...args: any[]) => any) | (() => any) | void | undefined | boolean | string | Promise<any>;
-/** All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/
+/**
+ * All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/
  * This is here because there is no AriaAttrubutes type in the default library.
  */
 interface AriaAttributes {

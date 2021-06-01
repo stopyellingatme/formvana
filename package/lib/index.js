@@ -1,5 +1,1240 @@
-!function(e,t){"object"==typeof exports&&"undefined"!=typeof module?t(exports):"function"==typeof define&&define.amd?define(["exports"],t):t((e="undefined"!=typeof globalThis?globalThis:e||self)["@formvana"]={})}(this,(function(e){"use strict";function t(){}function r(e){let r;return function(e,...r){if(null==e)return t;const i=e.subscribe(...r);return i.unsubscribe?()=>i.unsubscribe():i}(e,(e=>r=e))(),r}const i=[];function n(e,r=t){let n;const s=[];function o(t){if(o=t,((r=e)!=r?o==o:r!==o||r&&"object"==typeof r||"function"==typeof r)&&(e=t,n)){const t=!i.length;for(let t=0;t<s.length;t+=1){const r=s[t];r[1](),i.push(r,e)}if(t){for(let e=0;e<i.length;e+=2)i[e][0](i[e+1]);i.length=0}}var r,o}return{set:o,update:function(t){o(t(e))},subscribe:function(i,a=t){const l=[i,a];return s.push(l),1===s.length&&(n=r(o)||t),i(e),()=>{const e=s.indexOf(l);-1!==e&&s.splice(e,1),0===s.length&&(n(),n=null)}}}}class s{constructor(e,t){if(!e)throw new Error("{name: string} is required for FieldConfig intialization.");if(this.name=e,t&&Object.assign(this,t),!this.selector)throw new Error("Please pass in a valid Element.\nEither a string selector or a SvelteComponent.");switch(this.value&&this.value.subscribe||(this.value=n(this.value)),this.attributes&&!this.attributes.type?this.attributes.type=this.type:this.attributes||(this.attributes={},this.attributes.type=this.type),this.type){case"text":this.value.set("");break;case"decimal":case"number":this.value.set(0);break;case"boolean":this.value.set(!1),this.options=[];break;case"select":this.options=[];break;default:this.value.set(void 0)}!this.attributes["aria-label"]&&this.attributes.title?this.attributes["aria-label"]=this.attributes.title:this.attributes["aria-label"]||(this.attributes["aria-label"]=this.label||this.name)}name;node;selector;value=n(void 0);type="text";required;label;hint;errors=n(void 0);styles;classes;ref_key;options;disabled;hidden;attributes;data_set;for_form;validation_rules;group;step;clearErrors=()=>{this.errors.set(void 0)};clear=()=>{this.clearErrors()};addEventListener=(e,t)=>{if(!this.node)throw new Error("Node is missing! No Html Node to attach event listener too!");this.node.addEventListener(e,(e=>t instanceof Function?t(e):t),!1)}}class o{constructor(e,t,r){if(e&&(this.property=e),t&&(this.constraints=t),r){let e;for(e in r)this[e]=r[e]}}target;property;value;constraints;children}class a{constructor(e,t=!1){if(t){let e;for(e in this)this[e]=!1}Object.assign(this,e)}blur=!0;change=!0;click=!1;dblclick=!1;focus=!0;input=!0;keydown=!1;keypress=!1;keyup=!1;mount=!1;mousedown=!1;mouseenter=!1;mouseleave=!1;mousemove=!1;mouseout=!1;mouseover=!1;mouseup=!1;submit=!0}function l(e,t){return t.filter((t=>t.name===e))[0]}function u(e,t,r,i,n){i&&i.when?t.addEventListener(r,d(e,n,void 0,[i])):t.addEventListener(r,i)}function f(e,t,i){let n=0,s=t.length;for(;s>n;++n){const s=t[n].name,o=t[n].value;e?i[s]=r(o):o.set(i[s])}}function c(e,t,r){e.forEach((e=>{let i;for(i in e)if(i===r){l(e[r],t).errors.set(e)}}))}function h(e,t,r){("always"===r||"valid"===r)&&f(!0,t,e)}function d(e,t,r,i){return e.pristine.set(!1),v([h(e.model,e.fields,e.validation_options.link_fields_to_model),r&&g(e.value_changes,r),i&&p("before",i)]),e.validation_options.validator(e.model,e.validation_options.options).then((n=>(v([y(e,n,t,r),m(e.value_changes,e.changed),i&&p("after",i)]),n)))}function p(e,t){t&&t.length>0&&t.forEach((t=>{t.when===e&&_(t.callback)}))}function _(e){e instanceof Function&&e()}function v(e){Array.isArray(e)?e.forEach((e=>{_(e)})):_(e)}async function y(e,t,r,i){return t&&t.length>0?(e.errors=t,i?e.validation_options.field_error_link_name&&function(e,t,r){const i=e.filter((e=>e[r]===t.name));i&&i.length>0?t.errors.set(i[0]):t.errors.set(void 0)}(t,i,e.validation_options.field_error_link_name):c(t,e.fields,e.validation_options.field_error_link_name),!function(e,t){if(0===e.length)return!0;let r=0,i=t.length;if(0===i)return!0;const n=e.map((e=>e.property));for(;i>r;++r)if(-1!==n.indexOf(t[r]))return!1;return!0}(t,r)?e.valid.set(!1):e.valid.set(!0)):(h(e.model,e.fields,e.validation_options.link_fields_to_model),e.clearErrors(),e.valid.set(!0)),t}function g(e,t){const i=r(e);i[t.name]?(i[t.name]=r(t.value),e.set({...i})):e.set({...i,[t.name]:r(t.value)})}function m(e,t){const i=r(e);i&&i!=={}&&Object.keys(i).length>0?t.set(!0):t.set(!1)}function b(e,t){return t.model=Object.assign({},e.model),e.errors&&e.errors.length>0?t.errors=[...e.errors]:t.errors=[],t}function w(e,t,r){let i=0,n=e.length;if(0===n)return;const s=t.map((e=>e.name));for(;n>i;++i){const n=s.indexOf(e[i]);if(-1!==n){E(s[n],t,r)}}}function E(e,t,r){const i=l(e,t);let n;for(n in r)"attributes"===n?Object.assign(i.attributes,r[n]):"name"!==n&&k(i,n,r[n])}function k(e,t,r){e[t]=r}var O,j="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof self?self:{};
-/*! *****************************************************************************
+(function (global, factory) {
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+    typeof define === 'function' && define.amd ? define(['exports'], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global['@formvana'] = {}));
+}(this, (function (exports) { 'use strict';
+
+    function noop() { }
+    function safe_not_equal(a, b) {
+        return a != a ? b == b : a !== b || ((a && typeof a === 'object') || typeof a === 'function');
+    }
+    function subscribe(store, ...callbacks) {
+        if (store == null) {
+            return noop;
+        }
+        const unsub = store.subscribe(...callbacks);
+        return unsub.unsubscribe ? () => unsub.unsubscribe() : unsub;
+    }
+    function get_store_value(store) {
+        let value;
+        subscribe(store, _ => value = _)();
+        return value;
+    }
+    Promise.resolve();
+
+    const subscriber_queue = [];
+    /**
+     * Create a `Writable` store that allows both updating and reading by subscription.
+     * @param {*=}value initial value
+     * @param {StartStopNotifier=}start start and stop notifications for subscriptions
+     */
+    function writable(value, start = noop) {
+        let stop;
+        const subscribers = [];
+        function set(new_value) {
+            if (safe_not_equal(value, new_value)) {
+                value = new_value;
+                if (stop) { // store is ready
+                    const run_queue = !subscriber_queue.length;
+                    for (let i = 0; i < subscribers.length; i += 1) {
+                        const s = subscribers[i];
+                        s[1]();
+                        subscriber_queue.push(s, value);
+                    }
+                    if (run_queue) {
+                        for (let i = 0; i < subscriber_queue.length; i += 2) {
+                            subscriber_queue[i][0](subscriber_queue[i + 1]);
+                        }
+                        subscriber_queue.length = 0;
+                    }
+                }
+            }
+        }
+        function update(fn) {
+            set(fn(value));
+        }
+        function subscribe(run, invalidate = noop) {
+            const subscriber = [run, invalidate];
+            subscribers.push(subscriber);
+            if (subscribers.length === 1) {
+                stop = start(set) || noop;
+            }
+            run(value);
+            return () => {
+                const index = subscribers.indexOf(subscriber);
+                if (index !== -1) {
+                    subscribers.splice(index, 1);
+                }
+                if (subscribers.length === 0) {
+                    stop();
+                    stop = null;
+                }
+            };
+        }
+        return { set, update, subscribe };
+    }
+
+    /**
+     * FieldConfig is used to help with the form auto generation functionality.
+     *
+     * This is not meant to be a complete HTML Input/Select/etc replacement.
+     * It is simply a vehicle to help give the form generator
+     * an easy-to-use format to work with.
+     */
+    class FieldConfig {
+        constructor(name, init) {
+            if (name) {
+                this.name = name;
+            }
+            else {
+                throw new Error("{name: string} is required for FieldConfig intialization.");
+            }
+            /** I know, Object.assign... lots of freedom there. */
+            if (init)
+                Object.assign(this, init);
+            if (!this.selector) {
+                throw new Error(`Please pass in a valid Element.\nEither a string selector or a SvelteComponent.`);
+            }
+            /** Check if the value is still a Writable store */
+            if (!this.value || !this.value.subscribe) {
+                /** If it's not, make it a writable store. */
+                this.value = writable(this.value);
+            }
+            /**  Set the type attribute if it's not already set */
+            if (this.attributes && !this.attributes["type"]) {
+                this.attributes["type"] = this.type;
+            }
+            else if (!this.attributes) {
+                this.attributes = {};
+                this.attributes["type"] = this.type;
+            }
+            /**
+             * Trying to set some sane defaults when initializing field.
+             * These can be over-written easily by simply adding a value to your
+             * class field.
+             * E.g. class YourClass{ description: string = "This is a descriptor." }
+             * The text "This is a descriptor." will be linked to the FieldConfig.value
+             * when the fields are built from the model (in Form.buildFields();)
+             */
+            switch (this.type) {
+                case "text"   :
+                    this.value.set("");
+                    break;
+                case "decimal" :
+                    this.value.set(0.0);
+                    break;
+                case "number"  :
+                    this.value.set(0);
+                    break;
+                case "boolean"   :
+                    this.value.set(false);
+                    this.options = [];
+                    break;
+                case "select" :
+                    this.options = [];
+                    break;
+                default:
+                    this.value.set(undefined);
+                    break;
+            }
+            /**
+             * I'm doing this because there's not enough thought about accessibility
+             * in Forms or for libraries. Better to have SOME kind of default than none
+             * at all.
+             * So, if there's no aria-label and the title attribute is present...
+             */
+            if (!this.attributes["aria-label"] && this.attributes["title"]) {
+                /** Set aria-label = title */
+                this.attributes["aria-label"] = this.attributes["title"];
+            }
+            else if (!this.attributes["aria-label"]) {
+                /** If no aria-label then set it to the label or if !label then name */
+                this.attributes["aria-label"] = this.label || this.name;
+            }
+        }
+        /**
+         * Name of the class property.
+         * Only set "name" if you are using FieldConfig apart from
+         * your object/model.
+         * I.e. you are using plain JSON rather than a TS class.
+         */
+        name;
+        /**
+         * HTML Element which the field is attached to.
+         * Attached using the form.useField method.
+         */
+        node;
+        /**
+         * el can be either String or Svelte Component.
+         * This allows us a more flexible dynamic field generator.
+         * Using a template also allows you to style each input as needed.
+         */
+        selector;
+        /** Value is a writable store defaulting to undefined. */
+        value = writable(undefined);
+        /** Defaults to text, can be set to anything though. */
+        type = "text";
+        required;
+        label;
+        hint;
+        /**
+         * Validation Errors!
+         * We're mainly looking for the "constraints".
+         * One ValidationError object can have multiple errors (constraints)
+         */
+        errors = writable(undefined);
+        /**
+         * Use styles and classes to apply styling.
+         * However, using a template/component is recommended.
+         */
+        styles;
+        classes;
+        /** Linked to form.refs via RefData[ref_key] */
+        ref_key;
+        /** Used if there is a set of "options" to choose from. */
+        options;
+        /** Pretty self-explainitory, disable the field. */
+        disabled;
+        /** Pretty self-explainitory, hide the field. */
+        hidden;
+        /**
+         * Attributes uses a fairly exhaustive map of most HTML Field-ish
+         * attributes.
+         * You also have the option to use a plain JSON Object, for
+         * extra flexibility.
+         *
+         * @example attrubutes["description"] is ok without being a FieldAttribute
+         */
+        attributes;
+        /** Element.dataset hook, so you can do the really wild things! */
+        data_set;
+        /** In case you'd like to filter some fields for a specific form */
+        for_form;
+        /**
+         * If you're using a validation library that supports
+         * a validation rules, validation pattern.
+         */
+        validation_rules;
+        /**
+         * Group is optional.
+         * Use when you'd like to group multiple fields togethter.
+         */
+        group;
+        /**
+         * Step is used when field is part of a multi-step form.
+         */
+        step;
+        clearErrors = () => {
+            this.errors.set(undefined);
+        };
+        clear = () => {
+            this.clearErrors();
+        };
+        addEventListener = (event, callback) => {
+            if (this.node) {
+                this.node.addEventListener(event, 
+                /** Check if the callback is directly executable */
+                (e) => (callback instanceof Function ? callback(e) : callback), 
+                /** No extra options being passed in */
+                false);
+            }
+            else {
+                throw new Error("Node is missing! No Html Node to attach event listener too!");
+            }
+        };
+    }
+    class FieldStepper {
+        constructor(fields, active_index) {
+            this.fields = fields;
+            if (active_index) {
+                this.active_step = active_index;
+            }
+            else {
+                /** Get the first set, and set the active_index */
+                let k;
+                for (k in fields) {
+                    this.active_step = k;
+                }
+            }
+        }
+        fields;
+        active_step;
+        get fields_valid() {
+            let valid = true, k;
+            for (k in this.fields) {
+                /** If there's an error, set valid to false. */
+                if (get_store_value(this.fields[k].errors)) {
+                    valid = false;
+                }
+            }
+            return writable(valid);
+        }
+    }
+
+    // #region Validation
+    /**
+     * @param model_property_key, which model field are we linking this to?
+     * @param errors essentially Record<string #1, string #2>
+     * with #1 being the name of the error (minlength, pattern)
+     * and #2 being the error message
+     * @param options, anything else part of the ValidationErrorType
+     */
+    class ValidationError {
+        constructor(model_property_key, errors, options) {
+            if (model_property_key)
+                this.property = model_property_key;
+            if (errors) {
+                this.constraints = errors;
+            }
+            if (options) {
+                let k;
+                for (k in options) {
+                    this[k] = options[k];
+                }
+            }
+        }
+        target; // Object that was validated.
+        property; // Object's property that didn't pass validation.
+        value; // Value that didn't pass a validation.
+        constraints;
+        children;
+    }
+    //#endregion
+    // #region Events
+    /**
+     * Determines which events to validate on.
+     * You can insert event listeners just by adding a [string]: boolean
+     * to the constructor's init object.
+     * Enabled By Default: blue, change, focus, input, submit
+     */
+    class OnEvents {
+        constructor(init, disableAll = false) {
+            // If disableAll is false, turn off all event listeners
+            if (disableAll) {
+                let k;
+                for (k in this) {
+                    this[k] = false;
+                }
+            }
+            Object.assign(this, init);
+        }
+        blur = true;
+        change = true;
+        click = false;
+        dblclick = false;
+        focus = true;
+        input = true;
+        keydown = false;
+        keypress = false;
+        keyup = false;
+        mount = false;
+        mousedown = false;
+        mouseenter = false;
+        mouseleave = false;
+        mousemove = false;
+        mouseout = false;
+        mouseover = false;
+        mouseup = false;
+        submit = true;
+    }
+    //#endregion
+
+    // #region Utility Functions
+    /**
+     * Build the field configs from this.model using metadata-reflection.
+     * Grab the editableProperties from the @field decorator.
+     *
+     * @TODO Create method to use plain JSON as model, fields and validation schema
+     */
+    function _buildFormFields(model, meta, props = Reflect.getMetadata("editableProperties", model)) {
+        /** Map the @field fields to the form.fields */
+        const fields = props.map((prop) => {
+            /** Get the @FieldConfig using metadata reflection */
+            const field = new FieldConfig(prop, {
+                ...Reflect.getMetadata("fieldConfig", model, prop),
+                value: model[prop],
+            });
+            /** We made it. Return the field config and let's generate some inputs! */
+            return field;
+        });
+        if (meta) {
+            /** Filter fields used in a specific form */
+            fields.filter((f) => meta["name"] === f.for_form);
+        }
+        return fields;
+    }
+    function _buildFormFieldsWithSchema(props, meta) {
+        let k, fields = [];
+        for (k in props) {
+            const field = new FieldConfig(k, {
+                ...props[k],
+            });
+            fields.push(field);
+        }
+        // const fields = props.map((prop: string) => {
+        //   /** Get the @FieldConfig using metadata reflection */
+        //   const field: FieldConfig<T> = new FieldConfig<T>(prop as keyof T, {
+        //     ...Reflect.getMetadata("fieldConfig", model, prop),
+        //     value: model[prop as keyof T],
+        //   });
+        /** We made it. Return the field config and let's generate some inputs! */
+        // return field;
+        // });
+        if (meta) {
+            /** Filter fields used in a specific form */
+            fields.filter((f) => meta["name"] === f.for_form);
+        }
+        return fields;
+    }
+    /** Get the form field by name */
+    function _get(name, fields) {
+        return fields.filter((f) => f.name === name)[0];
+    }
+    //#endregion
+    // #region HTML Event Helpers
+    /**
+     * Attach the OnEvents events to each form.field.
+     * Parent: form.useField(...)
+     */
+    function _attachEventListeners(field, on_events, callback) {
+        Object.entries(on_events).forEach(([eventName, shouldListen]) => {
+            /** If shouldListen true, then add the event listener */
+            if (shouldListen) {
+                if (field.node?.nodeName === "SELECT" && eventName !== "input") {
+                    field.addEventListener(eventName, callback);
+                }
+                if (field.node?.nodeName !== "SELECT") {
+                    field.addEventListener(eventName, callback);
+                }
+            }
+        });
+    }
+    function _addCallbackToField(form, field, event, callback, required_fields) {
+        /** Check if callback is of type ValidationCallback */
+        if (callback && callback.when) {
+            field.addEventListener(event, _executeValidationEvent(form, required_fields, undefined, [
+                callback,
+            ]));
+        }
+        else {
+            field.addEventListener(event, callback);
+        }
+    }
+    //#endregion
+    // #region Linking Utilities
+    /**
+     * Link form.errors to it's corresponding field.errors
+     * Via error[field_name]
+     *
+     * @Hotpath
+     */
+    function _linkFieldErrors(errors, field, field_name) {
+        const error = errors.filter((e) => e[field_name] === field.name);
+        // Check if there's an error for the field
+        if (error && error.length > 0) {
+            field.errors.set(error[0]);
+        }
+        else {
+            /**  Very important! Don't change! */
+            field.errors.set(undefined);
+        }
+    }
+    /**
+     * Link all Validation Errors on Form.errors to each field via the
+     * field_error_link_name.
+     *
+     * @Hotpath
+     */
+    function _linkAllErrors(errors, fields, field_error_link_name) {
+        errors.forEach((err) => {
+            if (Array.isArray(err)) {
+                err = err[0];
+                if (err[field_error_link_name]) {
+                    const f = _get(err[field_error_link_name], fields);
+                    f.errors.set(err);
+                }
+            }
+            else {
+                if (err[field_error_link_name]) {
+                    const f = _get(err[field_error_link_name], fields);
+                    f.errors.set(err);
+                }
+            }
+        });
+    }
+    /** When should we link the fields to the model?
+     * "alwyas" || "valid" (when valid)
+     *
+     * @Hotpath
+     */
+    function _hanldeValueLinking(model, fields, link_fields_to_model, event) {
+        /**
+         * Link the input from the field to the model.
+         * We dont't link (just) the field value.
+         * We link all values just in case the field change propigates
+         * to other field changes.
+         */
+        if (link_fields_to_model === "always") {
+            _linkValues(true, fields, model, event);
+        }
+        else if (link_fields_to_model === "valid") {
+            _linkValues(true, fields, model, event);
+        }
+    }
+    /**
+     * Link values from FIELDS to MODEL or MODEL to FIELDS
+     *
+     * @Hotpath
+     */
+    function _linkValues(from_fields_to_model, fields, model, event) {
+        /** Still the fastest way i've seen to loop in JS. */
+        let i = 0, len = fields.length;
+        for (; len > i; ++i) {
+            /** Get name and value of the field */
+            const name = fields[i].name, val = fields[i].value, value = getValueFromEvent(event);
+            /**  Link field[values] to model[values] */
+            if (from_fields_to_model) {
+                // model[name as keyof T] = get<typeof model[keyof T]>(val);
+                model[name] = value;
+            }
+            else {
+                /**  Link form.model[values] to the form.fields[values] */
+                val.set(model[name]);
+                // val.set(value);
+            }
+        }
+    }
+    function getValueFromEvent(event) {
+        let result;
+        if (event) {
+            if (event.target) {
+                /** @ts-ignore */
+                if (event.target.valueAsDate) {
+                    /** @ts-ignore */
+                    result = event.target.valueAsDate;
+                    /** @ts-ignore */
+                }
+                else if (
+                /** @ts-ignore */
+                event.target.valueAsNumber ||
+                    /** @ts-ignore */
+                    event.target.valueAsNumber === 0) {
+                    /** @ts-ignore */
+                    result = event.target.valueAsNumber;
+                    /** @ts-ignore */
+                }
+                else if (event.target.value) {
+                    /** @ts-ignore */
+                    result = event.target.value;
+                }
+            }
+        }
+        return result;
+    }
+    //#endregion
+    // #region Validation Helpers
+    /**
+     * Hanlde the events that will fire for each field.
+     * Corresponds to the form.on_events field.
+     *
+     * @Hotpath
+     */
+    function _executeValidationEvent(form, required_fields, field, callbacks, event) {
+        /** The form has been altered (no longer pristine) */
+        form.pristine.set(false);
+        /** Execute pre-validation callbacks */
+        _executeCallbacks([
+            /**
+             * Link new data from field to the model.
+             * We are not linking (only/just) the field value.
+             * We link all values just in case the field change propigates other field changes.
+             * I've tried an approach that linked ONLY data to single field, negligable perf hit
+             */
+            _hanldeValueLinking(form.model, form.fields, form.validation_options.link_fields_to_model, event),
+            /** Execution step may need work */
+            field && _setValueChanges(form.value_changes, field),
+            callbacks && _executeValidationCallbacks("before", callbacks),
+        ]);
+        return form.validation_options
+            .validator(form.model, form.validation_options.options
+        // form.validation_options.schema && form.validation_options.schema
+        )
+            .then((errors) => {
+            _executeCallbacks([
+                _handleValidationSideEffects(form, errors, required_fields, field),
+                _hasStateChanged(form.value_changes, form.changed),
+                callbacks && _executeValidationCallbacks("after", callbacks),
+            ]);
+            return errors;
+        });
+    }
+    /**
+     * Execute validation callbacks, depending on when_to_call
+     * @Hotpath
+     */
+    function _executeValidationCallbacks(when_to_call, callbacks) {
+        if (callbacks && callbacks.length > 0)
+            callbacks.forEach((cb) => {
+                if (cb.when === when_to_call) {
+                    _callFunction(cb.callback);
+                }
+            });
+    }
+    /**
+     * Check if the callback is a function and execute it accordingly
+     * @Hotpath
+     */
+    function _callFunction(cb) {
+        if (cb instanceof Function) {
+            cb();
+        }
+    }
+    /**
+     * This is used to add functions and callbacks to the OnEvent
+     * handler. Functions can be added in a plugin-style manner now.
+     *
+     * @Hotpath
+     */
+    function _executeCallbacks(callbacks) {
+        /** Is it an Array of callbacks? */
+        if (Array.isArray(callbacks)) {
+            callbacks.forEach((cb) => {
+                _callFunction(cb);
+            });
+        }
+        else {
+            _callFunction(callbacks);
+        }
+    }
+    /**
+     * Handle all the things associated with validation!
+     * Link the errors to the fields.
+     * Check if all required fields are valid.
+     * Link values from fields to model if
+     * form.link_fields_to_model === LinkOnEvent.Valid is true.
+     *
+     * @Hotpath
+     */
+    async function _handleValidationSideEffects(form, errors, required_fields, field) {
+        /**  There are errors! */
+        if (errors && errors.length > 0) {
+            form.errors = errors;
+            /**  Are we validating the whole form or just the fields? */
+            if (field) {
+                /**  Link errors to field (to show validation errors) */
+                if (form.validation_options.field_error_link_name) {
+                    _linkFieldErrors(errors, field, form.validation_options.field_error_link_name);
+                }
+            }
+            else {
+                /**  This is validation for the whole form! */
+                _linkAllErrors(errors, form.fields, form.validation_options.field_error_link_name);
+            }
+            /**  All required fields are valid? */
+            if (_requiredFieldsValid(errors, required_fields, form.validation_options.field_error_link_name)) {
+                form.valid.set(true);
+            }
+            else {
+                form.valid.set(false);
+            }
+        }
+        else {
+            /** We can't get here unless the errors we see are for non-required fields */
+            /**
+             * If the config tells us to link the values only when the form
+             * is valid, then link them here.
+             */
+            _hanldeValueLinking(form.model, form.fields, form.validation_options.link_fields_to_model);
+            form.clearErrors(); /** Clear form errors */
+            form.valid.set(true); /** Form is valid! */
+        }
+        return errors;
+    }
+    /**
+     * @TODO Clean up this requiredFieldsValid implementation. Seems too clunky.
+     *
+     * Check if there are any required fields in the errors.
+     * If there are no required fields in the errors, the form is valid.
+     *
+     * @Hotpath
+     */
+    function _requiredFieldsValid(errors, required_fields, field_error_link_name) {
+        if (errors.length === 0)
+            return true;
+        // Go ahead and return if there are no errors
+        let i = 0, len = required_fields.length;
+        // If there are no required fields, just go ahead and return
+        if (len === 0)
+            return true;
+        /**
+         * Otherwise we have to map the names of the errors so we can
+         * check if they're for a required field
+         */
+        const errs = errors.map((e) => e[field_error_link_name]);
+        for (; len > i; ++i) {
+            if (errs.indexOf(required_fields[i]) !== -1) {
+                return false;
+            }
+        }
+        return true;
+    }
+    //#endregion
+    // #region Form State
+    /**
+     * Helper function for value_change emitter.
+     * Write the form's value changes to form.value_changes.
+     *
+     * @Hotpath
+     *
+     * @param changes incoming value changes
+     * @param field field emitting the changes
+     */
+    function _setValueChanges(changes, field) {
+        const _changes = get_store_value(changes);
+        /** Is the change is on the same field? */
+        if (_changes[field.name]) {
+            _changes[field.name] = get_store_value(field.value);
+            changes.set({ ..._changes });
+        }
+        else {
+            /** Or is the change on a different field? */
+            changes.set({ ..._changes, [field.name]: get_store_value(field.value) });
+        }
+    }
+    /**
+     * Is the current form state different than the initial state?
+     *
+     * I've tested it with ~ 1000 fields in a single class with very slight input lag.
+     *
+     * @Hotpath
+     */
+    function _hasStateChanged(value_changes, changed) {
+        // const changes = get(value_changes) !== {} ? get(value_changes) : null;
+        const changes = get_store_value(value_changes);
+        if (changes && changes !== {} && Object.keys(changes).length > 0) {
+            changed.set(true);
+            return;
+        }
+        changed.set(false);
+    }
+    /**
+     * Grab a snapshot of several items that generally define the state of the form
+     * and serialize them into a format that's easy-ish to check/deserialize (for resetting)
+     */
+    function _setInitialState(form, initial_state) {
+        initial_state.model = Object.assign({}, form.model);
+        if (form.errors && form.errors.length > 0) {
+            initial_state.errors = [...form.errors];
+        }
+        else {
+            initial_state.errors = [];
+        }
+        return initial_state;
+    }
+    /**
+     * Reset form to inital state.
+     */
+    function _resetState(form, initial_state) {
+        /** !CANNOT OVERWRITE MODEL. VALIDATION GETS FUCKED UP! */
+        let k;
+        if (initial_state.model) {
+            for (k in initial_state.model) {
+                form.model[k] = initial_state.model[k];
+            }
+        }
+        /** Clear the form errors before assigning initial_state.errors */
+        form.clearErrors();
+        if (initial_state.errors && initial_state.errors.length > 0) {
+            form.errors = [...initial_state.errors];
+        }
+        else {
+            form.errors = [];
+        }
+        /** Done serializing the initial_state */
+        /** Link the values, now */
+        _linkValues(false, form.fields, form.model);
+        /** If there were errors in the inital_state
+         *  link them to each field
+         */
+        if (form.errors && form.errors.length > 0) {
+            _linkAllErrors(form.errors, form.fields, form.validation_options.field_error_link_name);
+        }
+        /** Reset the value changes and the "changed" store */
+        form.value_changes.set({});
+        form.changed.set(false);
+    }
+    //#endregion
+    // #region Styling
+    /**
+     * Using this.field_order, rearrange the order of the fields.
+     */
+    function _setFieldOrder(field_order, fields) {
+        let newLayout = [];
+        let leftovers = [];
+        /** Loop over the order... */
+        field_order.forEach((name) => {
+            const field = _get(name, fields);
+            /** If the field.name and the order name match... */
+            if (field.name === name) {
+                /** Then push it to the fields array */
+                newLayout.push(field);
+            }
+            else if (leftovers.indexOf(field) === -1 &&
+                field_order.indexOf(field.name) === -1) {
+                /** Field is not in the order, so push it to bottom of order. */
+                leftovers.push(field);
+            }
+        });
+        fields = [...newLayout, ...leftovers];
+        return fields;
+    }
+    /**
+     * Set any attributes on the given fields.
+     */
+    function _setFieldAttributes(target_fields, fields, attributes) {
+        let i = 0, len = target_fields.length;
+        if (len === 0)
+            return;
+        const all_field_names = fields.map((f) => f.name);
+        for (; len > i; ++i) {
+            const field_index = all_field_names.indexOf(target_fields[i]);
+            if (field_index !== -1) {
+                const field_name = all_field_names[field_index];
+                _setFieldAttribute(field_name, fields, attributes);
+            }
+        }
+    }
+    /**
+     * Set any attributes on the given field.
+     */
+    function _setFieldAttribute(name, fields, attributes) {
+        /**  Get field config */
+        const f = _get(name, fields);
+        /**  Loop over key of Partial FieldConfig */
+        let k;
+        for (k in attributes) {
+            /**  If we hit the attributes property then we set the field.attributes */
+            if (k === "attributes") {
+                Object.assign(f.attributes, attributes[k]);
+            }
+            else if (k !== "name") {
+                /**  "name" is readonly on FieldConfig */
+                setFieldProperty(f, k, attributes[k]);
+            }
+        }
+    }
+    /**
+     * Initially created to deal with TS compiler errors.
+     * Dynamically assigning a value to f[key] wouldn't play nice.
+     */
+    function setFieldProperty(f, key, value) {
+        f[key] = value;
+    }
+    //#endregion
+    //#region Form Manager
+    //#endregion
+
+    /**
+     * @Recomended_Use
+     *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
+     *  - Set the model (if you didn't in the first step)
+     *  - Attach reference data (if you didn't in the first step)
+     *  - Storify the form - check example.form.ts for an example
+     *  - Now you're ready to use the form!
+     *  - Pass it into the DynamicForm component and let the form generate itself!
+     *
+     * Performance is blazing with < 500 fields.
+     * Can render up to 2000 inputs in per class/fields, not recommended.
+     * Just break it up into 100 or so fields per form (max 250) if its a huge form.
+     *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
+     *
+     *
+     * @TODO Create easy component/pattern for field groups and stepper/wizzard
+     *
+     * @TODO add a super-struct validation example. Could end up being more ergonomic.
+     *
+     * @TODO Allow fields, model and validator to be passed in separately.
+     *  - This will allow for a more "dynamic" form building experience
+     */
+    /**
+     * Formvana Form Class
+     *
+     * Main Concept: fields and model are separate.
+     * Fields are built using the model, via the @field() decorator.
+     * We keep the fields and the model in sync via your model property names
+     * and field[name].
+     *
+     * Form is NOT valid, initially.
+     *
+     * Functions are camelCase.
+     * Variables and stores are snake_case.
+     * Everyone will love it.
+     *
+     */
+    class Form {
+        constructor(model, validation_options, form_properties) {
+            if (form_properties)
+                Object.assign(this, form_properties);
+            /** If there's a model, set the inital state's and build the fields */
+            if (model) {
+                this.model = model;
+            }
+            else {
+                throw new Error("Model is not valid. Please use a valid model.");
+            }
+            if (validation_options) {
+                Object.assign(this.validation_options, validation_options);
+            }
+            else {
+                throw new Error("Please add a validator with ReturnType<Promise<ValidationError[]>>");
+            }
+            this.buildFields();
+            if (this.refs)
+                this.attachRefData();
+            if (this.disabled_fields)
+                _setFieldAttributes(this.disabled_fields, this.fields, {
+                    disabled: true,
+                    attributes: { disabled: true },
+                });
+            if (this.hidden_fields)
+                _setFieldAttributes(this.hidden_fields, this.fields, {
+                    hidden: true,
+                });
+            /** Wait until everything is initalized, then set the inital state. */
+            _setInitialState(this, this.initial_state);
+        }
+        //#region ** Fields **
+        /**
+         * This is your form Model/Schema.
+         * Used to build the form.fields.
+         */
+        model;
+        /**
+         * Fields are built using model's reflection metadata.
+         * Or using an array of field configuration objects.
+         */
+        fields = [];
+        /**
+         * Errors are attached to their corresponding fields.
+         * This pattern adds flexibility at the cost of a little complexity and object size.
+         *
+         * When a single field is validated, the whole model is validated (if
+         * using class-validator).
+         * We just don't show all the errors to the user.
+         * This way, we know if the form is still invalid, even if we aren't
+         * showing the user any errors (like, pre-submit-button press).
+         */
+        errors = [];
+        /**
+         * validation_options contains the logic and configuration for
+         * validating the form as well as linking errors to fields.
+         * If you're using class-validator, just pass in the validate func
+         */
+        validation_options = {
+            validator: async () => [],
+            on_events: new OnEvents(),
+            /** When to link this.field values to this.model values */
+            link_fields_to_model: "always",
+            field_error_link_name: "property",
+            /** These options from class-validator, thats why snake and camel case mixing */
+            // options: {},
+        };
+        /** Is the form valid? */
+        valid = writable(false);
+        /** Has the form state changed from it's initial value? */
+        changed = writable(false);
+        /** Has the form been altered in any way? */
+        pristine = writable(true);
+        /** Is the form loading? */
+        loading = writable(false);
+        /**
+         * Form Template Layout
+         *
+         * Render the form into a custom svelte template!
+         * Use a svelte component. Or use a string as the selector.
+         * * The template/component must accept {form} prop
+         *
+         * Note: add ` types": ["svelte"] ` to tsconfig compilerOptions
+         * to remove TS import error of .svelte files (for your template)
+         */
+        template;
+        /**
+         * refs hold any reference data you'll be using in the form
+         * e.g. seclet dropdowns, radio buttons, etc.
+         *
+         * If you did not set the model in constructor:
+         * Call attachRefData() to link the data to the respective field
+         *
+         * * Format:
+         * * Record<ref_key: string, Array<{label: string, value: any, data?: any}>>
+         *
+         * * Fields & reference data are linked via field.ref_key
+         */
+        refs;
+        /**
+         * Emits value changes as a plain JS object.
+         * Format: { [field.name]: value }
+         *
+         * Similar to Angular form.valueChanges
+         */
+        value_changes = writable({});
+        /**
+         * This is the model's initial state.
+         * It's only initial model and errors.
+         * We're keeping this simple.
+         */
+        initial_state = {
+            model: undefined,
+            errors: undefined,
+        };
+        /** Use the NAME of the field (field.name) to disable/hide the field. */
+        hidden_fields;
+        /** Use the NAME of the field (field.name) to disable/hide the field. */
+        disabled_fields;
+        /**
+         * Any extra data you may want to pass around.
+         * @examples description, name, type, header, label, classes, etc.
+         *
+         * * If you're using the field.for_form propery, set form name here.
+         */
+        meta;
+        /**
+         * Determines the ordering of this.fields.
+         * Simply an array of field names (or group names or stepper names)
+         * in the order to be displayed
+         *
+         */
+        #field_order;
+        /**
+         * We keep track of required fields because we let class-validator handle everything
+         * except *required* (field.required)
+         * If there are no required fields, but there ARE errors, the form is still
+         * valid. Get it?
+         * Keep track of the fields so we can validate faster.
+         */
+        #required_fields = [];
+        //#endregion ^^ Fields ^^
+        // #region ** Form API **
+        // #region - Form Setup
+        /**
+         * Builds the fields from the model.
+         * Builds the field configs via this.model using metadata-reflection.
+         *
+         * @TODO Allow plain JSON model, fields and schema validation/setup
+         */
+        buildFields = (model = this.model) => {
+            if (this.validation_options.schema) {
+                this.fields = _buildFormFieldsWithSchema(this.validation_options.schema, this.meta);
+            }
+            else {
+                this.fields = _buildFormFields(model, this.meta);
+            }
+            this.#required_fields = this.fields
+                .filter((f) => f.required)
+                .map((f) => f.name);
+        };
+        /**
+         * Aim for "no-class" initialization model:
+         *
+         * take Array<Partial<FieldConfig>> &
+         *
+         *      validation schema &
+         *
+         *      JSON model
+         *
+         *  => Form<Object>
+         *
+         * Model keys must match fieldConfig name & validation schema
+         * property keys.
+         *
+         *
+         */
+        /**
+         * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!
+         * This hooks up the event listeners!
+         *
+         * This is for Svelte's "use:FUNCTION" feature.
+         * The "use" directive passes the HTML Node as a parameter
+         * to the given function (e.g. use:useField(node: HTMLElement)).
+         *
+         * Use on the element that will be interacted with.
+         * e.g. <input/> -- <button/> -- <select/> -- etc.
+         * Check examples folder for more details.
+         */
+        useField = (node) => {
+            /** Attach HTML Node to field so we can remove event listeners later */
+            const field = _get(node.name, this.fields);
+            field.node = node;
+            if (this.validation_options.on_events)
+                _attachEventListeners(field, this.validation_options.on_events, (e) => _executeValidationEvent(this, this.#required_fields, field, undefined, e));
+        };
+        //#endregion
+        // #region - Validation
+        /**
+         * Validate the form!
+         * You can pass in callbacks as needed.
+         * Callbacks can be called "before" or "after" validation.
+         */
+        validate = (callbacks) => {
+            return _executeValidationEvent(this, this.#required_fields, undefined, callbacks);
+        };
+        /**
+         * Validate the form, async!
+         * You can pass in callbacks as needed.
+         * Callbacks can be applied "before" or "after" validation.
+         */
+        validateAsync = async (callbacks) => {
+            return await _executeValidationEvent(this, this.#required_fields, undefined, callbacks);
+        };
+        /** If want to (in)validate a specific field for any reason */
+        validateField = (field_name, with_message, callbacks) => {
+            const field = _get(field_name, this.fields);
+            if (!with_message) {
+                _executeValidationEvent(this, this.#required_fields, field, callbacks);
+            }
+            else {
+                const err = new ValidationError(field_name, { error: with_message }, { value: get_store_value(field.value) });
+                this.errors.push(err);
+                _linkAllErrors(this.errors, this.fields, this.validation_options.field_error_link_name);
+            }
+        };
+        /**
+         * Attach a callback to a field or array of fields.
+         * If the callback if type ValidationCallback it will be added
+         * to the validation handler
+         */
+        attachCallbacks = (event, callback, field_names) => {
+            if (Array.isArray(field_names)) {
+                const fields = field_names.map((f) => _get(f, this.fields));
+                fields.forEach((f) => {
+                    _addCallbackToField(this, f, event, callback, this.#required_fields);
+                });
+            }
+            else {
+                const field = _get(field_names, this.fields);
+                _addCallbackToField(this, field, event, callback, this.#required_fields);
+            }
+        };
+        /** Clear ALL the errors. */
+        clearErrors = () => {
+            this.errors = [];
+            this.fields.forEach((f) => {
+                f.errors.set(undefined);
+            });
+        };
+        //#endregion
+        // #region - Utility Methods
+        /** Get Field by name */
+        get = (field_name) => {
+            return _get(field_name, this.fields);
+        };
+        /**
+         * Load new data into the form and build the fields.
+         * Data is updated IN PLACE by default.
+         * Reinitialize is set to false, by default.
+         *
+         * Inital State is not updated by default.
+         */
+        loadModel = (model, reinitialize = false, update_initial_state = false) => {
+            if (reinitialize) {
+                this.model = model;
+                this.buildFields();
+            }
+            else {
+                let key;
+                for (key in this.model) {
+                    this.model[key] = model[key];
+                }
+                _linkValues(false, this.fields, this.model);
+            }
+            if (update_initial_state)
+                this.updateInitialState();
+            return this;
+        };
+        /**
+         * Pass in the reference data to add options to fields.
+         */
+        attachRefData = (refs) => {
+            const fields_with_ref_keys = this.fields.filter((f) => f.ref_key);
+            if (refs) {
+                this.refs = refs;
+                fields_with_ref_keys.forEach((field) => {
+                    if (field.ref_key)
+                        field.options = refs[field.ref_key];
+                });
+            }
+            else if (this.refs) {
+                fields_with_ref_keys.forEach((field) => {
+                    if (field.ref_key && this.refs)
+                        field.options = this.refs[field.ref_key];
+                });
+            }
+        };
+        /**
+         *! Make sure to call this when the component is unloaded/destroyed
+         * Removes all event listeners and clears the form state.
+         */
+        destroy = () => {
+            if (this.fields && this.fields.length > 0) {
+                // For each field...
+                this.fields.forEach((f) => {
+                    // Remove all the event listeners!
+                    if (this.validation_options.on_events)
+                        Object.keys(this.validation_options.on_events).forEach((key) => {
+                            f.node &&
+                                f.node.removeEventListener(key, (ev) => {
+                                });
+                        });
+                });
+            }
+        };
+        //#endregion
+        // #region - Form State
+        /** Resets to the inital state of the form. */
+        reset = () => {
+            _resetState(this, this.initial_state);
+        };
+        /** Well, this updates the initial state of the form. */
+        updateInitialState = () => {
+            _setInitialState(this, this.initial_state);
+            this.changed.set(false);
+        };
+        //#endregion
+        // #region - Layout
+        /**
+         * Set the field order.
+         * Layout param is simply an array of field (or group)
+         * names in the order to be displayed.
+         * Leftover fields are appended to bottom of form.
+         */
+        setFieldOrder = (order) => {
+            if (order && order.length > 0) {
+                this.#field_order = order;
+                this.fields = _setFieldOrder(this.#field_order, this.fields);
+            }
+        };
+        /**
+         * Set attributes on a given set of fields.
+         *
+         * @exapmle to hide several fields:
+         * names = [field.name, field.name],
+         * attributes = { hidden: true };
+         */
+        setFieldAttributes = (names, attributes) => {
+            if (names) {
+                if (Array.isArray(names)) {
+                    _setFieldAttributes(names, this.fields, attributes);
+                }
+                else {
+                    _setFieldAttributes([names], this.fields, attributes);
+                }
+            }
+        };
+    }
+
+    var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+    /*! *****************************************************************************
     Copyright (C) Microsoft. All rights reserved.
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use
     this file except in compliance with the License. You may obtain a copy of the
@@ -12,5 +1247,1311 @@
 
     See the Apache Version 2.0 License for specific language governing permissions
     and limitations under the License.
-    ***************************************************************************** */!function(e){!function(t){var r="object"==typeof j?j:"object"==typeof self?self:"object"==typeof this?this:Function("return this;")(),i=n(e);function n(e,t){return function(r,i){"function"!=typeof e[r]&&Object.defineProperty(e,r,{configurable:!0,writable:!0,value:i}),t&&t(r,i)}}void 0===r.Reflect?r.Reflect=e:i=n(r.Reflect,i),function(e){var t=Object.prototype.hasOwnProperty,r="function"==typeof Symbol,i=r&&void 0!==Symbol.toPrimitive?Symbol.toPrimitive:"@@toPrimitive",n=r&&void 0!==Symbol.iterator?Symbol.iterator:"@@iterator",s="function"==typeof Object.create,o={__proto__:[]}instanceof Array,a=!s&&!o,l={create:s?function(){return ie(Object.create(null))}:o?function(){return ie({__proto__:null})}:function(){return ie({})},has:a?function(e,r){return t.call(e,r)}:function(e,t){return t in e},get:a?function(e,r){return t.call(e,r)?e[r]:void 0}:function(e,t){return e[t]}},u=Object.getPrototypeOf(Function),f="object"==typeof process&&process.env&&"true"===process.env.REFLECT_METADATA_USE_MAP_POLYFILL,c=f||"function"!=typeof Map||"function"!=typeof Map.prototype.entries?ee():Map,h=f||"function"!=typeof Set||"function"!=typeof Set.prototype.entries?te():Set,d=new(f||"function"!=typeof WeakMap?re():WeakMap);function p(e,t,r,i){if(R(r)){if(!W(e))throw new TypeError;if(!G(t))throw new TypeError;return O(e,t)}if(!W(e))throw new TypeError;if(!V(t))throw new TypeError;if(!V(i)&&!R(i)&&!q(i))throw new TypeError;return q(i)&&(i=void 0),j(e,t,r=D(r),i)}function _(e,t){function r(r,i){if(!V(r))throw new TypeError;if(!R(i)&&!H(i))throw new TypeError;F(e,t,r,i)}return r}function v(e,t,r,i){if(!V(r))throw new TypeError;return R(i)||(i=D(i)),F(e,t,r,i)}function y(e,t,r){if(!V(t))throw new TypeError;return R(r)||(r=D(r)),x(e,t,r)}function g(e,t,r){if(!V(t))throw new TypeError;return R(r)||(r=D(r)),T(e,t,r)}function m(e,t,r){if(!V(t))throw new TypeError;return R(r)||(r=D(r)),M(e,t,r)}function b(e,t,r){if(!V(t))throw new TypeError;return R(r)||(r=D(r)),P(e,t,r)}function w(e,t){if(!V(e))throw new TypeError;return R(t)||(t=D(t)),S(e,t)}function E(e,t){if(!V(e))throw new TypeError;return R(t)||(t=D(t)),C(e,t)}function k(e,t,r){if(!V(t))throw new TypeError;R(r)||(r=D(r));var i=A(t,r,!1);if(R(i))return!1;if(!i.delete(e))return!1;if(i.size>0)return!0;var n=d.get(t);return n.delete(r),n.size>0||d.delete(t),!0}function O(e,t){for(var r=e.length-1;r>=0;--r){var i=(0,e[r])(t);if(!R(i)&&!q(i)){if(!G(i))throw new TypeError;t=i}}return t}function j(e,t,r,i){for(var n=e.length-1;n>=0;--n){var s=(0,e[n])(t,r,i);if(!R(s)&&!q(s)){if(!V(s))throw new TypeError;i=s}}return i}function A(e,t,r){var i=d.get(e);if(R(i)){if(!r)return;i=new c,d.set(e,i)}var n=i.get(t);if(R(n)){if(!r)return;n=new c,i.set(t,n)}return n}function x(e,t,r){if(T(e,t,r))return!0;var i=Z(t);return!q(i)&&x(e,i,r)}function T(e,t,r){var i=A(t,r,!1);return!R(i)&&U(i.has(e))}function M(e,t,r){if(T(e,t,r))return P(e,t,r);var i=Z(t);return q(i)?void 0:M(e,i,r)}function P(e,t,r){var i=A(t,r,!1);if(!R(i))return i.get(e)}function F(e,t,r,i){A(r,i,!0).set(e,t)}function S(e,t){var r=C(e,t),i=Z(e);if(null===i)return r;var n=S(i,t);if(n.length<=0)return r;if(r.length<=0)return n;for(var s=new h,o=[],a=0,l=r;a<l.length;a++){var u=l[a];s.has(u)||(s.add(u),o.push(u))}for(var f=0,c=n;f<c.length;f++){u=c[f];s.has(u)||(s.add(u),o.push(u))}return o}function C(e,t){var r=[],i=A(e,t,!1);if(R(i))return r;for(var n=B(i.keys()),s=0;;){var o=Q(n);if(!o)return r.length=s,r;var a=J(o);try{r[s]=a}catch(e){try{X(n)}finally{throw e}}s++}}function L(e){if(null===e)return 1;switch(typeof e){case"undefined":return 0;case"boolean":return 2;case"string":return 3;case"symbol":return 4;case"number":return 5;case"object":return null===e?1:6;default:return 6}}function R(e){return void 0===e}function q(e){return null===e}function I(e){return"symbol"==typeof e}function V(e){return"object"==typeof e?null!==e:"function"==typeof e}function K(e,t){switch(L(e)){case 0:case 1:case 2:case 3:case 4:case 5:return e}var r=3===t?"string":5===t?"number":"default",n=Y(e,i);if(void 0!==n){var s=n.call(e,r);if(V(s))throw new TypeError;return s}return z(e,"default"===r?"number":r)}function z(e,t){if("string"===t){var r=e.toString;if($(r))if(!V(n=r.call(e)))return n;if($(i=e.valueOf))if(!V(n=i.call(e)))return n}else{var i;if($(i=e.valueOf))if(!V(n=i.call(e)))return n;var n,s=e.toString;if($(s))if(!V(n=s.call(e)))return n}throw new TypeError}function U(e){return!!e}function N(e){return""+e}function D(e){var t=K(e,3);return I(t)?t:N(t)}function W(e){return Array.isArray?Array.isArray(e):e instanceof Object?e instanceof Array:"[object Array]"===Object.prototype.toString.call(e)}function $(e){return"function"==typeof e}function G(e){return"function"==typeof e}function H(e){switch(L(e)){case 3:case 4:return!0;default:return!1}}function Y(e,t){var r=e[t];if(null!=r){if(!$(r))throw new TypeError;return r}}function B(e){var t=Y(e,n);if(!$(t))throw new TypeError;var r=t.call(e);if(!V(r))throw new TypeError;return r}function J(e){return e.value}function Q(e){var t=e.next();return!t.done&&t}function X(e){var t=e.return;t&&t.call(e)}function Z(e){var t=Object.getPrototypeOf(e);if("function"!=typeof e||e===u)return t;if(t!==u)return t;var r=e.prototype,i=r&&Object.getPrototypeOf(r);if(null==i||i===Object.prototype)return t;var n=i.constructor;return"function"!=typeof n||n===e?t:n}function ee(){var e={},t=[],r=function(){function e(e,t,r){this._index=0,this._keys=e,this._values=t,this._selector=r}return e.prototype["@@iterator"]=function(){return this},e.prototype[n]=function(){return this},e.prototype.next=function(){var e=this._index;if(e>=0&&e<this._keys.length){var r=this._selector(this._keys[e],this._values[e]);return e+1>=this._keys.length?(this._index=-1,this._keys=t,this._values=t):this._index++,{value:r,done:!1}}return{value:void 0,done:!0}},e.prototype.throw=function(e){throw this._index>=0&&(this._index=-1,this._keys=t,this._values=t),e},e.prototype.return=function(e){return this._index>=0&&(this._index=-1,this._keys=t,this._values=t),{value:e,done:!0}},e}();return function(){function t(){this._keys=[],this._values=[],this._cacheKey=e,this._cacheIndex=-2}return Object.defineProperty(t.prototype,"size",{get:function(){return this._keys.length},enumerable:!0,configurable:!0}),t.prototype.has=function(e){return this._find(e,!1)>=0},t.prototype.get=function(e){var t=this._find(e,!1);return t>=0?this._values[t]:void 0},t.prototype.set=function(e,t){var r=this._find(e,!0);return this._values[r]=t,this},t.prototype.delete=function(t){var r=this._find(t,!1);if(r>=0){for(var i=this._keys.length,n=r+1;n<i;n++)this._keys[n-1]=this._keys[n],this._values[n-1]=this._values[n];return this._keys.length--,this._values.length--,t===this._cacheKey&&(this._cacheKey=e,this._cacheIndex=-2),!0}return!1},t.prototype.clear=function(){this._keys.length=0,this._values.length=0,this._cacheKey=e,this._cacheIndex=-2},t.prototype.keys=function(){return new r(this._keys,this._values,i)},t.prototype.values=function(){return new r(this._keys,this._values,s)},t.prototype.entries=function(){return new r(this._keys,this._values,o)},t.prototype["@@iterator"]=function(){return this.entries()},t.prototype[n]=function(){return this.entries()},t.prototype._find=function(e,t){return this._cacheKey!==e&&(this._cacheIndex=this._keys.indexOf(this._cacheKey=e)),this._cacheIndex<0&&t&&(this._cacheIndex=this._keys.length,this._keys.push(e),this._values.push(void 0)),this._cacheIndex},t}();function i(e,t){return e}function s(e,t){return t}function o(e,t){return[e,t]}}function te(){return function(){function e(){this._map=new c}return Object.defineProperty(e.prototype,"size",{get:function(){return this._map.size},enumerable:!0,configurable:!0}),e.prototype.has=function(e){return this._map.has(e)},e.prototype.add=function(e){return this._map.set(e,e),this},e.prototype.delete=function(e){return this._map.delete(e)},e.prototype.clear=function(){this._map.clear()},e.prototype.keys=function(){return this._map.keys()},e.prototype.values=function(){return this._map.values()},e.prototype.entries=function(){return this._map.entries()},e.prototype["@@iterator"]=function(){return this.keys()},e.prototype[n]=function(){return this.keys()},e}()}function re(){var e=16,r=l.create(),i=n();return function(){function e(){this._key=n()}return e.prototype.has=function(e){var t=s(e,!1);return void 0!==t&&l.has(t,this._key)},e.prototype.get=function(e){var t=s(e,!1);return void 0!==t?l.get(t,this._key):void 0},e.prototype.set=function(e,t){return s(e,!0)[this._key]=t,this},e.prototype.delete=function(e){var t=s(e,!1);return void 0!==t&&delete t[this._key]},e.prototype.clear=function(){this._key=n()},e}();function n(){var e;do{e="@@WeakMap@@"+u()}while(l.has(r,e));return r[e]=!0,e}function s(e,r){if(!t.call(e,i)){if(!r)return;Object.defineProperty(e,i,{value:l.create()})}return e[i]}function o(e,t){for(var r=0;r<t;++r)e[r]=255*Math.random()|0;return e}function a(e){return"function"==typeof Uint8Array?"undefined"!=typeof crypto?crypto.getRandomValues(new Uint8Array(e)):"undefined"!=typeof msCrypto?msCrypto.getRandomValues(new Uint8Array(e)):o(new Uint8Array(e),e):o(new Array(e),e)}function u(){var t=a(e);t[6]=79&t[6]|64,t[8]=191&t[8]|128;for(var r="",i=0;i<e;++i){var n=t[i];4!==i&&6!==i&&8!==i||(r+="-"),n<16&&(r+="0"),r+=n.toString(16).toLowerCase()}return r}}function ie(e){return e.__=void 0,delete e.__,e}e("decorate",p),e("metadata",_),e("defineMetadata",v),e("hasMetadata",y),e("hasOwnMetadata",g),e("getMetadata",m),e("getOwnMetadata",b),e("getMetadataKeys",w),e("getOwnMetadataKeys",E),e("deleteMetadata",k)}(i)}()}(O||(O={}));class A{constructor(e,t){e&&(this.forms=e),t&&Object.assign(this,t),this.#getAllValueChanges(),this.#getAllValid(),this.#getAllChanged(),this.#getAllPristine()}forms=[];loading=n(!1);all_value_changes=n({});all_valid=n(!1);any_changed=n(!1);all_pristine=n(!1);#all_valid_list={};#all_changed_list={};#all_pristine_list={};validateAll=(e,t)=>{if(t)t.forEach((t=>{this.forms&&this.forms[t].validate(e)}));else{let t;for(t in this.forms)this.forms[t].validate(e)}};destroy=()=>{};resetAll=()=>{this.forms.forEach((e=>e.reset()))};#getAllValueChanges=()=>{let e,t=0;for(e in this.forms){const i=`form_${t}`;if("{}"!=`${r(this.forms[e].value_changes)}`){const t=r(this.all_value_changes);t[i]||this.all_value_changes.set({...t,[i]:{}}),this.forms[e].value_changes.subscribe((e=>{const t=r(this.all_value_changes);this.all_value_changes.set({...t,[i]:e})}))}t++}};#getAllValid=()=>{let e,t=0;for(e in this.forms){const r=t;this.forms[e].valid.subscribe((e=>{this.#all_valid_list[r]=e,Object.values(this.#all_valid_list).includes(!1)?this.all_valid.set(!1):this.all_valid.set(!0)})),t++}};#getAllChanged=()=>{let e,t=0;for(e in this.forms){const r=t;this.forms[e].changed.subscribe((e=>{this.#all_changed_list[r]=e,Object.values(this.#all_changed_list).includes(!0)?this.any_changed.set(!0):this.any_changed.set(!1)})),t++}};#getAllPristine=()=>{let e,t=0;for(e in this.forms){const r=t;this.forms[e].pristine.subscribe((e=>{this.#all_pristine_list[r]=e,Object.values(this.#all_pristine_list).includes(!1)?this.all_pristine.set(!1):this.all_pristine.set(!0)})),t++}}}e.FieldConfig=s,e.FieldStepper=class{constructor(e,t){if(this.fields=e,t)this.active_step=t;else{let t;for(t in e)this.active_step=t}}fields;active_step;get fields_valid(){let e,t=!0;for(e in this.fields)r(this.fields[e].errors)&&(t=!1);return n(t)}},e.Form=class{constructor(e,t,r){if(r&&Object.assign(this,r),!e)throw new Error("Model is not valid. Please use a valid model.");if(this.model=e,this.#buildFields(),!t)throw new Error("Please add a validator with ReturnType<Promise<ValidationError[]>>");Object.assign(this.validation_options,t),this.refs&&this.attachRefData(),this.disabled_fields&&w(this.disabled_fields,this.fields,{disabled:!0,attributes:{disabled:!0}}),this.hidden_fields&&w(this.hidden_fields,this.fields,{hidden:!0}),b(this,this.initial_state)}model;fields=[];validation_options={validator:async()=>[],on_events:new a,link_fields_to_model:"always",field_error_link_name:"property",options:{skipMissingProperties:!1,dismissDefaultMessages:!1,validationError:{target:!1,value:!1},forbidUnknownValues:!0,stopAtFirstError:!1}};errors=[];valid=n(!1);changed=n(!1);pristine=n(!0);loading=n(!1);template;refs;value_changes=n({});initial_state={model:void 0,errors:void 0};hidden_fields;disabled_fields;meta;#field_order;#required_fields=[];#buildFields=(e=this.model)=>{this.fields=function(e,t,r=Reflect.getMetadata("editableProperties",e)){const i=r.map((t=>new s(t,{...Reflect.getMetadata("fieldConfig",e,t),value:e[t]})));return t&&i.filter((e=>t.name===e.for_form)),i}(e,this.meta),this.#required_fields=this.fields.filter((e=>e.required)).map((e=>e.name))};useField=e=>{const t=l(e.name,this.fields);t.node=e,this.validation_options.on_events&&function(e,t,r){Object.entries(t).forEach((([t,i])=>{i&&("SELECT"===e.node?.nodeName&&"input"!==t&&e.addEventListener(t,r),"SELECT"!==e.node?.nodeName&&e.addEventListener(t,r))}))}(t,this.validation_options.on_events,(e=>d(this,this.#required_fields,t)))};validate=e=>d(this,this.#required_fields,void 0,e);validateAsync=async e=>await d(this,this.#required_fields,void 0,e);validateField=(e,t,i)=>{const n=l(e,this.fields);if(t){const i=new o(e,{error:t},{value:r(n.value)});this.errors.push(i),c(this.errors,this.fields,this.validation_options.field_error_link_name)}else d(this,this.#required_fields,n,i)};attachCallbacks=(e,t,r)=>{if(Array.isArray(r)){r.map((e=>l(e,this.fields))).forEach((r=>{u(this,r,e,t,this.#required_fields)}))}else{u(this,l(r,this.fields),e,t,this.#required_fields)}};clearErrors=()=>{this.errors=[],this.fields.forEach((e=>{e.errors.set(void 0)}))};get=e=>l(e,this.fields);loadModel=(e,t=!1,r=!1)=>{if(t)this.model=e,this.#buildFields();else{let t;for(t in this.model)this.model[t]=e[t];f(!1,this.fields,this.model)}return r&&this.updateInitialState(),this};attachRefData=e=>{const t=this.fields.filter((e=>e.ref_key));e?(this.refs=e,t.forEach((t=>{t.ref_key&&(t.options=e[t.ref_key])}))):this.refs&&t.forEach((e=>{e.ref_key&&this.refs&&(e.options=this.refs[e.ref_key])}))};destroy=()=>{this.fields&&this.fields.length>0&&this.fields.forEach((e=>{this.validation_options.on_events&&Object.keys(this.validation_options.on_events).forEach((t=>{e.node&&e.node.removeEventListener(t,(e=>{}))}))}))};reset=()=>{!function(e,t){let r;if(t.model)for(r in t.model)e.model[r]=t.model[r];e.clearErrors(),t.errors&&t.errors.length>0?e.errors=[...t.errors]:e.errors=[],f(!1,e.fields,e.model),e.errors&&e.errors.length>0&&c(e.errors,e.fields,e.validation_options.field_error_link_name),e.value_changes.set({}),e.changed.set(!1)}(this,this.initial_state)};updateInitialState=()=>{b(this,this.initial_state),this.changed.set(!1)};setFieldOrder=e=>{e&&e.length>0&&(this.#field_order=e,this.fields=function(e,t){let r=[],i=[];return e.forEach((n=>{const s=l(n,t);s.name===n?r.push(s):-1===i.indexOf(s)&&-1===e.indexOf(s.name)&&i.push(s)})),t=[...r,...i]}(this.#field_order,this.fields))};setFieldAttributes=(e,t)=>{e&&(Array.isArray(e)?w(e,this.fields,t):w([e],this.fields,t))}},e.FormGroup=class extends A{constructor(e,t){super(e,t)}},e.FormManager=A,e.FormStepper=class extends A{constructor(e,t){super(e,t)}active_step=0;next=()=>{"number"==typeof this.active_step&&this.active_step++};back=()=>{"number"==typeof this.active_step&&this.active_step--}},e.OnEvents=a,e.ValidationError=o,e.field=function(e){return function(t,r){let i=Reflect.getMetadata("editableProperties",t)||[];i.indexOf(r)<0&&i.push(r),Reflect.defineMetadata("editableProperties",i,t),Reflect.defineMetadata("fieldConfig",e,t,r)}},Object.defineProperty(e,"__esModule",{value:!0})}));
+    ***************************************************************************** */
+
+    var Reflect$1;
+    (function (Reflect) {
+        // Metadata Proposal
+        // https://rbuckton.github.io/reflect-metadata/
+        (function (factory) {
+            var root = typeof commonjsGlobal === "object" ? commonjsGlobal :
+                typeof self === "object" ? self :
+                    typeof this === "object" ? this :
+                        Function("return this;")();
+            var exporter = makeExporter(Reflect);
+            if (typeof root.Reflect === "undefined") {
+                root.Reflect = Reflect;
+            }
+            else {
+                exporter = makeExporter(root.Reflect, exporter);
+            }
+            factory(exporter);
+            function makeExporter(target, previous) {
+                return function (key, value) {
+                    if (typeof target[key] !== "function") {
+                        Object.defineProperty(target, key, { configurable: true, writable: true, value: value });
+                    }
+                    if (previous)
+                        previous(key, value);
+                };
+            }
+        })(function (exporter) {
+            var hasOwn = Object.prototype.hasOwnProperty;
+            // feature test for Symbol support
+            var supportsSymbol = typeof Symbol === "function";
+            var toPrimitiveSymbol = supportsSymbol && typeof Symbol.toPrimitive !== "undefined" ? Symbol.toPrimitive : "@@toPrimitive";
+            var iteratorSymbol = supportsSymbol && typeof Symbol.iterator !== "undefined" ? Symbol.iterator : "@@iterator";
+            var supportsCreate = typeof Object.create === "function"; // feature test for Object.create support
+            var supportsProto = { __proto__: [] } instanceof Array; // feature test for __proto__ support
+            var downLevel = !supportsCreate && !supportsProto;
+            var HashMap = {
+                // create an object in dictionary mode (a.k.a. "slow" mode in v8)
+                create: supportsCreate
+                    ? function () { return MakeDictionary(Object.create(null)); }
+                    : supportsProto
+                        ? function () { return MakeDictionary({ __proto__: null }); }
+                        : function () { return MakeDictionary({}); },
+                has: downLevel
+                    ? function (map, key) { return hasOwn.call(map, key); }
+                    : function (map, key) { return key in map; },
+                get: downLevel
+                    ? function (map, key) { return hasOwn.call(map, key) ? map[key] : undefined; }
+                    : function (map, key) { return map[key]; },
+            };
+            // Load global or shim versions of Map, Set, and WeakMap
+            var functionPrototype = Object.getPrototypeOf(Function);
+            var usePolyfill = typeof process === "object" && process.env && process.env["REFLECT_METADATA_USE_MAP_POLYFILL"] === "true";
+            var _Map = !usePolyfill && typeof Map === "function" && typeof Map.prototype.entries === "function" ? Map : CreateMapPolyfill();
+            var _Set = !usePolyfill && typeof Set === "function" && typeof Set.prototype.entries === "function" ? Set : CreateSetPolyfill();
+            var _WeakMap = !usePolyfill && typeof WeakMap === "function" ? WeakMap : CreateWeakMapPolyfill();
+            // [[Metadata]] internal slot
+            // https://rbuckton.github.io/reflect-metadata/#ordinary-object-internal-methods-and-internal-slots
+            var Metadata = new _WeakMap();
+            /**
+             * Applies a set of decorators to a property of a target object.
+             * @param decorators An array of decorators.
+             * @param target The target object.
+             * @param propertyKey (Optional) The property key to decorate.
+             * @param attributes (Optional) The property descriptor for the target key.
+             * @remarks Decorators are applied in reverse order.
+             * @example
+             *
+             *     class Example {
+             *         // property declarations are not part of ES6, though they are valid in TypeScript:
+             *         // static staticProperty;
+             *         // property;
+             *
+             *         constructor(p) { }
+             *         static staticMethod(p) { }
+             *         method(p) { }
+             *     }
+             *
+             *     // constructor
+             *     Example = Reflect.decorate(decoratorsArray, Example);
+             *
+             *     // property (on constructor)
+             *     Reflect.decorate(decoratorsArray, Example, "staticProperty");
+             *
+             *     // property (on prototype)
+             *     Reflect.decorate(decoratorsArray, Example.prototype, "property");
+             *
+             *     // method (on constructor)
+             *     Object.defineProperty(Example, "staticMethod",
+             *         Reflect.decorate(decoratorsArray, Example, "staticMethod",
+             *             Object.getOwnPropertyDescriptor(Example, "staticMethod")));
+             *
+             *     // method (on prototype)
+             *     Object.defineProperty(Example.prototype, "method",
+             *         Reflect.decorate(decoratorsArray, Example.prototype, "method",
+             *             Object.getOwnPropertyDescriptor(Example.prototype, "method")));
+             *
+             */
+            function decorate(decorators, target, propertyKey, attributes) {
+                if (!IsUndefined(propertyKey)) {
+                    if (!IsArray(decorators))
+                        throw new TypeError();
+                    if (!IsObject(target))
+                        throw new TypeError();
+                    if (!IsObject(attributes) && !IsUndefined(attributes) && !IsNull(attributes))
+                        throw new TypeError();
+                    if (IsNull(attributes))
+                        attributes = undefined;
+                    propertyKey = ToPropertyKey(propertyKey);
+                    return DecorateProperty(decorators, target, propertyKey, attributes);
+                }
+                else {
+                    if (!IsArray(decorators))
+                        throw new TypeError();
+                    if (!IsConstructor(target))
+                        throw new TypeError();
+                    return DecorateConstructor(decorators, target);
+                }
+            }
+            exporter("decorate", decorate);
+            // 4.1.2 Reflect.metadata(metadataKey, metadataValue)
+            // https://rbuckton.github.io/reflect-metadata/#reflect.metadata
+            /**
+             * A default metadata decorator factory that can be used on a class, class member, or parameter.
+             * @param metadataKey The key for the metadata entry.
+             * @param metadataValue The value for the metadata entry.
+             * @returns A decorator function.
+             * @remarks
+             * If `metadataKey` is already defined for the target and target key, the
+             * metadataValue for that key will be overwritten.
+             * @example
+             *
+             *     // constructor
+             *     @Reflect.metadata(key, value)
+             *     class Example {
+             *     }
+             *
+             *     // property (on constructor, TypeScript only)
+             *     class Example {
+             *         @Reflect.metadata(key, value)
+             *         static staticProperty;
+             *     }
+             *
+             *     // property (on prototype, TypeScript only)
+             *     class Example {
+             *         @Reflect.metadata(key, value)
+             *         property;
+             *     }
+             *
+             *     // method (on constructor)
+             *     class Example {
+             *         @Reflect.metadata(key, value)
+             *         static staticMethod() { }
+             *     }
+             *
+             *     // method (on prototype)
+             *     class Example {
+             *         @Reflect.metadata(key, value)
+             *         method() { }
+             *     }
+             *
+             */
+            function metadata(metadataKey, metadataValue) {
+                function decorator(target, propertyKey) {
+                    if (!IsObject(target))
+                        throw new TypeError();
+                    if (!IsUndefined(propertyKey) && !IsPropertyKey(propertyKey))
+                        throw new TypeError();
+                    OrdinaryDefineOwnMetadata(metadataKey, metadataValue, target, propertyKey);
+                }
+                return decorator;
+            }
+            exporter("metadata", metadata);
+            /**
+             * Define a unique metadata entry on the target.
+             * @param metadataKey A key used to store and retrieve metadata.
+             * @param metadataValue A value that contains attached metadata.
+             * @param target The target object on which to define metadata.
+             * @param propertyKey (Optional) The property key for the target.
+             * @example
+             *
+             *     class Example {
+             *         // property declarations are not part of ES6, though they are valid in TypeScript:
+             *         // static staticProperty;
+             *         // property;
+             *
+             *         constructor(p) { }
+             *         static staticMethod(p) { }
+             *         method(p) { }
+             *     }
+             *
+             *     // constructor
+             *     Reflect.defineMetadata("custom:annotation", options, Example);
+             *
+             *     // property (on constructor)
+             *     Reflect.defineMetadata("custom:annotation", options, Example, "staticProperty");
+             *
+             *     // property (on prototype)
+             *     Reflect.defineMetadata("custom:annotation", options, Example.prototype, "property");
+             *
+             *     // method (on constructor)
+             *     Reflect.defineMetadata("custom:annotation", options, Example, "staticMethod");
+             *
+             *     // method (on prototype)
+             *     Reflect.defineMetadata("custom:annotation", options, Example.prototype, "method");
+             *
+             *     // decorator factory as metadata-producing annotation.
+             *     function MyAnnotation(options): Decorator {
+             *         return (target, key?) => Reflect.defineMetadata("custom:annotation", options, target, key);
+             *     }
+             *
+             */
+            function defineMetadata(metadataKey, metadataValue, target, propertyKey) {
+                if (!IsObject(target))
+                    throw new TypeError();
+                if (!IsUndefined(propertyKey))
+                    propertyKey = ToPropertyKey(propertyKey);
+                return OrdinaryDefineOwnMetadata(metadataKey, metadataValue, target, propertyKey);
+            }
+            exporter("defineMetadata", defineMetadata);
+            /**
+             * Gets a value indicating whether the target object or its prototype chain has the provided metadata key defined.
+             * @param metadataKey A key used to store and retrieve metadata.
+             * @param target The target object on which the metadata is defined.
+             * @param propertyKey (Optional) The property key for the target.
+             * @returns `true` if the metadata key was defined on the target object or its prototype chain; otherwise, `false`.
+             * @example
+             *
+             *     class Example {
+             *         // property declarations are not part of ES6, though they are valid in TypeScript:
+             *         // static staticProperty;
+             *         // property;
+             *
+             *         constructor(p) { }
+             *         static staticMethod(p) { }
+             *         method(p) { }
+             *     }
+             *
+             *     // constructor
+             *     result = Reflect.hasMetadata("custom:annotation", Example);
+             *
+             *     // property (on constructor)
+             *     result = Reflect.hasMetadata("custom:annotation", Example, "staticProperty");
+             *
+             *     // property (on prototype)
+             *     result = Reflect.hasMetadata("custom:annotation", Example.prototype, "property");
+             *
+             *     // method (on constructor)
+             *     result = Reflect.hasMetadata("custom:annotation", Example, "staticMethod");
+             *
+             *     // method (on prototype)
+             *     result = Reflect.hasMetadata("custom:annotation", Example.prototype, "method");
+             *
+             */
+            function hasMetadata(metadataKey, target, propertyKey) {
+                if (!IsObject(target))
+                    throw new TypeError();
+                if (!IsUndefined(propertyKey))
+                    propertyKey = ToPropertyKey(propertyKey);
+                return OrdinaryHasMetadata(metadataKey, target, propertyKey);
+            }
+            exporter("hasMetadata", hasMetadata);
+            /**
+             * Gets a value indicating whether the target object has the provided metadata key defined.
+             * @param metadataKey A key used to store and retrieve metadata.
+             * @param target The target object on which the metadata is defined.
+             * @param propertyKey (Optional) The property key for the target.
+             * @returns `true` if the metadata key was defined on the target object; otherwise, `false`.
+             * @example
+             *
+             *     class Example {
+             *         // property declarations are not part of ES6, though they are valid in TypeScript:
+             *         // static staticProperty;
+             *         // property;
+             *
+             *         constructor(p) { }
+             *         static staticMethod(p) { }
+             *         method(p) { }
+             *     }
+             *
+             *     // constructor
+             *     result = Reflect.hasOwnMetadata("custom:annotation", Example);
+             *
+             *     // property (on constructor)
+             *     result = Reflect.hasOwnMetadata("custom:annotation", Example, "staticProperty");
+             *
+             *     // property (on prototype)
+             *     result = Reflect.hasOwnMetadata("custom:annotation", Example.prototype, "property");
+             *
+             *     // method (on constructor)
+             *     result = Reflect.hasOwnMetadata("custom:annotation", Example, "staticMethod");
+             *
+             *     // method (on prototype)
+             *     result = Reflect.hasOwnMetadata("custom:annotation", Example.prototype, "method");
+             *
+             */
+            function hasOwnMetadata(metadataKey, target, propertyKey) {
+                if (!IsObject(target))
+                    throw new TypeError();
+                if (!IsUndefined(propertyKey))
+                    propertyKey = ToPropertyKey(propertyKey);
+                return OrdinaryHasOwnMetadata(metadataKey, target, propertyKey);
+            }
+            exporter("hasOwnMetadata", hasOwnMetadata);
+            /**
+             * Gets the metadata value for the provided metadata key on the target object or its prototype chain.
+             * @param metadataKey A key used to store and retrieve metadata.
+             * @param target The target object on which the metadata is defined.
+             * @param propertyKey (Optional) The property key for the target.
+             * @returns The metadata value for the metadata key if found; otherwise, `undefined`.
+             * @example
+             *
+             *     class Example {
+             *         // property declarations are not part of ES6, though they are valid in TypeScript:
+             *         // static staticProperty;
+             *         // property;
+             *
+             *         constructor(p) { }
+             *         static staticMethod(p) { }
+             *         method(p) { }
+             *     }
+             *
+             *     // constructor
+             *     result = Reflect.getMetadata("custom:annotation", Example);
+             *
+             *     // property (on constructor)
+             *     result = Reflect.getMetadata("custom:annotation", Example, "staticProperty");
+             *
+             *     // property (on prototype)
+             *     result = Reflect.getMetadata("custom:annotation", Example.prototype, "property");
+             *
+             *     // method (on constructor)
+             *     result = Reflect.getMetadata("custom:annotation", Example, "staticMethod");
+             *
+             *     // method (on prototype)
+             *     result = Reflect.getMetadata("custom:annotation", Example.prototype, "method");
+             *
+             */
+            function getMetadata(metadataKey, target, propertyKey) {
+                if (!IsObject(target))
+                    throw new TypeError();
+                if (!IsUndefined(propertyKey))
+                    propertyKey = ToPropertyKey(propertyKey);
+                return OrdinaryGetMetadata(metadataKey, target, propertyKey);
+            }
+            exporter("getMetadata", getMetadata);
+            /**
+             * Gets the metadata value for the provided metadata key on the target object.
+             * @param metadataKey A key used to store and retrieve metadata.
+             * @param target The target object on which the metadata is defined.
+             * @param propertyKey (Optional) The property key for the target.
+             * @returns The metadata value for the metadata key if found; otherwise, `undefined`.
+             * @example
+             *
+             *     class Example {
+             *         // property declarations are not part of ES6, though they are valid in TypeScript:
+             *         // static staticProperty;
+             *         // property;
+             *
+             *         constructor(p) { }
+             *         static staticMethod(p) { }
+             *         method(p) { }
+             *     }
+             *
+             *     // constructor
+             *     result = Reflect.getOwnMetadata("custom:annotation", Example);
+             *
+             *     // property (on constructor)
+             *     result = Reflect.getOwnMetadata("custom:annotation", Example, "staticProperty");
+             *
+             *     // property (on prototype)
+             *     result = Reflect.getOwnMetadata("custom:annotation", Example.prototype, "property");
+             *
+             *     // method (on constructor)
+             *     result = Reflect.getOwnMetadata("custom:annotation", Example, "staticMethod");
+             *
+             *     // method (on prototype)
+             *     result = Reflect.getOwnMetadata("custom:annotation", Example.prototype, "method");
+             *
+             */
+            function getOwnMetadata(metadataKey, target, propertyKey) {
+                if (!IsObject(target))
+                    throw new TypeError();
+                if (!IsUndefined(propertyKey))
+                    propertyKey = ToPropertyKey(propertyKey);
+                return OrdinaryGetOwnMetadata(metadataKey, target, propertyKey);
+            }
+            exporter("getOwnMetadata", getOwnMetadata);
+            /**
+             * Gets the metadata keys defined on the target object or its prototype chain.
+             * @param target The target object on which the metadata is defined.
+             * @param propertyKey (Optional) The property key for the target.
+             * @returns An array of unique metadata keys.
+             * @example
+             *
+             *     class Example {
+             *         // property declarations are not part of ES6, though they are valid in TypeScript:
+             *         // static staticProperty;
+             *         // property;
+             *
+             *         constructor(p) { }
+             *         static staticMethod(p) { }
+             *         method(p) { }
+             *     }
+             *
+             *     // constructor
+             *     result = Reflect.getMetadataKeys(Example);
+             *
+             *     // property (on constructor)
+             *     result = Reflect.getMetadataKeys(Example, "staticProperty");
+             *
+             *     // property (on prototype)
+             *     result = Reflect.getMetadataKeys(Example.prototype, "property");
+             *
+             *     // method (on constructor)
+             *     result = Reflect.getMetadataKeys(Example, "staticMethod");
+             *
+             *     // method (on prototype)
+             *     result = Reflect.getMetadataKeys(Example.prototype, "method");
+             *
+             */
+            function getMetadataKeys(target, propertyKey) {
+                if (!IsObject(target))
+                    throw new TypeError();
+                if (!IsUndefined(propertyKey))
+                    propertyKey = ToPropertyKey(propertyKey);
+                return OrdinaryMetadataKeys(target, propertyKey);
+            }
+            exporter("getMetadataKeys", getMetadataKeys);
+            /**
+             * Gets the unique metadata keys defined on the target object.
+             * @param target The target object on which the metadata is defined.
+             * @param propertyKey (Optional) The property key for the target.
+             * @returns An array of unique metadata keys.
+             * @example
+             *
+             *     class Example {
+             *         // property declarations are not part of ES6, though they are valid in TypeScript:
+             *         // static staticProperty;
+             *         // property;
+             *
+             *         constructor(p) { }
+             *         static staticMethod(p) { }
+             *         method(p) { }
+             *     }
+             *
+             *     // constructor
+             *     result = Reflect.getOwnMetadataKeys(Example);
+             *
+             *     // property (on constructor)
+             *     result = Reflect.getOwnMetadataKeys(Example, "staticProperty");
+             *
+             *     // property (on prototype)
+             *     result = Reflect.getOwnMetadataKeys(Example.prototype, "property");
+             *
+             *     // method (on constructor)
+             *     result = Reflect.getOwnMetadataKeys(Example, "staticMethod");
+             *
+             *     // method (on prototype)
+             *     result = Reflect.getOwnMetadataKeys(Example.prototype, "method");
+             *
+             */
+            function getOwnMetadataKeys(target, propertyKey) {
+                if (!IsObject(target))
+                    throw new TypeError();
+                if (!IsUndefined(propertyKey))
+                    propertyKey = ToPropertyKey(propertyKey);
+                return OrdinaryOwnMetadataKeys(target, propertyKey);
+            }
+            exporter("getOwnMetadataKeys", getOwnMetadataKeys);
+            /**
+             * Deletes the metadata entry from the target object with the provided key.
+             * @param metadataKey A key used to store and retrieve metadata.
+             * @param target The target object on which the metadata is defined.
+             * @param propertyKey (Optional) The property key for the target.
+             * @returns `true` if the metadata entry was found and deleted; otherwise, false.
+             * @example
+             *
+             *     class Example {
+             *         // property declarations are not part of ES6, though they are valid in TypeScript:
+             *         // static staticProperty;
+             *         // property;
+             *
+             *         constructor(p) { }
+             *         static staticMethod(p) { }
+             *         method(p) { }
+             *     }
+             *
+             *     // constructor
+             *     result = Reflect.deleteMetadata("custom:annotation", Example);
+             *
+             *     // property (on constructor)
+             *     result = Reflect.deleteMetadata("custom:annotation", Example, "staticProperty");
+             *
+             *     // property (on prototype)
+             *     result = Reflect.deleteMetadata("custom:annotation", Example.prototype, "property");
+             *
+             *     // method (on constructor)
+             *     result = Reflect.deleteMetadata("custom:annotation", Example, "staticMethod");
+             *
+             *     // method (on prototype)
+             *     result = Reflect.deleteMetadata("custom:annotation", Example.prototype, "method");
+             *
+             */
+            function deleteMetadata(metadataKey, target, propertyKey) {
+                if (!IsObject(target))
+                    throw new TypeError();
+                if (!IsUndefined(propertyKey))
+                    propertyKey = ToPropertyKey(propertyKey);
+                var metadataMap = GetOrCreateMetadataMap(target, propertyKey, /*Create*/ false);
+                if (IsUndefined(metadataMap))
+                    return false;
+                if (!metadataMap.delete(metadataKey))
+                    return false;
+                if (metadataMap.size > 0)
+                    return true;
+                var targetMetadata = Metadata.get(target);
+                targetMetadata.delete(propertyKey);
+                if (targetMetadata.size > 0)
+                    return true;
+                Metadata.delete(target);
+                return true;
+            }
+            exporter("deleteMetadata", deleteMetadata);
+            function DecorateConstructor(decorators, target) {
+                for (var i = decorators.length - 1; i >= 0; --i) {
+                    var decorator = decorators[i];
+                    var decorated = decorator(target);
+                    if (!IsUndefined(decorated) && !IsNull(decorated)) {
+                        if (!IsConstructor(decorated))
+                            throw new TypeError();
+                        target = decorated;
+                    }
+                }
+                return target;
+            }
+            function DecorateProperty(decorators, target, propertyKey, descriptor) {
+                for (var i = decorators.length - 1; i >= 0; --i) {
+                    var decorator = decorators[i];
+                    var decorated = decorator(target, propertyKey, descriptor);
+                    if (!IsUndefined(decorated) && !IsNull(decorated)) {
+                        if (!IsObject(decorated))
+                            throw new TypeError();
+                        descriptor = decorated;
+                    }
+                }
+                return descriptor;
+            }
+            function GetOrCreateMetadataMap(O, P, Create) {
+                var targetMetadata = Metadata.get(O);
+                if (IsUndefined(targetMetadata)) {
+                    if (!Create)
+                        return undefined;
+                    targetMetadata = new _Map();
+                    Metadata.set(O, targetMetadata);
+                }
+                var metadataMap = targetMetadata.get(P);
+                if (IsUndefined(metadataMap)) {
+                    if (!Create)
+                        return undefined;
+                    metadataMap = new _Map();
+                    targetMetadata.set(P, metadataMap);
+                }
+                return metadataMap;
+            }
+            // 3.1.1.1 OrdinaryHasMetadata(MetadataKey, O, P)
+            // https://rbuckton.github.io/reflect-metadata/#ordinaryhasmetadata
+            function OrdinaryHasMetadata(MetadataKey, O, P) {
+                var hasOwn = OrdinaryHasOwnMetadata(MetadataKey, O, P);
+                if (hasOwn)
+                    return true;
+                var parent = OrdinaryGetPrototypeOf(O);
+                if (!IsNull(parent))
+                    return OrdinaryHasMetadata(MetadataKey, parent, P);
+                return false;
+            }
+            // 3.1.2.1 OrdinaryHasOwnMetadata(MetadataKey, O, P)
+            // https://rbuckton.github.io/reflect-metadata/#ordinaryhasownmetadata
+            function OrdinaryHasOwnMetadata(MetadataKey, O, P) {
+                var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ false);
+                if (IsUndefined(metadataMap))
+                    return false;
+                return ToBoolean(metadataMap.has(MetadataKey));
+            }
+            // 3.1.3.1 OrdinaryGetMetadata(MetadataKey, O, P)
+            // https://rbuckton.github.io/reflect-metadata/#ordinarygetmetadata
+            function OrdinaryGetMetadata(MetadataKey, O, P) {
+                var hasOwn = OrdinaryHasOwnMetadata(MetadataKey, O, P);
+                if (hasOwn)
+                    return OrdinaryGetOwnMetadata(MetadataKey, O, P);
+                var parent = OrdinaryGetPrototypeOf(O);
+                if (!IsNull(parent))
+                    return OrdinaryGetMetadata(MetadataKey, parent, P);
+                return undefined;
+            }
+            // 3.1.4.1 OrdinaryGetOwnMetadata(MetadataKey, O, P)
+            // https://rbuckton.github.io/reflect-metadata/#ordinarygetownmetadata
+            function OrdinaryGetOwnMetadata(MetadataKey, O, P) {
+                var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ false);
+                if (IsUndefined(metadataMap))
+                    return undefined;
+                return metadataMap.get(MetadataKey);
+            }
+            // 3.1.5.1 OrdinaryDefineOwnMetadata(MetadataKey, MetadataValue, O, P)
+            // https://rbuckton.github.io/reflect-metadata/#ordinarydefineownmetadata
+            function OrdinaryDefineOwnMetadata(MetadataKey, MetadataValue, O, P) {
+                var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ true);
+                metadataMap.set(MetadataKey, MetadataValue);
+            }
+            // 3.1.6.1 OrdinaryMetadataKeys(O, P)
+            // https://rbuckton.github.io/reflect-metadata/#ordinarymetadatakeys
+            function OrdinaryMetadataKeys(O, P) {
+                var ownKeys = OrdinaryOwnMetadataKeys(O, P);
+                var parent = OrdinaryGetPrototypeOf(O);
+                if (parent === null)
+                    return ownKeys;
+                var parentKeys = OrdinaryMetadataKeys(parent, P);
+                if (parentKeys.length <= 0)
+                    return ownKeys;
+                if (ownKeys.length <= 0)
+                    return parentKeys;
+                var set = new _Set();
+                var keys = [];
+                for (var _i = 0, ownKeys_1 = ownKeys; _i < ownKeys_1.length; _i++) {
+                    var key = ownKeys_1[_i];
+                    var hasKey = set.has(key);
+                    if (!hasKey) {
+                        set.add(key);
+                        keys.push(key);
+                    }
+                }
+                for (var _a = 0, parentKeys_1 = parentKeys; _a < parentKeys_1.length; _a++) {
+                    var key = parentKeys_1[_a];
+                    var hasKey = set.has(key);
+                    if (!hasKey) {
+                        set.add(key);
+                        keys.push(key);
+                    }
+                }
+                return keys;
+            }
+            // 3.1.7.1 OrdinaryOwnMetadataKeys(O, P)
+            // https://rbuckton.github.io/reflect-metadata/#ordinaryownmetadatakeys
+            function OrdinaryOwnMetadataKeys(O, P) {
+                var keys = [];
+                var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ false);
+                if (IsUndefined(metadataMap))
+                    return keys;
+                var keysObj = metadataMap.keys();
+                var iterator = GetIterator(keysObj);
+                var k = 0;
+                while (true) {
+                    var next = IteratorStep(iterator);
+                    if (!next) {
+                        keys.length = k;
+                        return keys;
+                    }
+                    var nextValue = IteratorValue(next);
+                    try {
+                        keys[k] = nextValue;
+                    }
+                    catch (e) {
+                        try {
+                            IteratorClose(iterator);
+                        }
+                        finally {
+                            throw e;
+                        }
+                    }
+                    k++;
+                }
+            }
+            // 6 ECMAScript Data Typ0es and Values
+            // https://tc39.github.io/ecma262/#sec-ecmascript-data-types-and-values
+            function Type(x) {
+                if (x === null)
+                    return 1 /* Null */;
+                switch (typeof x) {
+                    case "undefined": return 0 /* Undefined */;
+                    case "boolean": return 2 /* Boolean */;
+                    case "string": return 3 /* String */;
+                    case "symbol": return 4 /* Symbol */;
+                    case "number": return 5 /* Number */;
+                    case "object": return x === null ? 1 /* Null */ : 6 /* Object */;
+                    default: return 6 /* Object */;
+                }
+            }
+            // 6.1.1 The Undefined Type
+            // https://tc39.github.io/ecma262/#sec-ecmascript-language-types-undefined-type
+            function IsUndefined(x) {
+                return x === undefined;
+            }
+            // 6.1.2 The Null Type
+            // https://tc39.github.io/ecma262/#sec-ecmascript-language-types-null-type
+            function IsNull(x) {
+                return x === null;
+            }
+            // 6.1.5 The Symbol Type
+            // https://tc39.github.io/ecma262/#sec-ecmascript-language-types-symbol-type
+            function IsSymbol(x) {
+                return typeof x === "symbol";
+            }
+            // 6.1.7 The Object Type
+            // https://tc39.github.io/ecma262/#sec-object-type
+            function IsObject(x) {
+                return typeof x === "object" ? x !== null : typeof x === "function";
+            }
+            // 7.1 Type Conversion
+            // https://tc39.github.io/ecma262/#sec-type-conversion
+            // 7.1.1 ToPrimitive(input [, PreferredType])
+            // https://tc39.github.io/ecma262/#sec-toprimitive
+            function ToPrimitive(input, PreferredType) {
+                switch (Type(input)) {
+                    case 0 /* Undefined */: return input;
+                    case 1 /* Null */: return input;
+                    case 2 /* Boolean */: return input;
+                    case 3 /* String */: return input;
+                    case 4 /* Symbol */: return input;
+                    case 5 /* Number */: return input;
+                }
+                var hint = PreferredType === 3 /* String */ ? "string" : PreferredType === 5 /* Number */ ? "number" : "default";
+                var exoticToPrim = GetMethod(input, toPrimitiveSymbol);
+                if (exoticToPrim !== undefined) {
+                    var result = exoticToPrim.call(input, hint);
+                    if (IsObject(result))
+                        throw new TypeError();
+                    return result;
+                }
+                return OrdinaryToPrimitive(input, hint === "default" ? "number" : hint);
+            }
+            // 7.1.1.1 OrdinaryToPrimitive(O, hint)
+            // https://tc39.github.io/ecma262/#sec-ordinarytoprimitive
+            function OrdinaryToPrimitive(O, hint) {
+                if (hint === "string") {
+                    var toString_1 = O.toString;
+                    if (IsCallable(toString_1)) {
+                        var result = toString_1.call(O);
+                        if (!IsObject(result))
+                            return result;
+                    }
+                    var valueOf = O.valueOf;
+                    if (IsCallable(valueOf)) {
+                        var result = valueOf.call(O);
+                        if (!IsObject(result))
+                            return result;
+                    }
+                }
+                else {
+                    var valueOf = O.valueOf;
+                    if (IsCallable(valueOf)) {
+                        var result = valueOf.call(O);
+                        if (!IsObject(result))
+                            return result;
+                    }
+                    var toString_2 = O.toString;
+                    if (IsCallable(toString_2)) {
+                        var result = toString_2.call(O);
+                        if (!IsObject(result))
+                            return result;
+                    }
+                }
+                throw new TypeError();
+            }
+            // 7.1.2 ToBoolean(argument)
+            // https://tc39.github.io/ecma262/2016/#sec-toboolean
+            function ToBoolean(argument) {
+                return !!argument;
+            }
+            // 7.1.12 ToString(argument)
+            // https://tc39.github.io/ecma262/#sec-tostring
+            function ToString(argument) {
+                return "" + argument;
+            }
+            // 7.1.14 ToPropertyKey(argument)
+            // https://tc39.github.io/ecma262/#sec-topropertykey
+            function ToPropertyKey(argument) {
+                var key = ToPrimitive(argument, 3 /* String */);
+                if (IsSymbol(key))
+                    return key;
+                return ToString(key);
+            }
+            // 7.2 Testing and Comparison Operations
+            // https://tc39.github.io/ecma262/#sec-testing-and-comparison-operations
+            // 7.2.2 IsArray(argument)
+            // https://tc39.github.io/ecma262/#sec-isarray
+            function IsArray(argument) {
+                return Array.isArray
+                    ? Array.isArray(argument)
+                    : argument instanceof Object
+                        ? argument instanceof Array
+                        : Object.prototype.toString.call(argument) === "[object Array]";
+            }
+            // 7.2.3 IsCallable(argument)
+            // https://tc39.github.io/ecma262/#sec-iscallable
+            function IsCallable(argument) {
+                // NOTE: This is an approximation as we cannot check for [[Call]] internal method.
+                return typeof argument === "function";
+            }
+            // 7.2.4 IsConstructor(argument)
+            // https://tc39.github.io/ecma262/#sec-isconstructor
+            function IsConstructor(argument) {
+                // NOTE: This is an approximation as we cannot check for [[Construct]] internal method.
+                return typeof argument === "function";
+            }
+            // 7.2.7 IsPropertyKey(argument)
+            // https://tc39.github.io/ecma262/#sec-ispropertykey
+            function IsPropertyKey(argument) {
+                switch (Type(argument)) {
+                    case 3 /* String */: return true;
+                    case 4 /* Symbol */: return true;
+                    default: return false;
+                }
+            }
+            // 7.3 Operations on Objects
+            // https://tc39.github.io/ecma262/#sec-operations-on-objects
+            // 7.3.9 GetMethod(V, P)
+            // https://tc39.github.io/ecma262/#sec-getmethod
+            function GetMethod(V, P) {
+                var func = V[P];
+                if (func === undefined || func === null)
+                    return undefined;
+                if (!IsCallable(func))
+                    throw new TypeError();
+                return func;
+            }
+            // 7.4 Operations on Iterator Objects
+            // https://tc39.github.io/ecma262/#sec-operations-on-iterator-objects
+            function GetIterator(obj) {
+                var method = GetMethod(obj, iteratorSymbol);
+                if (!IsCallable(method))
+                    throw new TypeError(); // from Call
+                var iterator = method.call(obj);
+                if (!IsObject(iterator))
+                    throw new TypeError();
+                return iterator;
+            }
+            // 7.4.4 IteratorValue(iterResult)
+            // https://tc39.github.io/ecma262/2016/#sec-iteratorvalue
+            function IteratorValue(iterResult) {
+                return iterResult.value;
+            }
+            // 7.4.5 IteratorStep(iterator)
+            // https://tc39.github.io/ecma262/#sec-iteratorstep
+            function IteratorStep(iterator) {
+                var result = iterator.next();
+                return result.done ? false : result;
+            }
+            // 7.4.6 IteratorClose(iterator, completion)
+            // https://tc39.github.io/ecma262/#sec-iteratorclose
+            function IteratorClose(iterator) {
+                var f = iterator["return"];
+                if (f)
+                    f.call(iterator);
+            }
+            // 9.1 Ordinary Object Internal Methods and Internal Slots
+            // https://tc39.github.io/ecma262/#sec-ordinary-object-internal-methods-and-internal-slots
+            // 9.1.1.1 OrdinaryGetPrototypeOf(O)
+            // https://tc39.github.io/ecma262/#sec-ordinarygetprototypeof
+            function OrdinaryGetPrototypeOf(O) {
+                var proto = Object.getPrototypeOf(O);
+                if (typeof O !== "function" || O === functionPrototype)
+                    return proto;
+                // TypeScript doesn't set __proto__ in ES5, as it's non-standard.
+                // Try to determine the superclass constructor. Compatible implementations
+                // must either set __proto__ on a subclass constructor to the superclass constructor,
+                // or ensure each class has a valid `constructor` property on its prototype that
+                // points back to the constructor.
+                // If this is not the same as Function.[[Prototype]], then this is definately inherited.
+                // This is the case when in ES6 or when using __proto__ in a compatible browser.
+                if (proto !== functionPrototype)
+                    return proto;
+                // If the super prototype is Object.prototype, null, or undefined, then we cannot determine the heritage.
+                var prototype = O.prototype;
+                var prototypeProto = prototype && Object.getPrototypeOf(prototype);
+                if (prototypeProto == null || prototypeProto === Object.prototype)
+                    return proto;
+                // If the constructor was not a function, then we cannot determine the heritage.
+                var constructor = prototypeProto.constructor;
+                if (typeof constructor !== "function")
+                    return proto;
+                // If we have some kind of self-reference, then we cannot determine the heritage.
+                if (constructor === O)
+                    return proto;
+                // we have a pretty good guess at the heritage.
+                return constructor;
+            }
+            // naive Map shim
+            function CreateMapPolyfill() {
+                var cacheSentinel = {};
+                var arraySentinel = [];
+                var MapIterator = /** @class */ (function () {
+                    function MapIterator(keys, values, selector) {
+                        this._index = 0;
+                        this._keys = keys;
+                        this._values = values;
+                        this._selector = selector;
+                    }
+                    MapIterator.prototype["@@iterator"] = function () { return this; };
+                    MapIterator.prototype[iteratorSymbol] = function () { return this; };
+                    MapIterator.prototype.next = function () {
+                        var index = this._index;
+                        if (index >= 0 && index < this._keys.length) {
+                            var result = this._selector(this._keys[index], this._values[index]);
+                            if (index + 1 >= this._keys.length) {
+                                this._index = -1;
+                                this._keys = arraySentinel;
+                                this._values = arraySentinel;
+                            }
+                            else {
+                                this._index++;
+                            }
+                            return { value: result, done: false };
+                        }
+                        return { value: undefined, done: true };
+                    };
+                    MapIterator.prototype.throw = function (error) {
+                        if (this._index >= 0) {
+                            this._index = -1;
+                            this._keys = arraySentinel;
+                            this._values = arraySentinel;
+                        }
+                        throw error;
+                    };
+                    MapIterator.prototype.return = function (value) {
+                        if (this._index >= 0) {
+                            this._index = -1;
+                            this._keys = arraySentinel;
+                            this._values = arraySentinel;
+                        }
+                        return { value: value, done: true };
+                    };
+                    return MapIterator;
+                }());
+                return /** @class */ (function () {
+                    function Map() {
+                        this._keys = [];
+                        this._values = [];
+                        this._cacheKey = cacheSentinel;
+                        this._cacheIndex = -2;
+                    }
+                    Object.defineProperty(Map.prototype, "size", {
+                        get: function () { return this._keys.length; },
+                        enumerable: true,
+                        configurable: true
+                    });
+                    Map.prototype.has = function (key) { return this._find(key, /*insert*/ false) >= 0; };
+                    Map.prototype.get = function (key) {
+                        var index = this._find(key, /*insert*/ false);
+                        return index >= 0 ? this._values[index] : undefined;
+                    };
+                    Map.prototype.set = function (key, value) {
+                        var index = this._find(key, /*insert*/ true);
+                        this._values[index] = value;
+                        return this;
+                    };
+                    Map.prototype.delete = function (key) {
+                        var index = this._find(key, /*insert*/ false);
+                        if (index >= 0) {
+                            var size = this._keys.length;
+                            for (var i = index + 1; i < size; i++) {
+                                this._keys[i - 1] = this._keys[i];
+                                this._values[i - 1] = this._values[i];
+                            }
+                            this._keys.length--;
+                            this._values.length--;
+                            if (key === this._cacheKey) {
+                                this._cacheKey = cacheSentinel;
+                                this._cacheIndex = -2;
+                            }
+                            return true;
+                        }
+                        return false;
+                    };
+                    Map.prototype.clear = function () {
+                        this._keys.length = 0;
+                        this._values.length = 0;
+                        this._cacheKey = cacheSentinel;
+                        this._cacheIndex = -2;
+                    };
+                    Map.prototype.keys = function () { return new MapIterator(this._keys, this._values, getKey); };
+                    Map.prototype.values = function () { return new MapIterator(this._keys, this._values, getValue); };
+                    Map.prototype.entries = function () { return new MapIterator(this._keys, this._values, getEntry); };
+                    Map.prototype["@@iterator"] = function () { return this.entries(); };
+                    Map.prototype[iteratorSymbol] = function () { return this.entries(); };
+                    Map.prototype._find = function (key, insert) {
+                        if (this._cacheKey !== key) {
+                            this._cacheIndex = this._keys.indexOf(this._cacheKey = key);
+                        }
+                        if (this._cacheIndex < 0 && insert) {
+                            this._cacheIndex = this._keys.length;
+                            this._keys.push(key);
+                            this._values.push(undefined);
+                        }
+                        return this._cacheIndex;
+                    };
+                    return Map;
+                }());
+                function getKey(key, _) {
+                    return key;
+                }
+                function getValue(_, value) {
+                    return value;
+                }
+                function getEntry(key, value) {
+                    return [key, value];
+                }
+            }
+            // naive Set shim
+            function CreateSetPolyfill() {
+                return /** @class */ (function () {
+                    function Set() {
+                        this._map = new _Map();
+                    }
+                    Object.defineProperty(Set.prototype, "size", {
+                        get: function () { return this._map.size; },
+                        enumerable: true,
+                        configurable: true
+                    });
+                    Set.prototype.has = function (value) { return this._map.has(value); };
+                    Set.prototype.add = function (value) { return this._map.set(value, value), this; };
+                    Set.prototype.delete = function (value) { return this._map.delete(value); };
+                    Set.prototype.clear = function () { this._map.clear(); };
+                    Set.prototype.keys = function () { return this._map.keys(); };
+                    Set.prototype.values = function () { return this._map.values(); };
+                    Set.prototype.entries = function () { return this._map.entries(); };
+                    Set.prototype["@@iterator"] = function () { return this.keys(); };
+                    Set.prototype[iteratorSymbol] = function () { return this.keys(); };
+                    return Set;
+                }());
+            }
+            // naive WeakMap shim
+            function CreateWeakMapPolyfill() {
+                var UUID_SIZE = 16;
+                var keys = HashMap.create();
+                var rootKey = CreateUniqueKey();
+                return /** @class */ (function () {
+                    function WeakMap() {
+                        this._key = CreateUniqueKey();
+                    }
+                    WeakMap.prototype.has = function (target) {
+                        var table = GetOrCreateWeakMapTable(target, /*create*/ false);
+                        return table !== undefined ? HashMap.has(table, this._key) : false;
+                    };
+                    WeakMap.prototype.get = function (target) {
+                        var table = GetOrCreateWeakMapTable(target, /*create*/ false);
+                        return table !== undefined ? HashMap.get(table, this._key) : undefined;
+                    };
+                    WeakMap.prototype.set = function (target, value) {
+                        var table = GetOrCreateWeakMapTable(target, /*create*/ true);
+                        table[this._key] = value;
+                        return this;
+                    };
+                    WeakMap.prototype.delete = function (target) {
+                        var table = GetOrCreateWeakMapTable(target, /*create*/ false);
+                        return table !== undefined ? delete table[this._key] : false;
+                    };
+                    WeakMap.prototype.clear = function () {
+                        // NOTE: not a real clear, just makes the previous data unreachable
+                        this._key = CreateUniqueKey();
+                    };
+                    return WeakMap;
+                }());
+                function CreateUniqueKey() {
+                    var key;
+                    do
+                        key = "@@WeakMap@@" + CreateUUID();
+                    while (HashMap.has(keys, key));
+                    keys[key] = true;
+                    return key;
+                }
+                function GetOrCreateWeakMapTable(target, create) {
+                    if (!hasOwn.call(target, rootKey)) {
+                        if (!create)
+                            return undefined;
+                        Object.defineProperty(target, rootKey, { value: HashMap.create() });
+                    }
+                    return target[rootKey];
+                }
+                function FillRandomBytes(buffer, size) {
+                    for (var i = 0; i < size; ++i)
+                        buffer[i] = Math.random() * 0xff | 0;
+                    return buffer;
+                }
+                function GenRandomBytes(size) {
+                    if (typeof Uint8Array === "function") {
+                        if (typeof crypto !== "undefined")
+                            return crypto.getRandomValues(new Uint8Array(size));
+                        if (typeof msCrypto !== "undefined")
+                            return msCrypto.getRandomValues(new Uint8Array(size));
+                        return FillRandomBytes(new Uint8Array(size), size);
+                    }
+                    return FillRandomBytes(new Array(size), size);
+                }
+                function CreateUUID() {
+                    var data = GenRandomBytes(UUID_SIZE);
+                    // mark as random - RFC 4122 § 4.4
+                    data[6] = data[6] & 0x4f | 0x40;
+                    data[8] = data[8] & 0xbf | 0x80;
+                    var result = "";
+                    for (var offset = 0; offset < UUID_SIZE; ++offset) {
+                        var byte = data[offset];
+                        if (offset === 4 || offset === 6 || offset === 8)
+                            result += "-";
+                        if (byte < 16)
+                            result += "0";
+                        result += byte.toString(16).toLowerCase();
+                    }
+                    return result;
+                }
+            }
+            // uses a heuristic used by v8 and chakra to force an object into dictionary mode.
+            function MakeDictionary(obj) {
+                obj.__ = undefined;
+                delete obj.__;
+                return obj;
+            }
+        });
+    })(Reflect$1 || (Reflect$1 = {}));
+
+    function field(config) {
+        return function (target, propertyKey) {
+            let properties = Reflect.getMetadata("editableProperties", target) || [];
+            if (properties.indexOf(propertyKey) < 0) {
+                properties.push(propertyKey);
+            }
+            Reflect.defineMetadata("editableProperties", properties, target);
+            Reflect.defineMetadata("fieldConfig", config, target, propertyKey);
+        };
+    }
+    // export function editable(target: any, propertyKey: string) {
+    //   let properties: string[] =
+    //     Reflect.getMetadata("editableProperties", target) || [];
+    //   if (properties.indexOf(propertyKey) < 0) {
+    //     properties.push(propertyKey);
+    //   }
+    //   Reflect.defineMetadata("editableProperties", properties, target);
+    // }
+
+    /**
+     * Base interface for managing multiple instances of Form
+     * classes.
+     *
+     * @TODO Class for FormGroup and FormStepper
+     */
+    class FormManager {
+        constructor(forms, props) {
+            if (forms)
+                this.forms = forms;
+            if (props)
+                Object.assign(this, props);
+            this.#getAllValueChanges();
+            this.#getAllValid();
+            this.#getAllChanged();
+            this.#getAllPristine();
+        }
+        /** Collection of Forms */
+        forms = [];
+        loading = writable(false);
+        all_value_changes = writable({});
+        all_valid = writable(false);
+        any_changed = writable(false);
+        all_pristine = writable(false);
+        #all_valid_list = {};
+        #all_changed_list = {};
+        #all_pristine_list = {};
+        _subscriptions = [];
+        /** Validate a given form, a number of forms, or all forms */
+        validateAll = (callbacks, form_indexes) => {
+            if (form_indexes) {
+                form_indexes.forEach((index) => {
+                    this.forms && this.forms[index].validate(callbacks);
+                });
+            }
+            else {
+                let k;
+                for (k in this.forms) {
+                    this.forms[k].validate(callbacks);
+                }
+            }
+        };
+        destroySubscriptions = () => {
+            if (this._subscriptions && this._subscriptions.length > 0) {
+                this._subscriptions.forEach((unsub) => unsub());
+            }
+        };
+        resetAll = () => {
+            this.forms.forEach((f) => f.reset());
+        };
+        /** All value changes of all forms */
+        #getAllValueChanges = () => {
+            /** Set all_valid = true, then check if any forms are invalid */
+            // let changes: Writable<Record<string, any>> = writable({}),
+            let k, i = 0;
+            for (k in this.forms) {
+                const id = `form_${i}`;
+                /** If even one of them is invalid, set all_valid to false */
+                if (`${get_store_value(this.forms[k].value_changes)}` !== "{}") {
+                    const previous_changes = get_store_value(this.all_value_changes);
+                    if (!previous_changes[id]) {
+                        this.all_value_changes.set({ ...previous_changes, [id]: {} });
+                    }
+                    const unsubscriber = this.forms[k].value_changes.subscribe((_changes) => {
+                        const _previous_changes = get_store_value(this.all_value_changes);
+                        this.all_value_changes.set({
+                            ..._previous_changes,
+                            [id]: _changes,
+                        });
+                    });
+                    this._subscriptions.push(unsubscriber);
+                }
+                i++;
+            }
+        };
+        /** Are all of the forms valid? */
+        #getAllValid = () => {
+            let k, i = 0;
+            for (k in this.forms) {
+                const index = i;
+                const unsubscribe = this.forms[k].valid.subscribe((valid) => {
+                    this.#all_valid_list[index] = valid;
+                    if (Object.values(this.#all_valid_list).includes(false)) {
+                        this.all_valid.set(false);
+                    }
+                    else {
+                        this.all_valid.set(true);
+                    }
+                });
+                this._subscriptions.push(unsubscribe);
+                i++;
+            }
+        };
+        #getAllChanged = () => {
+            let k, i = 0;
+            for (k in this.forms) {
+                const index = i;
+                const unsubscribe = this.forms[k].changed.subscribe((changed) => {
+                    this.#all_changed_list[index] = changed;
+                    if (Object.values(this.#all_changed_list).includes(true)) {
+                        this.any_changed.set(true);
+                    }
+                    else {
+                        this.any_changed.set(false);
+                    }
+                });
+                this._subscriptions.push(unsubscribe);
+                i++;
+            }
+        };
+        #getAllPristine = () => {
+            let k, i = 0;
+            for (k in this.forms) {
+                const index = i;
+                const unsubscribe = this.forms[k].pristine.subscribe((pristine) => {
+                    this.#all_pristine_list[index] = pristine;
+                    if (Object.values(this.#all_pristine_list).includes(false)) {
+                        this.all_pristine.set(false);
+                    }
+                    else {
+                        this.all_pristine.set(true);
+                    }
+                });
+                this._subscriptions.push(unsubscribe);
+                i++;
+            }
+        };
+    }
+    /**
+     * Collection of Forms used as steps.
+     * @example a data collection wizard with many fields or whatever
+     */
+    class FormStepper extends FormManager {
+        constructor(forms, props) {
+            super(forms, props);
+        }
+        active_step = 0;
+        next = () => {
+            if (typeof this.active_step === "number")
+                this.active_step++;
+        };
+        back = () => {
+            if (typeof this.active_step === "number")
+                this.active_step--;
+        };
+    }
+    /**
+     * Group of Forms which extends the FormManager functionality.
+     */
+    class FormGroup extends FormManager {
+        constructor(forms, props) {
+            super(forms, props);
+        }
+    }
+
+    exports.FieldConfig = FieldConfig;
+    exports.FieldStepper = FieldStepper;
+    exports.Form = Form;
+    exports.FormGroup = FormGroup;
+    exports.FormManager = FormManager;
+    exports.FormStepper = FormStepper;
+    exports.OnEvents = OnEvents;
+    exports.ValidationError = ValidationError;
+    exports.field = field;
+
+    Object.defineProperty(exports, '__esModule', { value: true });
+
+})));
 //# sourceMappingURL=index.js.map

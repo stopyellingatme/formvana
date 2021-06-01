@@ -20,7 +20,7 @@
     "dev": "rollup -cw"
   },
   "peerDependencies": {
-    "svelte": "^3.35.0"
+    "svelte": "^3.38.2"
   },
   "dependencies": {
     "reflect-metadata": "^0.1.13",

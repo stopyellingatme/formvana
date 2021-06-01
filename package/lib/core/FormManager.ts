@@ -1,6 +1,7 @@
+import { onDestroy } from "svelte";
 import { get, writable, Writable } from "svelte/store";
 import { Form } from "./Form";
-import { ValidationCallback } from "./internal";
+import { ValidationCallback } from "./Types";
 
 type FormDictionary = Array<Form<any>>;
 
@@ -38,6 +39,8 @@ export class FormManager {
   #all_changed_list: Record<number, boolean> = {};
   #all_pristine_list: Record<number, boolean> = {};
 
+  _subscriptions: any[] = [];
+
   /** Validate a given form, a number of forms, or all forms */
   validateAll = (
     callbacks?: ValidationCallback[],
@@ -55,7 +58,11 @@ export class FormManager {
     }
   };
 
-  destroy = () => {};
+  destroySubscriptions = () => {
+    if (this._subscriptions && this._subscriptions.length > 0) {
+      this._subscriptions.forEach((unsub) => unsub());
+    }
+  };
 
   resetAll = () => {
     this.forms.forEach((f) => f.reset());
@@ -78,10 +85,16 @@ export class FormManager {
           this.all_value_changes.set({ ...previous_changes, [id]: {} });
         }
 
-        this.forms[k].value_changes.subscribe((_changes) => {
-          const _previous_changes = get(this.all_value_changes);
-          this.all_value_changes.set({ ..._previous_changes, [id]: _changes });
-        });
+        const unsubscriber = this.forms[k].value_changes.subscribe(
+          (_changes) => {
+            const _previous_changes = get(this.all_value_changes);
+            this.all_value_changes.set({
+              ..._previous_changes,
+              [id]: _changes,
+            });
+          }
+        );
+        this._subscriptions.push(unsubscriber);
       }
 
       i++;
@@ -94,7 +107,7 @@ export class FormManager {
       i = 0;
     for (k in this.forms) {
       const index = i;
-      this.forms[k].valid.subscribe((valid) => {
+      const unsubscribe = this.forms[k].valid.subscribe((valid) => {
         this.#all_valid_list[index] = valid;
 
         if (Object.values(this.#all_valid_list).includes(false)) {
@@ -103,6 +116,7 @@ export class FormManager {
           this.all_valid.set(true);
         }
       });
+      this._subscriptions.push(unsubscribe);
       i++;
     }
   };
@@ -112,7 +126,7 @@ export class FormManager {
       i = 0;
     for (k in this.forms) {
       const index = i;
-      this.forms[k].changed.subscribe((changed) => {
+      const unsubscribe = this.forms[k].changed.subscribe((changed) => {
         this.#all_changed_list[index] = changed;
 
         if (Object.values(this.#all_changed_list).includes(true)) {
@@ -121,6 +135,7 @@ export class FormManager {
           this.any_changed.set(false);
         }
       });
+      this._subscriptions.push(unsubscribe);
       i++;
     }
   };
@@ -130,7 +145,7 @@ export class FormManager {
       i = 0;
     for (k in this.forms) {
       const index = i;
-      this.forms[k].pristine.subscribe((pristine) => {
+      const unsubscribe = this.forms[k].pristine.subscribe((pristine) => {
         this.#all_pristine_list[index] = pristine;
 
         if (Object.values(this.#all_pristine_list).includes(false)) {
@@ -139,6 +154,7 @@ export class FormManager {
           this.all_pristine.set(true);
         }
       });
+      this._subscriptions.push(unsubscribe);
       i++;
     }
   };

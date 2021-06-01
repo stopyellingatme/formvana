@@ -6,11 +6,11 @@ import {
   RefData,
   ValidationCallback,
 } from "@formvana";
-import { ExampleModel } from "../../models/ExampleClass2";
-import { ExampleModel as ExampleModel3 } from "../../models/ExampleClass3";
+import { ExampleModel } from "../../../models/ExampleClass2";
+import { ExampleModel as ExampleModel3 } from "../../../models/ExampleClass3";
 import { validate } from "class-validator";
 //@ts-ignore
-import GroupTemplate from "../../templates/GroupTemplate.svelte";
+import GroupTemplate from "../../../templates/GroupTemplate.svelte";
 
 const ref_data: RefData = {
   statuses: [
@@ -78,7 +78,7 @@ const updateState = (state, updates) => {
 /**
  * Export the Form State
  */
-export const formState: Writable<FormGroup> = initStore();
+export const form_state: Writable<FormGroup> = initStore();
 
 let initialized = false;
 /**
@@ -86,53 +86,53 @@ let initialized = false;
  */
 export const init = () => {
   if (!initialized) {
-    get(formState).loading.set(true);
+    get(form_state).loading.set(true);
 
     setTimeout(() => {
-      get(formState).loading.set(false);
+      get(form_state).loading.set(false);
     }, 1000);
 
-    setTimeout(() => {
-      // const callbacks: ValidationCallback[] = [
-      //   {
-      //     callback: () => {
-      //       console.log("Weeehoo!");
-      //     },
-      //     when: "after",
-      //   },
-      //   {
-      //     callback: () => {
-      //       get(formState)
-      //         .forms[0].get("name_10")
-      //         .value.set("some value jfkdsalfjdsk");
-      //       get(formState).validateAll();
-      //     },
-      //     when: "before",
-      //   },
-      // ];
-      // get(formState).validateAll(callbacks);
-      get(formState).forms[0].valid.set(true);
-      get(formState).forms[1].valid.set(true);
-    }, 2000);
+    // setTimeout(() => {
+    // const callbacks: ValidationCallback[] = [
+    //   {
+    //     callback: () => {
+    //       console.log("Weeehoo!");
+    //     },
+    //     when: "after",
+    //   },
+    //   {
+    //     callback: () => {
+    //       get(form_state)
+    //         .forms[0].get("name_10")
+    //         .value.set("some value jfkdsalfjdsk");
+    //       get(form_state).validateAll();
+    //     },
+    //     when: "before",
+    //   },
+    // ];
+    // get(form_state).validateAll(callbacks);
+    // get(form_state).forms[0].valid.set(true);
+    // get(form_state).forms[1].valid.set(true);
+    // }, 2000);
 
     // setTimeout(() => {
-    // console.log(get(formState));
+    // console.log(get(form_state));
     // }, 3000);
 
     /** Don't over subscribe to this bad boy */
-    get(formState).all_value_changes.subscribe((val) => {
+    get(form_state).all_value_changes.subscribe((val) => {
       console.log("CHANGE: ", val);
     });
 
-    // get(formState).all_valid.subscribe((val) => {
+    // get(form_state).all_valid.subscribe((val) => {
     //   console.log("ALL VALID: ", val);
     // });
 
-    // get(formState).all_pristine.subscribe((val) => {
+    // get(form_state).all_pristine.subscribe((val) => {
     //   console.log("ALL PRISTINE: ", val);
     // });
 
-    // get(formState).all_changed.subscribe((val) => {
+    // get(form_state).all_changed.subscribe((val) => {
     //   console.log("ALL CHANGED: ", val);
     // });
 
@@ -142,5 +142,5 @@ export const init = () => {
 
 export const onSubmit = (ev) => {
   console.log("SUBMIT: ", ev);
-  console.log(get(formState));
+  console.log(get(form_state));
 };

@@ -25,7 +25,7 @@
   onDestroy(() => {
     $form.destroy();
   });
-  
+
   $: loading = $form.loading;
 
   let fw, fh;
@@ -48,6 +48,9 @@
                 <h2 class="text-lg font-medium leading-6 text-gray-900">
                   Group {group_num + 1}
                 </h2>
+                <p class="mt-1 text-sm text-gray-500">
+                  Description for form #{group_num + 1}
+                </p>
               </div>
 
               <!-- Form Wrapper Div (col num, col gaps, etc.) -->
