@@ -7,7 +7,7 @@ import {
   ValidationError,
 } from "@formvana";
 import { ExampleModel } from "../../../models/ExampleClass";
-import { validate } from "class-validator";
+import { validate, ValidationError as VError } from "class-validator";
 import ExampleTemplate from "../../../templates/ExampleTemplate.svelte";
 
 const ref_data: RefData = {
@@ -31,7 +31,7 @@ const ref_data: RefData = {
   ],
 };
 
-/** Can pass in this function and form still works, albeit without validation. */
+/** Can pass this function and form still works, albeit without validation. */
 async function vali(model: any, options: any): Promise<ValidationError[]> {
   return [];
 }
@@ -48,14 +48,24 @@ const class_validator_options = {
   stopAtFirstError: true,
 };
 
+const validator = async (model, options) => {
+  return validate(model, options).then((errors: VError[]) => {
+    return errors.map((error) => {
+      // console.log(error.property === "status_97");
+
+      return new ValidationError(error.property, error.constraints);
+    });
+  });
+};
+
 function initStore() {
   // Set up the form(vana) object
   let form = new Form(
     new ExampleModel(),
     {
-      validator: validate,
+      validator: validator,
       on_events: new OnEvents({ focus: false }),
-      // ...class_validator_options
+      ...class_validator_options,
     },
     /** Partial Form Model Properties */
     {
@@ -95,16 +105,15 @@ export const init = () => {
 
     setTimeout(() => {
       const callbacks: ValidationCallback[] = [
+        // {
+        //   callback: () => {
+        //     console.log(get(form_state));
+        //   },
+        //   when: "after",
+        // },
         {
           callback: () => {
-            console.log(get(form_state));
-          },
-          when: "after",
-        },
-        {
-          callback: () => {
-            get(form_state).get("name_10").value.set("some value jfkdsalfjdsk");
-            get(form_state).validate();
+            get(form_state).setValue("name_100", "some value jfkdsalfjdsk");
           },
           when: "before",
         },
@@ -112,13 +121,12 @@ export const init = () => {
       get(form_state).validate(callbacks);
     }, 2000);
 
-    // setTimeout(() => {
-    //   get(form_state).updateInitialState();
-    // }, 3000);
+    setTimeout(() => {
+      get(form_state).updateInitialState();
+    }, 3000);
 
     // get(form_state).value_changes.subscribe((val) => {
-      // console.log('CHANGE: ', val);
-    //   console.log(get(form_state));
+    //   console.log("CHANGE: ", val);
     // });
 
     /**

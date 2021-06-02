@@ -10,40 +10,28 @@ export interface ValidationCallback {
 }
 /** Pretty much any funciton as long as it returns a Promise with
  * Validation Error array.
+ *
+ * @TODO This needs work.
  */
 export declare type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
 /**
- * @param model_property_key, which model field are we linking this to?
- * @param errors essentially Record<string #1, string #2>
- * with #1 being the name of the error (minlength, pattern)
- * and #2 being the error message
- * @param options, anything else part of the ValidationErrorType
+ * All constructor values are optional so we can create a blank Validation
+ * Error object, for whatever reason.
  */
-export declare class ValidationError implements ValidationErrorType {
-    constructor(model_property_key?: string, errors?: {
+export declare class ValidationError {
+    constructor(field_property_key?: string, errors?: {
         [type: string]: string;
-    }, options?: Partial<ValidationErrorType>);
-    target?: Object;
-    property?: string;
-    value?: any;
-    constraints?: {
-        [type: string]: string;
+    }, extra_data?: Record<string, any>);
+    field_key?: string;
+    field_value?: any;
+    errors?: {
+        [error_type: string]: string;
     };
-    children?: ValidationErrorType[];
-}
-export interface ValidationErrorType {
-    target?: Object;
-    property?: string;
-    value?: any;
-    constraints?: {
-        [type: string]: string;
-    };
-    children?: ValidationErrorType[];
 }
 /** Form Validation Options  */
 export interface ValidationOptions {
     /**
-     * PLEASE PASS IN A VALIDATOR FUNCTION!
+     * PLEASE PASS IN A VALIDATOR FUNCTION! (if you want validation)
      *
      * This is the (validation) function that will be called when validating.
      * You can use any validation library you like, as long as this function
@@ -51,100 +39,25 @@ export interface ValidationOptions {
      */
     validator: ValidatorFunction;
     /**
-     * Validation options come from class-validator ClassValidatorOptions.
+     * THIS IS THE SECOND PARAMETER BEING PASSED TO THE VALIDATOR FUNCTION.
+     * The other is form.model.
      *
-     * Biggest perf increase comes from setting validationError.target = false
-     * (so the whole model is not attached to each error message)
+     * This makes using other validation libraries easy.
+     * See the examples for more details.
      */
-    options?: Partial<ClassValidatorOptions> | Object;
+    options?: Record<string, any> | Object;
     /**
-     * Optional validation schema.
-     * "no-class" method of validating the model.
-     *
-     * @TODO Create a way to validate JSON model
+     * Optional field layout, if you aren't using a class object.
+     * "no-class" method of building the fields.
      */
-    schema?: Record<string, Partial<FieldConfig<Object>>>;
-    /**
-     * Form layout when using plain JSON object.
-     */
-    /** When to link this.field values to this.model values */
-    link_fields_to_model?: LinkOnEvent;
+    field_schema?: Record<string, Partial<FieldConfig<Object>>>;
     /**
      * Which events should the form do things on?
      * @examples validate, link values, hide/disable fields, callbacks
      */
     on_events: OnEvents<HTMLElementEventMap>;
-}
-/**
- * Options passed to validator during validation.
- * Note: this interface used by class-validator
- */
-export interface ClassValidatorOptions extends Record<string, unknown> {
-    /**
-     * If set to true then class-validator will print extra warning messages to the console when something is not right.
-     */
-    enableDebugMessages?: boolean;
-    /**
-     * If set to true then validator will skip validation of all properties that are undefined in the validating object.
-     */
-    skipUndefinedProperties?: boolean;
-    /**
-     * If set to true then validator will skip validation of all properties that are null in the validating object.
-     */
-    skipNullProperties?: boolean;
-    /**
-     * If set to true then validator will skip validation of all properties that are null or undefined in the validating object.
-     */
-    skipMissingProperties?: boolean;
-    /**
-     * If set to true validator will strip validated object of any properties that do not have any decorators.
-     *
-     * Tip: if no other decorator is suitable for your property use @Allow decorator.
-     */
-    whitelist?: boolean;
-    /**
-     * If set to true, instead of stripping non-whitelisted properties validator will throw an error
-     */
-    forbidNonWhitelisted?: boolean;
-    /**
-     * Groups to be used during validation of the object.
-     */
-    groups?: string[];
-    /**
-     * Set default for `always` option of decorators. Default can be overridden in decorator options.
-     */
-    always?: boolean;
-    /**
-     * If [groups]{@link ClassValidatorOptions#groups} is not given or is empty,
-     * ignore decorators with at least one group.
-     */
-    strictGroups?: boolean;
-    /**
-     * If set to true, the validation will not use default messages.
-     * Error message always will be undefined if its not explicitly set.
-     */
-    dismissDefaultMessages?: boolean;
-    /**
-     * ValidationError special options.
-     */
-    validationError?: {
-        /**
-         * Indicates if target should be exposed in ValidationError.
-         */
-        target?: boolean;
-        /**
-         * Indicates if validated value should be exposed in ValidationError.
-         */
-        value?: boolean;
-    };
-    /**
-     * Settings true will cause fail validation of unknown objects.
-     */
-    forbidUnknownValues?: boolean;
-    /**
-     * When set to true, validation of the given property will stop after encountering the first error. Defaults to false.
-     */
-    stopAtFirstError?: boolean;
+    /** When to link this.field values to this.model values */
+    when_link_fields_to_model?: LinkOnEvent;
 }
 /**
  * Determines which events to validate on.

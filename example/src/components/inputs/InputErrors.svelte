@@ -6,6 +6,8 @@
       val,
     };
   });
+
+  // $: console.log("ERRORS FROM COMPONENT: ", errorsStore, errors);
 </script>
 
 {#if errorsStore}

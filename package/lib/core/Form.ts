@@ -15,7 +15,7 @@ import {
   _get,
   _attachEventListeners,
   _linkAllErrors,
-  _linkValues,
+  _linkAllValues,
   _requiredFieldsValid,
   _setFieldOrder,
   _setInitialState,
@@ -48,6 +48,12 @@ import {
  * @TODO More robust testing with different input types
  * @TODO Add several plain html/css examples (without tailwind)
  * @TODO Clean up form control creation/binding - too complex, currently.
+ *
+ *
+ *
+ * @TODO Make a use:Form directive that grabs the fields by name and adds the
+ * relevant listeners and hookups. This will remove the need for value:binding
+ * and on:event shit.
  */
 
 /**
@@ -142,9 +148,7 @@ export class Form<ModelType extends Object> {
     validator: async () => [],
     on_events: new OnEvents(),
     /** When to link this.field values to this.model values */
-    link_fields_to_model: "always",
-    /** Options from class-validator, thats why snake and camel case mixing */
-    // options: {},
+    when_link_fields_to_model: "always",
   };
 
   /** Is the form valid? */
@@ -245,13 +249,12 @@ export class Form<ModelType extends Object> {
   /**
    * Builds the fields from the model.
    * Builds the field configs via this.model using metadata-reflection.
-   *
-   * @TODO Allow plain JSON model, fields and schema validation/setup
+   * Or via validation_options.field_shcema
    */
   buildFields = (model: ModelType = this.model): void => {
-    if (this.validation_options.schema) {
+    if (this.validation_options.field_schema) {
       this.fields = _buildFormFieldsWithSchema(
-        this.validation_options.schema,
+        this.validation_options.field_schema,
         this.meta
       );
     } else {
@@ -264,21 +267,18 @@ export class Form<ModelType extends Object> {
   };
 
   /**
-   * Aim for "no-class" initialization model:
+   * * useForm
    *
-   * take Array<Partial<FieldConfig>> &
+   * Create a function that takes a form node and sets up all the fields
+   * with names attached.
+   * This will also allow for easy mechanism to attach errors in a
+   * plug-and-play manner.
    *
-   *      validation schema &
-   *
-   *      JSON model
-   *
-   *  => Form<Object>
-   *
-   * Model keys must match fieldConfig name & validation schema
-   * property keys.
-   *
-   *
+   * Also allows for a better single source of truth for data input.
    */
+  useForm = (node: HTMLFormElement) => {
+    /** Set up form/fields here */
+  };
 
   /**
    * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!
@@ -325,22 +325,6 @@ export class Form<ModelType extends Object> {
     callbacks?: ValidationCallback[]
   ): Promise<ValidationError[]> | undefined => {
     return _executeValidationEvent(
-      this,
-      this.#required_fields,
-      undefined,
-      callbacks
-    );
-  };
-
-  /**
-   * Validate the form, async!
-   * You can pass in callbacks as needed.
-   * Callbacks can be applied "before" or "after" validation.
-   */
-  validateAsync = async (
-    callbacks?: ValidationCallback[]
-  ): Promise<ValidationError[] | undefined> => {
-    return await _executeValidationEvent(
       this,
       this.#required_fields,
       undefined,
@@ -426,7 +410,7 @@ export class Form<ModelType extends Object> {
       for (key in this.model) {
         this.model[key] = model[key];
       }
-      _linkValues(false, this.fields, this.model);
+      _linkAllValues(false, this.fields, this.model);
     }
 
     if (update_initial_state) this.updateInitialState();
@@ -434,7 +418,10 @@ export class Form<ModelType extends Object> {
     return this;
   };
 
-  /** Set the value for a field or set of fields */
+  /**
+   * Set the value for a field or set of fields.
+   * Sets both field.value and model value.
+   */
   setValue = (
     field_names: Array<keyof ModelType> | keyof ModelType,
     value: any

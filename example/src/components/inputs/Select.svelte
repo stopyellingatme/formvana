@@ -3,27 +3,20 @@
 
   export let field;
   export let options;
-  export let useInput = null;
+  export let useInput;
 
   let name = field.name;
 
-  let default_class =
+  const default_class =
     "bg-white relative w-full border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm";
-  let error_class =
+  const error_class =
     "bg-white relative w-full text-red-900 border border-red-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 sm:text-sm";
 
   $: valueStore = field.value;
   $: errorsStore = field.errors;
   $: attributes = Object.assign({}, field.attributes || {});
-  $: errors = $errorsStore && $errorsStore.constraints;
-  $: cls =
-    $errorsStore && $errorsStore.constraints ? error_class : default_class;
-
-  const handleChange = (e) => {
-    /** Get option value from options array */
-    const opt = options.filter((o) => o.value == e.target.value)[0];
-    field.value.set(opt.value);
-  };
+  $: errors = $errorsStore && $errorsStore.errors;
+  $: cls = errors ? error_class : default_class;
 </script>
 
 <div>
@@ -32,19 +25,7 @@
       {field.label}
     </label>
     <div class="relative m-1 rounded-md shadow-sm">
-      <!-- 
-        Ok, i wish i could just bind:value={$valueStore} and see it in
-        value_changes. But using on:input produces a value change with the proper 
-        value. 
-      -->
-      <!-- svelte-ignore a11y-no-onchange -->
-      <select
-        {name}
-        {...attributes}
-        class={cls}
-        use:useInput
-        on:input={(e) => handleChange(e)}
-      >
+      <select {name} {...attributes} class={cls} use:useInput>
         {#if $valueStore === undefined || null}
           <option selected value={undefined}> -- </option>
         {/if}

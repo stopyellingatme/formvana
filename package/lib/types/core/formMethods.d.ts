@@ -1,7 +1,7 @@
 import { Writable } from "svelte/store";
 import { FieldConfig } from "./FieldConfig";
 import { Form } from "./Form";
-import { Callback, OnEvents, ValidationCallback, ValidationError, InitialFormState, LinkOnEvent } from "./Types";
+import { Callback, OnEvents, ValidationCallback, ValidationError, InitialFormState } from "./Types";
 /**
  * Build the field configs from this.model using metadata-reflection.
  * Grab the editableProperties from the @field decorator.
@@ -32,18 +32,12 @@ export declare function _linkFieldErrors<T extends Object>(errors: ValidationErr
  * @Hotpath
  */
 export declare function _linkAllErrors<T extends Object>(errors: ValidationError[], fields: FieldConfig<T>[]): void;
-/** When should we link the fields to the model?
- * "alwyas" || "valid" (when valid)
- *
- * @Hotpath
- */
-export declare function _hanldeValueLinking<T extends Object>(model: T, fields: FieldConfig<T>[], link_fields_to_model: LinkOnEvent | undefined, event?: Event): void;
 /**
  * Link values from FIELDS to MODEL or MODEL to FIELDS
  *
  * @Hotpath
  */
-export declare function _linkValues<T extends Object>(from_fields_to_model: boolean, fields: FieldConfig<T>[], model: T, event?: Event): void;
+export declare function _linkAllValues<T extends Object>(from_fields_to_model: boolean, fields: FieldConfig<T>[], model: T, event?: Event): void;
 /**
  * Hanlde the events that will fire for each field.
  * Corresponds to the form.on_events field.
@@ -63,11 +57,11 @@ export declare function _executeCallbacks(callbacks: Callback | Callback[]): voi
  * Link the errors to the fields.
  * Check if all required fields are valid.
  * Link values from fields to model if
- * form.link_fields_to_model === LinkOnEvent.Valid is true.
+ * form.when_link_fields_to_model === LinkOnEvent.Valid is true.
  *
  * @Hotpath
  */
-export declare function _handleValidationSideEffects<T extends Object>(form: Form<T>, errors: ValidationError[], required_fields: Array<keyof T>, field?: FieldConfig<T>): Promise<ValidationError[]>;
+export declare function _handleValidationSideEffects<T extends Object>(form: Form<T>, errors: ValidationError[], required_fields: Array<keyof T>, field?: FieldConfig<T>, event?: Event): Promise<ValidationError[]>;
 /**
  * @TODO Clean up this requiredFieldsValid implementation. Seems too clunky.
  *

@@ -13,7 +13,7 @@
 
   $: value = field.value;
   $: errorsStore = field.errors;
-  $: errors = $errorsStore && $errorsStore.constraints;
+  $: errors = $errorsStore && $errorsStore.errors;
 
   /** This allows us to update attributes dynamically */
   $: attributes = Object.assign(
@@ -26,7 +26,7 @@
   );
 
   $: cls =
-    $errorsStore && $errorsStore.constraints ? error_class : default_class;
+    $errorsStore && $errorsStore.errors ? error_class : default_class;
 </script>
 
 <div>

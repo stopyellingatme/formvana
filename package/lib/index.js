@@ -271,33 +271,22 @@
         }
     }
 
-    // #region Validation
     /**
-     * @param model_property_key, which model field are we linking this to?
-     * @param errors essentially Record<string #1, string #2>
-     * with #1 being the name of the error (minlength, pattern)
-     * and #2 being the error message
-     * @param options, anything else part of the ValidationErrorType
+     * All constructor values are optional so we can create a blank Validation
+     * Error object, for whatever reason.
      */
     class ValidationError {
-        constructor(model_property_key, errors, options) {
-            if (model_property_key)
-                this.property = model_property_key;
-            if (errors) {
-                this.constraints = errors;
-            }
-            if (options) {
-                let k;
-                for (k in options) {
-                    this[k] = options[k];
-                }
-            }
+        constructor(field_property_key, errors, extra_data) {
+            if (field_property_key)
+                this.field_key = field_property_key;
+            if (errors)
+                this.errors = errors;
+            if (extra_data)
+                Object.assign(this, extra_data);
         }
-        target; // Object that was validated.
-        property; // Object's property that didn't pass validation.
-        value; // Value that didn't pass a validation.
-        constraints;
-        children;
+        field_key;
+        field_value;
+        errors;
     }
     //#endregion
     // #region Events
@@ -429,7 +418,7 @@
      * @Hotpath
      */
     function _linkFieldErrors(errors, field) {
-        const error = errors.filter((e) => e["property"] === field.name);
+        const error = errors.filter((e) => e["field_key"] === field.name);
         // Check if there's an error for the field
         if (error && error.length > 0) {
             field.errors.set(error[0]);
@@ -449,44 +438,25 @@
         errors.forEach((err) => {
             if (Array.isArray(err)) {
                 err = err[0];
-                if (err["property"]) {
-                    const f = _get(err["property"], fields);
+                if (err["field_key"]) {
+                    const f = _get(err["field_key"], fields);
                     f.errors.set(err);
                 }
             }
             else {
-                if (err["property"]) {
-                    const f = _get(err["property"], fields);
+                if (err["field_key"]) {
+                    const f = _get(err["field_key"], fields);
                     f.errors.set(err);
                 }
             }
         });
-    }
-    /** When should we link the fields to the model?
-     * "alwyas" || "valid" (when valid)
-     *
-     * @Hotpath
-     */
-    function _hanldeValueLinking(model, fields, link_fields_to_model, event) {
-        /**
-         * Link the input from the field to the model.
-         * We dont't link (just) the field value.
-         * We link all values just in case the field change propigates
-         * to other field changes.
-         */
-        if (link_fields_to_model === "always") {
-            _linkValues(true, fields, model, event);
-        }
-        else if (link_fields_to_model === "valid") {
-            _linkValues(true, fields, model, event);
-        }
     }
     /**
      * Link values from FIELDS to MODEL or MODEL to FIELDS
      *
      * @Hotpath
      */
-    function _linkValues(from_fields_to_model, fields, model, event) {
+    function _linkAllValues(from_fields_to_model, fields, model, event) {
         fields.forEach((field) => {
             /** Get name and value of the field */
             const name = field.name, val = field.value, value = 
@@ -494,7 +464,10 @@
             event?.target?.name === name ? getValueFromEvent(event) : undefined;
             /**  Link field[values] to model[values] */
             if (from_fields_to_model) {
-                model[name] = parseInt(value) || parseInt(get_store_value(val));
+                model[name] = value
+                    ? parseIntOrValue(value)
+                    : parseIntOrValue(get_store_value(val));
+                // model[name as keyof T] = parseIntOrValue(get(val));
             }
             else {
                 /**  Link form.model[values] to the form.fields[values] */
@@ -502,35 +475,47 @@
             }
         });
     }
-    function parseInt(value) {
-        if (Number.isInteger(value) || Number.isSafeInteger(value)) {
-            return Number.parseInt(value);
+    function _linkValueFromEvent(field, model, event) {
+        const value = parseIntOrValue(getValueFromEvent(event));
+        field.value.set(value);
+        model[field.name] = value;
+    }
+    function parseIntOrValue(value) {
+        const value_as_number = Number.parseInt(value);
+        if (Number.isInteger(value_as_number) ||
+            Number.isSafeInteger(value_as_number)) {
+            return value_as_number;
         }
         else
             return value;
     }
+    /**
+     * Returns the value of the event.
+     * Can be date, number or string
+     */
     function getValueFromEvent(event) {
         let result;
         if (event) {
             if (event.target) {
+                const target = event.target;
                 /** @ts-ignore */
-                if (event.target.valueAsDate) {
+                if (target.valueAsDate) {
                     /** @ts-ignore */
-                    result = event.target.valueAsDate;
+                    result = target.valueAsDate;
                     /** @ts-ignore */
                 }
                 else if (
                 /** @ts-ignore */
-                event.target.valueAsNumber ||
+                target.valueAsNumber ||
                     /** @ts-ignore */
-                    event.target.valueAsNumber === 0) {
+                    target.valueAsNumber === 0) {
                     /** @ts-ignore */
-                    result = event.target.valueAsNumber;
+                    result = target.valueAsNumber;
                     /** @ts-ignore */
                 }
-                else if (event.target.value) {
+                else if (target.value) {
                     /** @ts-ignore */
-                    result = event.target.value;
+                    result = target.value;
                 }
             }
         }
@@ -549,24 +534,21 @@
         form.pristine.set(false);
         /** Execute pre-validation callbacks */
         _executeCallbacks([
-            /**
-             * Link new data from field to the model.
-             * We are not linking (only/just) the field value.
-             * We link all values just in case the field change propigates other field changes.
-             * I've tried an approach that linked ONLY data to single field, negligable perf hit
-             */
-            _hanldeValueLinking(form.model, form.fields, form.validation_options.link_fields_to_model, event),
+            field && _linkValueFromEvent(field, form.model, event),
             /** Execution step may need work */
             field && _setValueChanges(form.value_changes, field),
             callbacks && _executeValidationCallbacks("before", callbacks),
         ]);
+        /**
+         * @TODO This section needs a rework.
+         * Too many moving parts.
+         * Hard to pass in custom validation parameters.
+         */
         return form.validation_options
-            .validator(form.model, form.validation_options.options
-        // form.validation_options.schema && form.validation_options.schema
-        )
+            .validator(form.model, form.validation_options.options)
             .then((errors) => {
             _executeCallbacks([
-                _handleValidationSideEffects(form, errors, required_fields, field),
+                _handleValidationSideEffects(form, errors, required_fields, field, event),
                 _hasStateChanged(form.value_changes, form.changed),
                 callbacks && _executeValidationCallbacks("after", callbacks),
             ]);
@@ -616,11 +598,11 @@
      * Link the errors to the fields.
      * Check if all required fields are valid.
      * Link values from fields to model if
-     * form.link_fields_to_model === LinkOnEvent.Valid is true.
+     * form.when_link_fields_to_model === LinkOnEvent.Valid is true.
      *
      * @Hotpath
      */
-    async function _handleValidationSideEffects(form, errors, required_fields, field) {
+    async function _handleValidationSideEffects(form, errors, required_fields, field, event) {
         /**  There are errors! */
         if (errors && errors.length > 0) {
             form.errors = errors;
@@ -647,7 +629,7 @@
              * If the config tells us to link the values only when the form
              * is valid, then link them here.
              */
-            _hanldeValueLinking(form.model, form.fields, form.validation_options.link_fields_to_model);
+            field && _linkValueFromEvent(field, form.model, event);
             form.clearErrors(); /** Clear form errors */
             form.valid.set(true); /** Form is valid! */
         }
@@ -673,7 +655,7 @@
          * Otherwise we have to map the names of the errors so we can
          * check if they're for a required field
          */
-        const errs = errors.map((e) => e["property"]);
+        const errs = errors.map((e) => e["field_key"]);
         for (; len > i; ++i) {
             if (errs.indexOf(required_fields[i]) !== -1) {
                 return false;
@@ -750,7 +732,7 @@
         }
         /** Done serializing the initial_state, now link everything. */
         /** Link the values, now */
-        _linkValues(false, form.fields, form.model);
+        _linkAllValues(false, form.fields, form.model);
         /** If there were errors in the inital_state
          *  link them to each field
          */
@@ -854,6 +836,12 @@
      * @TODO More robust testing with different input types
      * @TODO Add several plain html/css examples (without tailwind)
      * @TODO Clean up form control creation/binding - too complex, currently.
+     *
+     *
+     *
+     * @TODO Make a use:Form directive that grabs the fields by name and adds the
+     * relevant listeners and hookups. This will remove the need for value:binding
+     * and on:event shit.
      */
     /**
      * Formvana Form Class
@@ -933,9 +921,7 @@
             validator: async () => [],
             on_events: new OnEvents(),
             /** When to link this.field values to this.model values */
-            link_fields_to_model: "always",
-            /** Options from class-validator, thats why snake and camel case mixing */
-            // options: {},
+            when_link_fields_to_model: "always",
         };
         /** Is the form valid? */
         valid = writable(false);
@@ -1017,12 +1003,11 @@
         /**
          * Builds the fields from the model.
          * Builds the field configs via this.model using metadata-reflection.
-         *
-         * @TODO Allow plain JSON model, fields and schema validation/setup
+         * Or via validation_options.field_shcema
          */
         buildFields = (model = this.model) => {
-            if (this.validation_options.schema) {
-                this.fields = _buildFormFieldsWithSchema(this.validation_options.schema, this.meta);
+            if (this.validation_options.field_schema) {
+                this.fields = _buildFormFieldsWithSchema(this.validation_options.field_schema, this.meta);
             }
             else {
                 this.fields = _buildFormFields(model, this.meta);
@@ -1032,21 +1017,18 @@
                 .map((f) => f.name);
         };
         /**
-         * Aim for "no-class" initialization model:
+         * * useForm
          *
-         * take Array<Partial<FieldConfig>> &
+         * Create a function that takes a form node and sets up all the fields
+         * with names attached.
+         * This will also allow for easy mechanism to attach errors in a
+         * plug-and-play manner.
          *
-         *      validation schema &
-         *
-         *      JSON model
-         *
-         *  => Form<Object>
-         *
-         * Model keys must match fieldConfig name & validation schema
-         * property keys.
-         *
-         *
+         * Also allows for a better single source of truth for data input.
          */
+        useForm = (node) => {
+            /** Set up form/fields here */
+        };
         /**
          * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!
          * This hooks up the event listeners!
@@ -1075,14 +1057,6 @@
          */
         validate = (callbacks) => {
             return _executeValidationEvent(this, this.#required_fields, undefined, callbacks);
-        };
-        /**
-         * Validate the form, async!
-         * You can pass in callbacks as needed.
-         * Callbacks can be applied "before" or "after" validation.
-         */
-        validateAsync = async (callbacks) => {
-            return await _executeValidationEvent(this, this.#required_fields, undefined, callbacks);
         };
         /** If want to (in)validate a specific field for any reason */
         validateField = (field_name, with_message, callbacks) => {
@@ -1143,13 +1117,16 @@
                 for (key in this.model) {
                     this.model[key] = model[key];
                 }
-                _linkValues(false, this.fields, this.model);
+                _linkAllValues(false, this.fields, this.model);
             }
             if (update_initial_state)
                 this.updateInitialState();
             return this;
         };
-        /** Set the value for a field or set of fields */
+        /**
+         * Set the value for a field or set of fields.
+         * Sets both field.value and model value.
+         */
         setValue = (field_names, value) => {
             if (Array.isArray(field_names)) {
                 field_names.forEach((f) => {

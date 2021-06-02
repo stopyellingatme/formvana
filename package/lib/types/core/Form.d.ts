@@ -24,6 +24,12 @@ import { RefData, ValidationError, ValidationCallback, Callback, ValidationOptio
  * @TODO More robust testing with different input types
  * @TODO Add several plain html/css examples (without tailwind)
  * @TODO Clean up form control creation/binding - too complex, currently.
+ *
+ *
+ *
+ * @TODO Make a use:Form directive that grabs the fields by name and adds the
+ * relevant listeners and hookups. This will remove the need for value:binding
+ * and on:event shit.
  */
 /**
  * Formvana Form Class
@@ -129,26 +135,20 @@ export declare class Form<ModelType extends Object> {
     /**
      * Builds the fields from the model.
      * Builds the field configs via this.model using metadata-reflection.
-     *
-     * @TODO Allow plain JSON model, fields and schema validation/setup
+     * Or via validation_options.field_shcema
      */
     buildFields: (model?: ModelType) => void;
     /**
-     * Aim for "no-class" initialization model:
+     * * useForm
      *
-     * take Array<Partial<FieldConfig>> &
+     * Create a function that takes a form node and sets up all the fields
+     * with names attached.
+     * This will also allow for easy mechanism to attach errors in a
+     * plug-and-play manner.
      *
-     *      validation schema &
-     *
-     *      JSON model
-     *
-     *  => Form<Object>
-     *
-     * Model keys must match fieldConfig name & validation schema
-     * property keys.
-     *
-     *
+     * Also allows for a better single source of truth for data input.
      */
+    useForm: (node: HTMLFormElement) => void;
     /**
      * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!
      * This hooks up the event listeners!
@@ -170,12 +170,6 @@ export declare class Form<ModelType extends Object> {
      * Callbacks can be called "before" or "after" validation.
      */
     validate: (callbacks?: ValidationCallback[] | undefined) => Promise<ValidationError[]> | undefined;
-    /**
-     * Validate the form, async!
-     * You can pass in callbacks as needed.
-     * Callbacks can be applied "before" or "after" validation.
-     */
-    validateAsync: (callbacks?: ValidationCallback[] | undefined) => Promise<ValidationError[] | undefined>;
     /** If want to (in)validate a specific field for any reason */
     validateField: (field_name: keyof ModelType, with_message?: string | undefined, callbacks?: ValidationCallback[] | undefined) => void;
     /**
@@ -196,7 +190,10 @@ export declare class Form<ModelType extends Object> {
      * Inital State is not updated by default.
      */
     loadModel: <T extends ModelType>(model: T, reinitialize?: boolean, update_initial_state?: boolean) => Form<ModelType>;
-    /** Set the value for a field or set of fields */
+    /**
+     * Set the value for a field or set of fields.
+     * Sets both field.value and model value.
+     */
     setValue: (field_names: Array<keyof ModelType> | keyof ModelType, value: any) => void;
     /**
      * Pass in the reference data to add options to fields.

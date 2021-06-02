@@ -149,9 +149,7 @@ export function _linkFieldErrors<T extends Object>(
   errors: ValidationError[],
   field: FieldConfig<T>
 ): void {
-  const error = errors.filter(
-    (e) => e["property" as keyof ValidationError] === field.name
-  );
+  const error = errors.filter((e) => e["field_key"] === field.name);
   // Check if there's an error for the field
   if (error && error.length > 0) {
     field.errors.set(error[0]);
@@ -174,41 +172,17 @@ export function _linkAllErrors<T extends Object>(
   errors.forEach((err) => {
     if (Array.isArray(err)) {
       err = err[0];
-      if (err["property"]) {
-        const f = _get(err["property" as keyof ValidationError], fields);
+      if (err["field_key"]) {
+        const f = _get(err["field_key" as keyof ValidationError], fields);
         f.errors.set(err);
       }
     } else {
-      if (err["property"]) {
-        const f = _get(err["property" as keyof ValidationError], fields);
+      if (err["field_key"]) {
+        const f = _get(err["field_key" as keyof ValidationError], fields);
         f.errors.set(err);
       }
     }
   });
-}
-
-/** When should we link the fields to the model?
- * "alwyas" || "valid" (when valid)
- *
- * @Hotpath
- */
-export function _hanldeValueLinking<T extends Object>(
-  model: T,
-  fields: FieldConfig<T>[],
-  link_fields_to_model: LinkOnEvent | undefined,
-  event?: Event
-): void {
-  /**
-   * Link the input from the field to the model.
-   * We dont't link (just) the field value.
-   * We link all values just in case the field change propigates
-   * to other field changes.
-   */
-  if (link_fields_to_model === "always") {
-    _linkValues(true, fields, model, event);
-  } else if (link_fields_to_model === "valid") {
-    _linkValues(true, fields, model, event);
-  }
 }
 
 /**
@@ -216,7 +190,7 @@ export function _hanldeValueLinking<T extends Object>(
  *
  * @Hotpath
  */
-export function _linkValues<T extends Object>(
+export function _linkAllValues<T extends Object>(
   from_fields_to_model: boolean,
   fields: FieldConfig<T>[],
   model: T,
@@ -232,7 +206,10 @@ export function _linkValues<T extends Object>(
 
     /**  Link field[values] to model[values] */
     if (from_fields_to_model) {
-      model[name as keyof T] = parseInt(value) || parseInt(get(val));
+      model[name as keyof T] = value
+        ? parseIntOrValue(value)
+        : parseIntOrValue(get(val));
+      // model[name as keyof T] = parseIntOrValue(get(val));
     } else {
       /**  Link form.model[values] to the form.fields[values] */
       val.set(model[name as keyof T]);
@@ -240,33 +217,53 @@ export function _linkValues<T extends Object>(
   });
 }
 
-function parseInt(value: any) {
-  if (Number.isInteger(value) || Number.isSafeInteger(value)) {
-    return Number.parseInt(value);
+function _linkValueFromEvent<T extends Object>(
+  field: FieldConfig<T>,
+  model: T,
+  event?: Event
+): void {
+  const value = parseIntOrValue(getValueFromEvent(event));
+  field.value.set(value);
+  model[field.name] = value;
+}
+
+function parseIntOrValue(value: any) {
+  const value_as_number = Number.parseInt(value);
+  if (
+    Number.isInteger(value_as_number) ||
+    Number.isSafeInteger(value_as_number)
+  ) {
+    return value_as_number;
   } else return value;
 }
 
-function getValueFromEvent(event?: Event): any {
+/**
+ * Returns the value of the event.
+ * Can be date, number or string
+ */
+function getValueFromEvent(event?: Event): Date | Number | String {
   let result;
   if (event) {
     if (event.target) {
+      const target = event.target;
+
       /** @ts-ignore */
-      if (event.target.valueAsDate) {
+      if (target.valueAsDate) {
         /** @ts-ignore */
-        result = event.target.valueAsDate;
+        result = target.valueAsDate;
         /** @ts-ignore */
       } else if (
         /** @ts-ignore */
-        event.target.valueAsNumber ||
+        target.valueAsNumber ||
         /** @ts-ignore */
-        event.target.valueAsNumber === 0
+        target.valueAsNumber === 0
       ) {
         /** @ts-ignore */
-        result = event.target.valueAsNumber;
+        result = target.valueAsNumber;
         /** @ts-ignore */
-      } else if (event.target.value) {
+      } else if (target.value) {
         /** @ts-ignore */
-        result = event.target.value;
+        result = target.value;
       }
     }
   }
@@ -295,18 +292,7 @@ export function _executeValidationEvent<T extends Object>(
 
   /** Execute pre-validation callbacks */
   _executeCallbacks([
-    /**
-     * Link new data from field to the model.
-     * We are not linking (only/just) the field value.
-     * We link all values just in case the field change propigates other field changes.
-     * I've tried an approach that linked ONLY data to single field, negligable perf hit
-     */
-    _hanldeValueLinking(
-      form.model,
-      form.fields,
-      form.validation_options.link_fields_to_model,
-      event
-    ),
+    field && _linkValueFromEvent(field, form.model, event),
     /** Execution step may need work */
     field && _setValueChanges(form.value_changes, field),
     callbacks && _executeValidationCallbacks("before", callbacks),
@@ -318,14 +304,16 @@ export function _executeValidationEvent<T extends Object>(
    * Hard to pass in custom validation parameters.
    */
   return form.validation_options
-    .validator(
-      form.model,
-      form.validation_options.options
-      // form.validation_options.schema && form.validation_options.schema
-    )
+    .validator(form.model, form.validation_options.options)
     .then((errors: ValidationError[]) => {
       _executeCallbacks([
-        _handleValidationSideEffects(form, errors, required_fields, field),
+        _handleValidationSideEffects(
+          form,
+          errors,
+          required_fields,
+          field,
+          event
+        ),
         _hasStateChanged(form.value_changes, form.changed),
         callbacks && _executeValidationCallbacks("after", callbacks),
       ]);
@@ -383,7 +371,7 @@ export function _executeCallbacks(callbacks: Callback | Callback[]): void {
  * Link the errors to the fields.
  * Check if all required fields are valid.
  * Link values from fields to model if
- * form.link_fields_to_model === LinkOnEvent.Valid is true.
+ * form.when_link_fields_to_model === LinkOnEvent.Valid is true.
  *
  * @Hotpath
  */
@@ -391,7 +379,8 @@ export async function _handleValidationSideEffects<T extends Object>(
   form: Form<T>,
   errors: ValidationError[],
   required_fields: Array<keyof T>,
-  field?: FieldConfig<T>
+  field?: FieldConfig<T>,
+  event?: Event
 ): Promise<ValidationError[]> {
   /**  There are errors! */
   if (errors && errors.length > 0) {
@@ -419,11 +408,7 @@ export async function _handleValidationSideEffects<T extends Object>(
      * If the config tells us to link the values only when the form
      * is valid, then link them here.
      */
-    _hanldeValueLinking(
-      form.model,
-      form.fields,
-      form.validation_options.link_fields_to_model
-    );
+    field && _linkValueFromEvent(field, form.model, event);
     form.clearErrors(); /** Clear form errors */
     form.valid.set(true); /** Form is valid! */
   }
@@ -452,7 +437,7 @@ export function _requiredFieldsValid<T extends Object>(
    * Otherwise we have to map the names of the errors so we can
    * check if they're for a required field
    */
-  const errs = errors.map((e) => e["property" as keyof ValidationError]);
+  const errs = errors.map((e) => e["field_key"]);
   for (; len > i; ++i) {
     if (errs.indexOf(required_fields[i] as keyof ValidationError) !== -1) {
       return false;
@@ -549,7 +534,7 @@ export function _resetState<T extends Object>(
   /** Done serializing the initial_state, now link everything. */
 
   /** Link the values, now */
-  _linkValues(false, form.fields, form.model);
+  _linkAllValues(false, form.fields, form.model);
 
   /** If there were errors in the inital_state
    *  link them to each field

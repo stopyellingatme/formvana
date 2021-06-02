@@ -5,10 +5,11 @@ import {
   OnEvents,
   RefData,
   ValidationCallback,
+  ValidationError,
 } from "@formvana";
 import { ExampleModel } from "../../../models/ExampleClass2";
 import { ExampleModel as ExampleModel3 } from "../../../models/ExampleClass3";
-import { validate } from "class-validator";
+import { validate, ValidationError as VError } from "class-validator";
 //@ts-ignore
 import GroupTemplate from "../../../templates/GroupTemplate.svelte";
 
@@ -33,11 +34,19 @@ const ref_data: RefData = {
   ],
 };
 
+const validator = (model, options) => {
+  return validate(model, options).then((errors: VError[]) => {
+    return errors.map((error) => {
+      return new ValidationError(error.property, error.constraints);
+    });
+  });
+};
+
 function initStore() {
   // Set up the form(vana) class
   let form_1 = new Form(
     new ExampleModel(),
-    { validator: validate, on_events: new OnEvents({ focus: false }) },
+    { validator: validator, on_events: new OnEvents({ focus: false }) },
     {
       template: GroupTemplate,
       refs: ref_data,
@@ -48,7 +57,7 @@ function initStore() {
 
   let form_2 = new Form(
     new ExampleModel3(),
-    { validator: validate, on_events: new OnEvents({ focus: false }) },
+    { validator: validator, on_events: new OnEvents({ focus: false }) },
     {
       template: GroupTemplate,
       refs: ref_data,

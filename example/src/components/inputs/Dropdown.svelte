@@ -27,9 +27,9 @@
     options && options[$valueStore] && options[$valueStore].label;
 
   $: input_attributes = Object.assign({}, attrs);
-  $: errors = $errorsStore && $errorsStore.constraints;
+  $: errors = $errorsStore && $errorsStore.errors;
   $: cls =
-    $errorsStore && $errorsStore.constraints ? error_class : default_class;
+    $errorsStore && $errorsStore.errors ? error_class : default_class;
 
   onMount(() => {});
 

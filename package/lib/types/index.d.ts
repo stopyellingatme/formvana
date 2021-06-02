@@ -2,6 +2,7 @@ import { SvelteComponent } from "svelte";
 import { Writable } from "svelte/store";
 import { SvelteComponentDev } from "svelte/internal";
 import { SvelteComponent as SvelteComponent$0 } from "svelte/internal";
+// #region Validation
 /** Using "when" gives us a little more flexibilty. */
 interface ValidationCallback {
     callback: Callback;
@@ -13,42 +14,28 @@ interface ValidationCallback {
 }
 /** Pretty much any funciton as long as it returns a Promise with
  * Validation Error array.
+ *
+ * @TODO This needs work.
  */
 type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
 /**
- * @param model_property_key, which model field are we linking this to?
- * @param errors essentially Record<string #1, string #2>
- * with #1 being the name of the error (minlength, pattern)
- * and #2 being the error message
- * @param options, anything else part of the ValidationErrorType
+ * All constructor values are optional so we can create a blank Validation
+ * Error object, for whatever reason.
  */
-declare class ValidationError implements ValidationErrorType {
-    constructor(model_property_key?: string, errors?: {
+declare class ValidationError {
+    constructor(field_property_key?: string, errors?: {
         [type: string]: string;
-    }, options?: Partial<ValidationErrorType>);
-    target?: Object; // Object that was validated.
-    property?: string; // Object's property that didn't pass validation.
-    value?: any; // Value that didn't pass a validation.
-    constraints?: {
-        // Constraints that failed validation with error messages.
-        [type: string]: string;
+    }, extra_data?: Record<string, any>);
+    field_key?: string;
+    field_value?: any;
+    errors?: {
+        [error_type: string]: string;
     };
-    children?: ValidationErrorType[];
-}
-interface ValidationErrorType {
-    target?: Object; // Object that was validated.
-    property?: string; // Object's property that didn't pass validation.
-    value?: any; // Value that didn't pass a validation.
-    constraints?: {
-        // Constraints that failed validation with error messages.
-        [type: string]: string;
-    };
-    children?: ValidationErrorType[];
 }
 /** Form Validation Options  */
 interface ValidationOptions {
     /**
-     * PLEASE PASS IN A VALIDATOR FUNCTION!
+     * PLEASE PASS IN A VALIDATOR FUNCTION! (if you want validation)
      *
      * This is the (validation) function that will be called when validating.
      * You can use any validation library you like, as long as this function
@@ -56,101 +43,25 @@ interface ValidationOptions {
      */
     validator: ValidatorFunction;
     /**
-     * Validation options come from class-validator ClassValidatorOptions.
+     * THIS IS THE SECOND PARAMETER BEING PASSED TO THE VALIDATOR FUNCTION.
+     * The other is form.model.
      *
-     * Biggest perf increase comes from setting validationError.target = false
-     * (so the whole model is not attached to each error message)
+     * This makes using other validation libraries easy.
+     * See the examples for more details.
      */
-    options?: Partial<ClassValidatorOptions> | Object;
+    options?: Record<string, any> | Object;
     /**
-     * Optional validation schema.
-     * "no-class" method of validating the model.
-     *
-     * @TODO Create a way to validate JSON model
+     * Optional field layout, if you aren't using a class object.
+     * "no-class" method of building the fields.
      */
-    schema?: Record<string, Partial<FieldConfig<Object>>>;
-    /**
-     * Form layout when using plain JSON object.
-     */
-    // schema_layout?: Record<string, Partial<FieldConfig<Object>>>;
-    /** When to link this.field values to this.model values */
-    link_fields_to_model?: LinkOnEvent;
+    field_schema?: Record<string, Partial<FieldConfig<Object>>>;
     /**
      * Which events should the form do things on?
      * @examples validate, link values, hide/disable fields, callbacks
      */
     on_events: OnEvents<HTMLElementEventMap>;
-}
-/**
- * Options passed to validator during validation.
- * Note: this interface used by class-validator
- */
-interface ClassValidatorOptions extends Record<string, unknown> {
-    /**
-     * If set to true then class-validator will print extra warning messages to the console when something is not right.
-     */
-    enableDebugMessages?: boolean;
-    /**
-     * If set to true then validator will skip validation of all properties that are undefined in the validating object.
-     */
-    skipUndefinedProperties?: boolean;
-    /**
-     * If set to true then validator will skip validation of all properties that are null in the validating object.
-     */
-    skipNullProperties?: boolean;
-    /**
-     * If set to true then validator will skip validation of all properties that are null or undefined in the validating object.
-     */
-    skipMissingProperties?: boolean;
-    /**
-     * If set to true validator will strip validated object of any properties that do not have any decorators.
-     *
-     * Tip: if no other decorator is suitable for your property use @Allow decorator.
-     */
-    whitelist?: boolean;
-    /**
-     * If set to true, instead of stripping non-whitelisted properties validator will throw an error
-     */
-    forbidNonWhitelisted?: boolean;
-    /**
-     * Groups to be used during validation of the object.
-     */
-    groups?: string[];
-    /**
-     * Set default for `always` option of decorators. Default can be overridden in decorator options.
-     */
-    always?: boolean;
-    /**
-     * If [groups]{@link ClassValidatorOptions#groups} is not given or is empty,
-     * ignore decorators with at least one group.
-     */
-    strictGroups?: boolean;
-    /**
-     * If set to true, the validation will not use default messages.
-     * Error message always will be undefined if its not explicitly set.
-     */
-    dismissDefaultMessages?: boolean;
-    /**
-     * ValidationError special options.
-     */
-    validationError?: {
-        /**
-         * Indicates if target should be exposed in ValidationError.
-         */
-        target?: boolean;
-        /**
-         * Indicates if validated value should be exposed in ValidationError.
-         */
-        value?: boolean;
-    };
-    /**
-     * Settings true will cause fail validation of unknown objects.
-     */
-    forbidUnknownValues?: boolean;
-    /**
-     * When set to true, validation of the given property will stop after encountering the first error. Defaults to false.
-     */
-    stopAtFirstError?: boolean;
+    /** When to link this.field values to this.model values */
+    when_link_fields_to_model?: LinkOnEvent;
 }
 //#endregion
 // #region Events
@@ -516,6 +427,12 @@ declare class FieldStepper {
  * @TODO More robust testing with different input types
  * @TODO Add several plain html/css examples (without tailwind)
  * @TODO Clean up form control creation/binding - too complex, currently.
+ *
+ *
+ *
+ * @TODO Make a use:Form directive that grabs the fields by name and adds the
+ * relevant listeners and hookups. This will remove the need for value:binding
+ * and on:event shit.
  */
 /**
  * Formvana Form Class
@@ -625,26 +542,20 @@ declare class Form<ModelType extends Object> {
     /**
      * Builds the fields from the model.
      * Builds the field configs via this.model using metadata-reflection.
-     *
-     * @TODO Allow plain JSON model, fields and schema validation/setup
+     * Or via validation_options.field_shcema
      */
     buildFields: (model?: ModelType) => void;
     /**
-     * Aim for "no-class" initialization model:
+     * * useForm
      *
-     * take Array<Partial<FieldConfig>> &
+     * Create a function that takes a form node and sets up all the fields
+     * with names attached.
+     * This will also allow for easy mechanism to attach errors in a
+     * plug-and-play manner.
      *
-     *      validation schema &
-     *
-     *      JSON model
-     *
-     *  => Form<Object>
-     *
-     * Model keys must match fieldConfig name & validation schema
-     * property keys.
-     *
-     *
+     * Also allows for a better single source of truth for data input.
      */
+    useForm: (node: HTMLFormElement) => void;
     /**
      * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!
      * This hooks up the event listeners!
@@ -668,12 +579,6 @@ declare class Form<ModelType extends Object> {
      * Callbacks can be called "before" or "after" validation.
      */
     validate: (callbacks?: ValidationCallback[] | undefined) => Promise<ValidationError[]> | undefined;
-    /**
-     * Validate the form, async!
-     * You can pass in callbacks as needed.
-     * Callbacks can be applied "before" or "after" validation.
-     */
-    validateAsync: (callbacks?: ValidationCallback[] | undefined) => Promise<ValidationError[] | undefined>;
     /** If want to (in)validate a specific field for any reason */
     validateField: (field_name: keyof ModelType, with_message?: string | undefined, callbacks?: ValidationCallback[] | undefined) => void;
     /**
@@ -696,7 +601,10 @@ declare class Form<ModelType extends Object> {
      * Inital State is not updated by default.
      */
     loadModel: <T extends ModelType>(model: T, reinitialize?: boolean, update_initial_state?: boolean) => Form<ModelType>;
-    /** Set the value for a field or set of fields */
+    /**
+     * Set the value for a field or set of fields.
+     * Sets both field.value and model value.
+     */
     setValue: (field_names: Array<keyof ModelType> | keyof ModelType, value: any) => void;
     /**
      * Pass in the reference data to add options to fields.
@@ -772,4 +680,4 @@ declare class FormStepper extends FormManager {
 declare class FormGroup extends FormManager {
     constructor(forms: FormDictionary, props?: Partial<FormManager>);
 }
-export { FieldConfig, FieldStepper, Form, field, ValidationCallback, ValidatorFunction, ValidationError, ValidationErrorType, ValidationOptions, ClassValidatorOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, InitialFormState, RefDataItem, RefData, FieldAttributes, ElementAttributesMap, Callback, FormManager, FormStepper, FormGroup };
+export { FieldConfig, FieldStepper, Form, field, ValidationCallback, ValidatorFunction, ValidationError, ValidationOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, InitialFormState, RefDataItem, RefData, FieldAttributes, ElementAttributesMap, Callback, FormManager, FormStepper, FormGroup };

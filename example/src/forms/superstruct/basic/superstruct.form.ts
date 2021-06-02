@@ -120,7 +120,7 @@ function initStore() {
       validator: doValidation,
       on_events: new OnEvents({ focus: false }),
       options: Article,
-      schema: field_configs,
+      field_schema: field_configs,
     },
     /** Partial Form Model Properties */
     {
