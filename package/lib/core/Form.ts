@@ -11,20 +11,34 @@ import {
   InitialFormState,
 } from "./Types";
 import {
+  _setFieldAttributes,
+  _setInitialState,
+  _buildFormFieldsWithSchema,
   _buildFormFields,
   _get,
   _attachEventListeners,
-  _linkAllErrors,
-  _linkAllValues,
-  _requiredFieldsValid,
-  _setFieldOrder,
-  _setInitialState,
-  _resetState,
   _executeValidationEvent,
+  _linkAllErrors,
   _addCallbackToField,
-  _setFieldAttributes,
-  _buildFormFieldsWithSchema,
-} from "./formMethods";
+  _linkAllValues,
+  _resetState,
+  _setFieldOrder,
+} from "../utilities";
+// import {
+//   _buildFormFields,
+//   _get,
+//   _attachEventListeners,
+//   _linkAllErrors,
+//   _linkAllValues,
+//   _requiredFieldsValid,
+//   _setFieldOrder,
+//   _setInitialState,
+//   _resetState,
+//   _executeValidationEvent,
+//   _addCallbackToField,
+//   _setFieldAttributes,
+//   _buildFormFieldsWithSchema,
+// } from "./formMethods";
 
 /**
  * @Recomended_Use
@@ -177,6 +191,12 @@ export class Form<ModelType extends Object> {
     | typeof SvelteComponent;
 
   /**
+   * Optional field layout, if you aren't using a class object.
+   * "no-class" method of building the fields.
+   */
+  field_schema?: Record<string, Partial<FieldConfig<Object>>>;
+
+  /**
    * refs hold any reference data you'll be using in the form
    * e.g. seclet dropdowns, radio buttons, etc.
    *
@@ -252,11 +272,8 @@ export class Form<ModelType extends Object> {
    * Or via validation_options.field_shcema
    */
   buildFields = (model: ModelType = this.model): void => {
-    if (this.validation_options.field_schema) {
-      this.fields = _buildFormFieldsWithSchema(
-        this.validation_options.field_schema,
-        this.meta
-      );
+    if (this.field_schema) {
+      this.fields = _buildFormFieldsWithSchema(this.field_schema, this.meta);
     } else {
       this.fields = _buildFormFields(model, this.meta);
     }
@@ -278,6 +295,15 @@ export class Form<ModelType extends Object> {
    */
   useForm = (node: HTMLFormElement) => {
     /** Set up form/fields here */
+
+    let key: keyof ModelType;
+    for (key in this.model) {
+      const _el = node.querySelectorAll(`[name="${key}"]`);
+      if (_el && _el[0]) {
+        const el = _el[0];
+        this.useField(el as HTMLElement & { name: keyof ModelType });
+      }
+    }
   };
 
   /**

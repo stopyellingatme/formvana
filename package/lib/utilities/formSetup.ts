@@ -1,7 +1,21 @@
-// #region Utility Functions
-
-import { FieldConfig, OnEvents, Callback, Form, ValidationCallback } from "..";
+import {
+  FieldConfig,
+  OnEvents,
+  Callback,
+  Form,
+  ValidationCallback,
+} from "../core";
 import { _executeValidationEvent } from "./formValidation";
+
+/**
+ * ---------------------------------------------------------------------------
+ *
+ * *** Form Setup ***
+ *
+ * Will write later. Files delted and source control didnt catch.
+ *
+ * ---------------------------------------------------------------------------
+ */
 
 /**
  * Build the field configs from this.model using metadata-reflection.
@@ -9,7 +23,7 @@ import { _executeValidationEvent } from "./formValidation";
  *
  * @TODO Create method to use plain JSON as model, fields and validation schema
  */
-export function _buildFormFields<T extends Object>(
+function _buildFormFields<T extends Object>(
   model: T,
   meta?: Record<string, string | number | boolean | Object>,
   props: string[] = Reflect.getMetadata("editableProperties", model)
@@ -34,7 +48,7 @@ export function _buildFormFields<T extends Object>(
   return fields;
 }
 
-export function _buildFormFieldsWithSchema<T extends Object>(
+function _buildFormFieldsWithSchema<T extends Object>(
   props: Record<string, Partial<FieldConfig<T>>>,
   meta?: Record<string, string | number | boolean | Object>
 ): FieldConfig<T>[] {
@@ -65,23 +79,13 @@ export function _buildFormFieldsWithSchema<T extends Object>(
   return fields;
 }
 
-/** Get the form field by name */
-export function _get<T extends Object>(
-  name: keyof T,
-  fields: FieldConfig<T>[]
-): FieldConfig<T> {
-  return fields.filter((f) => f.name === name)[0];
-}
-
-//#endregion
-
 // #region HTML Event Helpers
 
 /**
  * Attach the OnEvents events to each form.field.
  * Parent: form.useField(...)
  */
-export function _attachEventListeners<T extends Object>(
+function _attachEventListeners<T extends Object>(
   field: FieldConfig<T>,
   on_events: OnEvents<HTMLElementEventMap>,
   callback: Callback
@@ -106,7 +110,7 @@ export function _attachEventListeners<T extends Object>(
   });
 }
 
-export function _addCallbackToField<T extends Object>(
+function _addCallbackToField<T extends Object>(
   form: Form<T>,
   field: FieldConfig<T>,
   event: keyof HTMLElementEventMap,
@@ -126,4 +130,9 @@ export function _addCallbackToField<T extends Object>(
   }
 }
 
-//#endregion
+export {
+  _buildFormFields,
+  _buildFormFieldsWithSchema,
+  _attachEventListeners,
+  _addCallbackToField,
+};

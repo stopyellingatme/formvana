@@ -96,6 +96,11 @@ export declare class Form<ModelType extends Object> {
      */
     template?: string | typeof SvelteComponentDev | typeof SvelteComponent | typeof SvelteComponent;
     /**
+     * Optional field layout, if you aren't using a class object.
+     * "no-class" method of building the fields.
+     */
+    field_schema?: Record<string, Partial<FieldConfig<Object>>>;
+    /**
      * refs hold any reference data you'll be using in the form
      * e.g. seclet dropdowns, radio buttons, etc.
      *

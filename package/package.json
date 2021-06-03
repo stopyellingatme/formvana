@@ -16,6 +16,7 @@
     "svelte"
   ],
   "scripts": {
+    "build:vite": "vite build",
     "build": "rollup -c",
     "dev": "rollup -cw"
   },

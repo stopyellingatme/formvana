@@ -28,7 +28,7 @@ const field_configs: Record<string, Partial<FieldConfig<Object>>> = {
     type: "number",
     label: "ID",
     required: true,
-    value: writable(null),
+    value: writable(0),
     classes: "col-span-4 sm:col-span-2",
   },
   title: {
@@ -36,7 +36,7 @@ const field_configs: Record<string, Partial<FieldConfig<Object>>> = {
     type: "text",
     label: "Title",
     required: true,
-    value: writable(null),
+    value: writable(undefined),
     classes: "col-span-4 sm:col-span-2",
   },
   tags: {
@@ -82,6 +82,14 @@ const data = Object.assign(
  * It seems to have been successful, albeit a little more complex than I'd like.
  */
 const doValidation = async (model, struct): Promise<ValidationError[]> => {
+  /**
+   * This is for parsing really huge number values
+   * Otherwise if the value is above Number.MAX_SAFE_INTEGER, we return the
+   * value as string. Seems sensible to me.
+   */
+  model.id = parseInt(model.id);
+  /** console.log(model.id); */
+
   /** Validate the struct */
   /** Flatten the array so it's not [[ValidationError], [ValidationError]] */
   return [].concat(
@@ -120,11 +128,11 @@ function initStore() {
       validator: doValidation,
       on_events: new OnEvents({ focus: false }),
       options: Article,
-      field_schema: field_configs,
     },
     /** Partial Form Model Properties */
     {
       template: ExampleTemplate,
+      field_schema: field_configs,
       // disabled_fields: ["title"],
     }
   );
@@ -173,7 +181,7 @@ export const init = () => {
       //   },
       // ];
       // get(form_state).validate(callbacks);
-      get(form_state).validate();
+      // get(form_state).validate();
     }, 2000);
 
     // setTimeout(() => {

@@ -4,7 +4,7 @@
   "repository": "https://github.com/stopyellingatme/formvana",
   "description": "Searching for Form Nirvana with Typescript and Svelte.",
   "scripts": {
-    "build:vite": "NODE_ENV=development vite",
+    "dev:vite": "vite",
     "dev": "rollup -cw",
     "build": "rollup -c",
     "start": "sirv ./public",

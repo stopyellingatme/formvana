@@ -1,8 +1,7 @@
-<script lang="ts">
+<script>
   import InputErrors from "./InputErrors.svelte";
 
   export let field;
-  export let useInput = null;
 
   let name = field.name;
 
@@ -11,6 +10,10 @@
   let error_class =
     "block w-full px-3 py-2 placeholder-red-300 border border-red-300 appearance-none transition text-red-900 duration-150 ease-in-out rounded-md focus:outline-none focus:ring-red-500 focus:shadow-outline-red focus:border-red-300 sm:text-sm sm:leading-5 disabled:cursor-not-allowed";
 
+  /**
+   * If we want the ability to programatically update the value then
+   * we have to bind the field.value to the input.
+   */
   $: value = field.value;
   $: errorsStore = field.errors;
   $: errors = $errorsStore && $errorsStore.errors;
@@ -25,8 +28,7 @@
     field.attributes || {}
   );
 
-  $: cls =
-    $errorsStore && $errorsStore.errors ? error_class : default_class;
+  $: cls = $errorsStore && $errorsStore.errors ? error_class : default_class;
 </script>
 
 <div>
@@ -34,13 +36,7 @@
     {field.label}
   </label>
   <div class="relative mt-1 rounded-md shadow-sm">
-    <input
-      {name}
-      {...attributes}
-      class={cls}
-      bind:value={$value}
-      use:useInput
-    />
+    <input {name} {...attributes} class={cls} bind:value={$value} />
     {#if errors}
       <!-- This is the red X in the input box -->
       <div

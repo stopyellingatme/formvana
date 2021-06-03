@@ -1,4 +1,3 @@
-import { FieldConfig } from "./FieldConfig";
 /** Using "when" gives us a little more flexibilty. */
 export interface ValidationCallback {
     callback: Callback;
@@ -46,11 +45,6 @@ export interface ValidationOptions {
      * See the examples for more details.
      */
     options?: Record<string, any> | Object;
-    /**
-     * Optional field layout, if you aren't using a class object.
-     * "no-class" method of building the fields.
-     */
-    field_schema?: Record<string, Partial<FieldConfig<Object>>>;
     /**
      * Which events should the form do things on?
      * @examples validate, link values, hide/disable fields, callbacks

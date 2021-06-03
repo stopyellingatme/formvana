@@ -328,89 +328,96 @@
     }
     //#endregion
 
-    // #region Utility Functions
     /**
-     * Build the field configs from this.model using metadata-reflection.
-     * Grab the editableProperties from the @field decorator.
+     * ---------------------------------------------------------------------------
      *
-     * @TODO Create method to use plain JSON as model, fields and validation schema
+     * *** General Form Utilities ***
+     *
+     * Will write later. Files delted and source control didnt catch.
+     *
+     * ---------------------------------------------------------------------------
      */
-    function _buildFormFields(model, meta, props = Reflect.getMetadata("editableProperties", model)) {
-        /** Map the @field fields to the form.fields */
-        const fields = props.map((prop) => {
-            /** Get the @FieldConfig using metadata reflection */
-            const field = new FieldConfig(prop, {
-                ...Reflect.getMetadata("fieldConfig", model, prop),
-                value: model[prop],
-            });
-            /** We made it. Return the field config and let's generate some inputs! */
-            return field;
-        });
-        if (meta) {
-            /** Filter fields used in a specific form */
-            fields.filter((f) => meta["name"] === f.for_form);
-        }
-        return fields;
-    }
-    function _buildFormFieldsWithSchema(props, meta) {
-        let k, fields = [];
-        for (k in props) {
-            const field = new FieldConfig(k, {
-                ...props[k],
-            });
-            fields.push(field);
-        }
-        // const fields = props.map((prop: string) => {
-        //   /** Get the @FieldConfig using metadata reflection */
-        //   const field: FieldConfig<T> = new FieldConfig<T>(prop as keyof T, {
-        //     ...Reflect.getMetadata("fieldConfig", model, prop),
-        //     value: model[prop as keyof T],
-        //   });
-        /** We made it. Return the field config and let's generate some inputs! */
-        // return field;
-        // });
-        if (meta) {
-            /** Filter fields used in a specific form */
-            fields.filter((f) => meta["name"] === f.for_form);
-        }
-        return fields;
-    }
     /** Get the form field by name */
     function _get(name, fields) {
         return fields.filter((f) => f.name === name)[0];
     }
-    //#endregion
-    // #region HTML Event Helpers
     /**
-     * Attach the OnEvents events to each form.field.
-     * Parent: form.useField(...)
+     * Set any attributes on the given fields.
      */
-    function _attachEventListeners(field, on_events, callback) {
-        Object.entries(on_events).forEach(([eventName, shouldListen]) => {
-            /** If shouldListen true, then add the event listener */
-            if (shouldListen) {
-                if (field.node?.nodeName === "SELECT" && eventName !== "input") {
-                    field.addEventListener(eventName, callback);
-                }
-                if (field.node?.nodeName !== "SELECT") {
-                    field.addEventListener(eventName, callback);
-                }
+    function _setFieldAttributes(target_fields, fields, attributes) {
+        let i = 0, len = target_fields.length;
+        if (len === 0)
+            return;
+        const all_field_names = fields.map((f) => f.name);
+        for (; len > i; ++i) {
+            const field_index = all_field_names.indexOf(target_fields[i]);
+            if (field_index !== -1) {
+                const field_name = all_field_names[field_index];
+                _setFieldAttribute(field_name, fields, attributes);
+            }
+        }
+    }
+    /**
+     * Set any attributes on the given field.
+     */
+    function _setFieldAttribute(name, fields, attributes) {
+        /**  Get field config */
+        const f = _get(name, fields);
+        /**  Loop over key of Partial FieldConfig */
+        let k;
+        for (k in attributes) {
+            /**  If we hit the attributes property then we set the field.attributes */
+            if (k === "attributes") {
+                Object.assign(f.attributes, attributes[k]);
+            }
+            else if (k !== "name") {
+                /**  "name" is readonly on FieldConfig */
+                setFieldProperty(f, k, attributes[k]);
+            }
+        }
+    }
+    /**
+     * Initially created to deal with TS compiler errors.
+     * Dynamically assigning a value to f[key] wouldn't play nice.
+     */
+    function setFieldProperty(f, key, value) {
+        f[key] = value;
+    }
+
+    /**
+     * Using this.field_order, rearrange the order of the fields.
+     */
+    function _setFieldOrder(field_order, fields) {
+        let newLayout = [];
+        let leftovers = [];
+        /** Loop over the order... */
+        field_order.forEach((name) => {
+            const field = _get(name, fields);
+            /** If the field.name and the order name match... */
+            if (field.name === name) {
+                /** Then push it to the fields array */
+                newLayout.push(field);
+            }
+            else if (leftovers.indexOf(field) === -1 &&
+                field_order.indexOf(field.name) === -1) {
+                /** Field is not in the order, so push it to bottom of order. */
+                leftovers.push(field);
             }
         });
+        fields = [...newLayout, ...leftovers];
+        return fields;
     }
-    function _addCallbackToField(form, field, event, callback, required_fields) {
-        /** Check if callback is of type ValidationCallback */
-        if (callback && callback.when) {
-            field.addEventListener(event, _executeValidationEvent(form, required_fields, undefined, [
-                callback,
-            ]));
-        }
-        else {
-            field.addEventListener(event, callback);
-        }
-    }
-    //#endregion
-    // #region Linking Utilities
+
+    /**
+     * ---------------------------------------------------------------------------
+     *
+     * *** Linking Methods ***
+     *
+     * This section handles linking values and errors.
+     * Nearly all of these functions are part of hot paths.
+     *
+     * ---------------------------------------------------------------------------
+     */
     /**
      * Link form.errors to it's corresponding field.errors
      * Via error[field_name]
@@ -439,14 +446,14 @@
             if (Array.isArray(err)) {
                 err = err[0];
                 if (err["field_key"]) {
-                    const f = _get(err["field_key"], fields);
-                    f.errors.set(err);
+                    const field = _get(err["field_key"], fields);
+                    field.errors.set(err);
                 }
             }
             else {
                 if (err["field_key"]) {
-                    const f = _get(err["field_key"], fields);
-                    f.errors.set(err);
+                    const field = _get(err["field_key"], fields);
+                    field.errors.set(err);
                 }
             }
         });
@@ -456,18 +463,13 @@
      *
      * @Hotpath
      */
-    function _linkAllValues(from_fields_to_model, fields, model, event) {
+    function _linkAllValues(from_fields_to_model, fields, model) {
         fields.forEach((field) => {
             /** Get name and value of the field */
-            const name = field.name, val = field.value, value = 
-            /** @ts-ignore */
-            event?.target?.name === name ? getValueFromEvent(event) : undefined;
-            /**  Link field[values] to model[values] */
+            const name = field.name, val = field.value;
             if (from_fields_to_model) {
-                model[name] = value
-                    ? parseIntOrValue(value)
-                    : parseIntOrValue(get_store_value(val));
-                // model[name as keyof T] = parseIntOrValue(get(val));
+                /**  Link field[values] to model[values] */
+                model[name] = get_store_value(val);
             }
             else {
                 /**  Link form.model[values] to the form.fields[values] */
@@ -475,54 +477,151 @@
             }
         });
     }
+    /**
+     * Link the event value to the target field and model.
+     *
+     * @Hotpath
+     */
     function _linkValueFromEvent(field, model, event) {
-        const value = parseIntOrValue(getValueFromEvent(event));
-        field.value.set(value);
+        const value = _getValueFromEvent(event);
+        /**
+         * Well, we have to set both.
+         * This compensates for native select elements and more.
+         */
         model[field.name] = value;
-    }
-    function parseIntOrValue(value) {
-        const value_as_number = Number.parseInt(value);
-        if (Number.isInteger(value_as_number) ||
-            Number.isSafeInteger(value_as_number)) {
-            return value_as_number;
-        }
-        else
-            return value;
+        field.value.set(value);
     }
     /**
-     * Returns the value of the event.
-     * Can be date, number or string
+     * Check if the target has some special value properties to help us out.
+     * If not, just grab the target.value and move on.
+     *
+     * @Hotpath
      */
-    function getValueFromEvent(event) {
-        let result;
-        if (event) {
-            if (event.target) {
-                const target = event.target;
-                /** @ts-ignore */
-                if (target.valueAsDate) {
-                    /** @ts-ignore */
-                    result = target.valueAsDate;
-                    /** @ts-ignore */
-                }
-                else if (
-                /** @ts-ignore */
-                target.valueAsNumber ||
-                    /** @ts-ignore */
-                    target.valueAsNumber === 0) {
-                    /** @ts-ignore */
-                    result = target.valueAsNumber;
-                    /** @ts-ignore */
-                }
-                else if (target.value) {
-                    /** @ts-ignore */
-                    result = target.value;
-                }
-            }
-        }
-        return result;
+    function _getValueFromEvent(event) {
+        /** @ts-ignore */
+        if (event && event.target)
+            return _parseNumberOrValue(event.target.value);
+        else
+            return undefined;
     }
-    //#endregion
-    // #region Validation Helpers
+    const max_int = Number.MAX_SAFE_INTEGER;
+    /**
+     * Check if the value is a (safe) intiger.
+     * Because the event value will happily pass the number 1 as
+     * "1", a string. So we parse it, check it, and if it's safe, return it.
+     * Otherwise just return the initial value.
+     *
+     * We check if the value is not a number and if the value (as a number)
+     * is greater than the max number value.
+     * If either is true, return plain value.
+     * Else return value as number.
+     *
+     * @Hotpath
+     */
+    function _parseNumberOrValue(value) {
+        if (isNaN(+value) || +value >= max_int)
+            return value;
+        else
+            return +value;
+    }
+
+    /**
+     * ---------------------------------------------------------------------------
+     *
+     * *** Form State ***
+     *
+     * Will write later. Files delted and source control didnt catch.
+     *
+     * ---------------------------------------------------------------------------
+     */
+    /**
+     * Helper function for value_change emitter.
+     * Write the form's value changes to form.value_changes.
+     *
+     * @Hotpath
+     *
+     * @param changes incoming value changes
+     * @param field field emitting the changes
+     */
+    function _setValueChanges(changes, field) {
+        const _changes = get_store_value(changes);
+        /** Is the change is on the same field? */
+        if (_changes[field.name]) {
+            _changes[field.name] = get_store_value(field.value);
+            changes.set({ ..._changes });
+        }
+        else {
+            /** Or is the change on a different field? */
+            changes.set({ ..._changes, [field.name]: get_store_value(field.value) });
+        }
+    }
+    /**
+     * Is the current form state different than the initial state?
+     *
+     * I've tested it with ~ 1000 fields in a single class with very slight input lag.
+     *
+     * @Hotpath
+     */
+    function _hasStateChanged(value_changes, changed) {
+        // const changes = get(value_changes) !== {} ? get(value_changes) : null;
+        const changes = get_store_value(value_changes);
+        if (changes && changes !== {} && Object.keys(changes).length > 0) {
+            changed.set(true);
+            return;
+        }
+        changed.set(false);
+    }
+    /**
+     * Grab a snapshot of several items that generally define the state of the form
+     * and serialize them into a format that's easy-ish to check/deserialize (for resetting)
+     */
+    function _setInitialState(form, initial_state) {
+        Object.assign(initial_state.model, form.model);
+        if (form.errors && form.errors.length > 0) {
+            initial_state.errors = [...form.errors];
+        }
+        else {
+            initial_state.errors = [];
+        }
+        return initial_state;
+    }
+    /**
+     * Reset form to inital state.
+     */
+    function _resetState(form, initial_state) {
+        /** !CANNOT OVERWRITE MODEL. VALIDATION GETS FUCKED UP! */
+        Object.assign(form.model, initial_state.model);
+        /** Clear the form errors before assigning initial_state.errors */
+        form.clearErrors();
+        if (initial_state.errors && initial_state.errors.length > 0) {
+            form.errors = [...initial_state.errors];
+        }
+        else {
+            form.errors = [];
+        }
+        /** Done serializing the initial_state, now link everything. */
+        /** Link the values, now */
+        _linkAllValues(false, form.fields, form.model);
+        /** If there were errors in the inital_state
+         *  link them to each field
+         */
+        if (form.errors && form.errors.length > 0) {
+            _linkAllErrors(form.errors, form.fields);
+        }
+        /** Reset the value changes and the "changed" store */
+        form.value_changes.set({});
+        form.changed.set(false);
+    }
+
+    /**
+     * ---------------------------------------------------------------------------
+     *
+     * *** Form Validation ***
+     *
+     * Will write later. Files delted and source control didnt catch.
+     *
+     * ---------------------------------------------------------------------------
+     */
     /**
      * Hanlde the events that will fire for each field.
      * Corresponds to the form.on_events field.
@@ -534,7 +633,9 @@
         form.pristine.set(false);
         /** Execute pre-validation callbacks */
         _executeCallbacks([
-            field && _linkValueFromEvent(field, form.model, event),
+            field &&
+                form.validation_options.when_link_fields_to_model === "always" &&
+                _linkValueFromEvent(field, form.model, event),
             /** Execution step may need work */
             field && _setValueChanges(form.value_changes, field),
             callbacks && _executeValidationCallbacks("before", callbacks),
@@ -629,7 +730,9 @@
              * If the config tells us to link the values only when the form
              * is valid, then link them here.
              */
-            field && _linkValueFromEvent(field, form.model, event);
+            field &&
+                form.validation_options.when_link_fields_to_model === "valid" &&
+                _linkValueFromEvent(field, form.model, event);
             form.clearErrors(); /** Clear form errors */
             form.valid.set(true); /** Form is valid! */
         }
@@ -663,157 +766,107 @@
         }
         return true;
     }
-    //#endregion
-    // #region Form State
+
     /**
-     * Helper function for value_change emitter.
-     * Write the form's value changes to form.value_changes.
+     * ---------------------------------------------------------------------------
      *
-     * @Hotpath
+     * *** Form Setup ***
      *
-     * @param changes incoming value changes
-     * @param field field emitting the changes
-     */
-    function _setValueChanges(changes, field) {
-        const _changes = get_store_value(changes);
-        /** Is the change is on the same field? */
-        if (_changes[field.name]) {
-            _changes[field.name] = get_store_value(field.value);
-            changes.set({ ..._changes });
-        }
-        else {
-            /** Or is the change on a different field? */
-            changes.set({ ..._changes, [field.name]: get_store_value(field.value) });
-        }
-    }
-    /**
-     * Is the current form state different than the initial state?
+     * Will write later. Files delted and source control didnt catch.
      *
-     * I've tested it with ~ 1000 fields in a single class with very slight input lag.
+     * ---------------------------------------------------------------------------
+     */
+    /**
+     * Build the field configs from this.model using metadata-reflection.
+     * Grab the editableProperties from the @field decorator.
      *
-     * @Hotpath
+     * @TODO Create method to use plain JSON as model, fields and validation schema
      */
-    function _hasStateChanged(value_changes, changed) {
-        // const changes = get(value_changes) !== {} ? get(value_changes) : null;
-        const changes = get_store_value(value_changes);
-        if (changes && changes !== {} && Object.keys(changes).length > 0) {
-            changed.set(true);
-            return;
-        }
-        changed.set(false);
-    }
-    /**
-     * Grab a snapshot of several items that generally define the state of the form
-     * and serialize them into a format that's easy-ish to check/deserialize (for resetting)
-     */
-    function _setInitialState(form, initial_state) {
-        Object.assign(initial_state.model, form.model);
-        if (form.errors && form.errors.length > 0) {
-            initial_state.errors = [...form.errors];
-        }
-        else {
-            initial_state.errors = [];
-        }
-        return initial_state;
-    }
-    /**
-     * Reset form to inital state.
-     */
-    function _resetState(form, initial_state) {
-        /** !CANNOT OVERWRITE MODEL. VALIDATION GETS FUCKED UP! */
-        Object.assign(form.model, initial_state.model);
-        /** Clear the form errors before assigning initial_state.errors */
-        form.clearErrors();
-        if (initial_state.errors && initial_state.errors.length > 0) {
-            form.errors = [...initial_state.errors];
-        }
-        else {
-            form.errors = [];
-        }
-        /** Done serializing the initial_state, now link everything. */
-        /** Link the values, now */
-        _linkAllValues(false, form.fields, form.model);
-        /** If there were errors in the inital_state
-         *  link them to each field
-         */
-        if (form.errors && form.errors.length > 0) {
-            _linkAllErrors(form.errors, form.fields);
-        }
-        /** Reset the value changes and the "changed" store */
-        form.value_changes.set({});
-        form.changed.set(false);
-    }
-    //#endregion
-    // #region Styling
-    /**
-     * Using this.field_order, rearrange the order of the fields.
-     */
-    function _setFieldOrder(field_order, fields) {
-        let newLayout = [];
-        let leftovers = [];
-        /** Loop over the order... */
-        field_order.forEach((name) => {
-            const field = _get(name, fields);
-            /** If the field.name and the order name match... */
-            if (field.name === name) {
-                /** Then push it to the fields array */
-                newLayout.push(field);
-            }
-            else if (leftovers.indexOf(field) === -1 &&
-                field_order.indexOf(field.name) === -1) {
-                /** Field is not in the order, so push it to bottom of order. */
-                leftovers.push(field);
-            }
+    function _buildFormFields(model, meta, props = Reflect.getMetadata("editableProperties", model)) {
+        /** Map the @field fields to the form.fields */
+        const fields = props.map((prop) => {
+            /** Get the @FieldConfig using metadata reflection */
+            const field = new FieldConfig(prop, {
+                ...Reflect.getMetadata("fieldConfig", model, prop),
+                value: model[prop],
+            });
+            /** We made it. Return the field config and let's generate some inputs! */
+            return field;
         });
-        fields = [...newLayout, ...leftovers];
+        if (meta) {
+            /** Filter fields used in a specific form */
+            fields.filter((f) => meta["name"] === f.for_form);
+        }
         return fields;
     }
+    function _buildFormFieldsWithSchema(props, meta) {
+        let k, fields = [];
+        for (k in props) {
+            const field = new FieldConfig(k, {
+                ...props[k],
+            });
+            fields.push(field);
+        }
+        // const fields = props.map((prop: string) => {
+        //   /** Get the @FieldConfig using metadata reflection */
+        //   const field: FieldConfig<T> = new FieldConfig<T>(prop as keyof T, {
+        //     ...Reflect.getMetadata("fieldConfig", model, prop),
+        //     value: model[prop as keyof T],
+        //   });
+        /** We made it. Return the field config and let's generate some inputs! */
+        // return field;
+        // });
+        if (meta) {
+            /** Filter fields used in a specific form */
+            fields.filter((f) => meta["name"] === f.for_form);
+        }
+        return fields;
+    }
+    // #region HTML Event Helpers
     /**
-     * Set any attributes on the given fields.
+     * Attach the OnEvents events to each form.field.
+     * Parent: form.useField(...)
      */
-    function _setFieldAttributes(target_fields, fields, attributes) {
-        let i = 0, len = target_fields.length;
-        if (len === 0)
-            return;
-        const all_field_names = fields.map((f) => f.name);
-        for (; len > i; ++i) {
-            const field_index = all_field_names.indexOf(target_fields[i]);
-            if (field_index !== -1) {
-                const field_name = all_field_names[field_index];
-                _setFieldAttribute(field_name, fields, attributes);
+    function _attachEventListeners(field, on_events, callback) {
+        Object.entries(on_events).forEach(([eventName, shouldListen]) => {
+            /** If shouldListen true, then add the event listener */
+            if (shouldListen) {
+                if (field.node?.nodeName === "SELECT" && eventName !== "input") {
+                    field.addEventListener(eventName, callback);
+                }
+                if (field.node?.nodeName !== "SELECT") {
+                    field.addEventListener(eventName, callback);
+                }
             }
+        });
+    }
+    function _addCallbackToField(form, field, event, callback, required_fields) {
+        /** Check if callback is of type ValidationCallback */
+        if (callback && callback.when) {
+            field.addEventListener(event, _executeValidationEvent(form, required_fields, undefined, [
+                callback,
+            ]));
+        }
+        else {
+            field.addEventListener(event, callback);
         }
     }
-    /**
-     * Set any attributes on the given field.
-     */
-    function _setFieldAttribute(name, fields, attributes) {
-        /**  Get field config */
-        const f = _get(name, fields);
-        /**  Loop over key of Partial FieldConfig */
-        let k;
-        for (k in attributes) {
-            /**  If we hit the attributes property then we set the field.attributes */
-            if (k === "attributes") {
-                Object.assign(f.attributes, attributes[k]);
-            }
-            else if (k !== "name") {
-                /**  "name" is readonly on FieldConfig */
-                setFieldProperty(f, k, attributes[k]);
-            }
-        }
-    }
-    /**
-     * Initially created to deal with TS compiler errors.
-     * Dynamically assigning a value to f[key] wouldn't play nice.
-     */
-    function setFieldProperty(f, key, value) {
-        f[key] = value;
-    }
-    //#endregion
-    //#region Form Manager
-    //#endregion
 
+    // import {
+    //   _buildFormFields,
+    //   _get,
+    //   _attachEventListeners,
+    //   _linkAllErrors,
+    //   _linkAllValues,
+    //   _requiredFieldsValid,
+    //   _setFieldOrder,
+    //   _setInitialState,
+    //   _resetState,
+    //   _executeValidationEvent,
+    //   _addCallbackToField,
+    //   _setFieldAttributes,
+    //   _buildFormFieldsWithSchema,
+    // } from "./formMethods";
     /**
      * @Recomended_Use
      *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
@@ -943,6 +996,11 @@
          */
         template;
         /**
+         * Optional field layout, if you aren't using a class object.
+         * "no-class" method of building the fields.
+         */
+        field_schema;
+        /**
          * refs hold any reference data you'll be using in the form
          * e.g. seclet dropdowns, radio buttons, etc.
          *
@@ -1006,8 +1064,8 @@
          * Or via validation_options.field_shcema
          */
         buildFields = (model = this.model) => {
-            if (this.validation_options.field_schema) {
-                this.fields = _buildFormFieldsWithSchema(this.validation_options.field_schema, this.meta);
+            if (this.field_schema) {
+                this.fields = _buildFormFieldsWithSchema(this.field_schema, this.meta);
             }
             else {
                 this.fields = _buildFormFields(model, this.meta);
@@ -1028,6 +1086,14 @@
          */
         useForm = (node) => {
             /** Set up form/fields here */
+            let key;
+            for (key in this.model) {
+                const _el = node.querySelectorAll(`[name="${key}"]`);
+                if (_el && _el[0]) {
+                    const el = _el[0];
+                    this.useField(el);
+                }
+            }
         };
         /**
          * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!

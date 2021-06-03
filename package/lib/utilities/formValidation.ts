@@ -4,15 +4,22 @@ import {
   ValidationCallback,
   ValidationError,
   Callback,
-} from "..";
+} from "../core";
 import { _setValueChanges, _hasStateChanged } from "./formState";
 import {
   _linkFieldErrors,
   _linkAllErrors,
   _linkValueFromEvent,
-} from "./formUtilities";
-
-// #region Validation Helpers
+} from "./linkMethods";
+/**
+ * ---------------------------------------------------------------------------
+ *
+ * *** Form Validation ***
+ *
+ * Will write later. Files delted and source control didnt catch.
+ *
+ * ---------------------------------------------------------------------------
+ */
 
 /**
  * Hanlde the events that will fire for each field.
@@ -20,7 +27,7 @@ import {
  *
  * @Hotpath
  */
-export function _executeValidationEvent<T extends Object>(
+function _executeValidationEvent<T extends Object>(
   form: Form<T>,
   required_fields: Array<keyof T>,
   field?: FieldConfig<T>,
@@ -32,7 +39,9 @@ export function _executeValidationEvent<T extends Object>(
 
   /** Execute pre-validation callbacks */
   _executeCallbacks([
-    field && _linkValueFromEvent(field, form.model, event),
+    field &&
+      form.validation_options.when_link_fields_to_model === "always" &&
+      _linkValueFromEvent(field, form.model, event),
     /** Execution step may need work */
     field && _setValueChanges(form.value_changes, field),
     callbacks && _executeValidationCallbacks("before", callbacks),
@@ -95,7 +104,7 @@ function _callFunction(cb: Callback) {
  *
  * @Hotpath
  */
-export function _executeCallbacks(callbacks: Callback | Callback[]): void {
+function _executeCallbacks(callbacks: Callback | Callback[]): void {
   /** Is it an Array of callbacks? */
   if (Array.isArray(callbacks)) {
     callbacks.forEach((cb) => {
@@ -115,7 +124,7 @@ export function _executeCallbacks(callbacks: Callback | Callback[]): void {
  *
  * @Hotpath
  */
-export async function _handleValidationSideEffects<T extends Object>(
+async function _handleValidationSideEffects<T extends Object>(
   form: Form<T>,
   errors: ValidationError[],
   required_fields: Array<keyof T>,
@@ -148,7 +157,9 @@ export async function _handleValidationSideEffects<T extends Object>(
      * If the config tells us to link the values only when the form
      * is valid, then link them here.
      */
-    field && _linkValueFromEvent(field, form.model, event);
+    field &&
+      form.validation_options.when_link_fields_to_model === "valid" &&
+      _linkValueFromEvent(field, form.model, event);
     form.clearErrors(); /** Clear form errors */
     form.valid.set(true); /** Form is valid! */
   }
@@ -163,7 +174,7 @@ export async function _handleValidationSideEffects<T extends Object>(
  *
  * @Hotpath
  */
-export function _requiredFieldsValid<T extends Object>(
+function _requiredFieldsValid<T extends Object>(
   errors: ValidationError[],
   required_fields: Array<keyof T>
 ): boolean {
@@ -186,4 +197,8 @@ export function _requiredFieldsValid<T extends Object>(
   return true;
 }
 
-//#endregion
+export {
+  _executeValidationEvent,
+  _executeCallbacks,
+  _handleValidationSideEffects,
+};

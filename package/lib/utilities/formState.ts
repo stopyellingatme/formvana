@@ -1,8 +1,16 @@
-// #region Form State
-
 import { Writable, get } from "svelte/store";
-import { FieldConfig, Form, InitialFormState } from "..";
-import { _linkAllValues, _linkAllErrors } from "./formUtilities";
+import { FieldConfig, Form, InitialFormState } from "../core";
+import { _linkAllValues, _linkAllErrors } from "./linkMethods";
+
+/**
+ * ---------------------------------------------------------------------------
+ *
+ * *** Form State ***
+ *
+ * Will write later. Files delted and source control didnt catch.
+ *
+ * ---------------------------------------------------------------------------
+ */
 
 /**
  * Helper function for value_change emitter.
@@ -13,7 +21,7 @@ import { _linkAllValues, _linkAllErrors } from "./formUtilities";
  * @param changes incoming value changes
  * @param field field emitting the changes
  */
-export function _setValueChanges<T extends Object>(
+function _setValueChanges<T extends Object>(
   changes: Writable<Record<keyof T | any, T[keyof T]>>,
   field: FieldConfig<T>
 ): void {
@@ -36,7 +44,7 @@ export function _setValueChanges<T extends Object>(
  *
  * @Hotpath
  */
-export function _hasStateChanged(
+function _hasStateChanged(
   value_changes: Writable<Record<string, any>>,
   changed: Writable<boolean>
 ): void {
@@ -54,7 +62,7 @@ export function _hasStateChanged(
  * Grab a snapshot of several items that generally define the state of the form
  * and serialize them into a format that's easy-ish to check/deserialize (for resetting)
  */
-export function _setInitialState<T extends Object>(
+function _setInitialState<T extends Object>(
   form: Form<T>,
   initial_state: InitialFormState<T>
 ): InitialFormState<T> {
@@ -71,7 +79,7 @@ export function _setInitialState<T extends Object>(
 /**
  * Reset form to inital state.
  */
-export function _resetState<T extends Object>(
+function _resetState<T extends Object>(
   form: Form<T>,
   initial_state: InitialFormState<T>
 ): void {
@@ -101,4 +109,4 @@ export function _resetState<T extends Object>(
   form.changed.set(false);
 }
 
-//#endregion
+export { _setValueChanges, _hasStateChanged, _setInitialState, _resetState };

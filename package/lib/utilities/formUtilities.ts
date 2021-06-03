@@ -1,140 +1,82 @@
-
-// #region Linking Utilities
-
 import { get } from "svelte/store";
-import { ValidationError } from "..";
+import { ValidationError } from "../core/Types";
 import { FieldConfig } from "../core/FieldConfig";
-import { _get } from "../core/formMethods";
 
 /**
- * Link form.errors to it's corresponding field.errors
- * Via error[field_name]
+ * ---------------------------------------------------------------------------
  *
- * @Hotpath
+ * *** General Form Utilities ***
+ *
+ * Will write later. Files delted and source control didnt catch.
+ *
+ * ---------------------------------------------------------------------------
  */
- export function _linkFieldErrors<T extends Object>(
-  errors: ValidationError[],
-  field: FieldConfig<T>
-): void {
-  const error = errors.filter((e) => e["field_key"] === field.name);
-  // Check if there's an error for the field
-  if (error && error.length > 0) {
-    field.errors.set(error[0]);
-  } else {
-    /**  Very important! Don't change! */
-    field.errors.set(undefined);
-  }
-}
 
-/**
- * Link all Validation Errors on Form.errors to each field via the
- * field_error_link_name.
- *
- * @Hotpath
- */
-export function _linkAllErrors<T extends Object>(
-  errors: ValidationError[],
+/** Get the form field by name */
+function _get<T extends Object>(
+  name: keyof T,
   fields: FieldConfig<T>[]
-): void {
-  errors.forEach((err) => {
-    if (Array.isArray(err)) {
-      err = err[0];
-      if (err["field_key"]) {
-        const f = _get(err["field_key" as keyof ValidationError], fields);
-        f.errors.set(err);
-      }
-    } else {
-      if (err["field_key"]) {
-        const f = _get(err["field_key" as keyof ValidationError], fields);
-        f.errors.set(err);
-      }
-    }
-  });
+): FieldConfig<T> {
+  return fields.filter((f) => f.name === name)[0];
 }
 
 /**
- * Link values from FIELDS to MODEL or MODEL to FIELDS
- *
- * @Hotpath
+ * Set any attributes on the given fields.
  */
-export function _linkAllValues<T extends Object>(
-  from_fields_to_model: boolean,
+function _setFieldAttributes<T extends Object>(
+  target_fields: Array<keyof T>,
   fields: FieldConfig<T>[],
-  model: T,
-  event?: Event
+  attributes: Partial<FieldConfig<T>>
 ): void {
-  fields.forEach((field) => {
-    /** Get name and value of the field */
-    const name = field.name,
-      val = field.value,
-      value =
-        /** @ts-ignore */
-        event?.target?.name === name ? getValueFromEvent(event) : undefined;
+  let i = 0,
+    len = target_fields.length;
+  if (len === 0) return;
+  const all_field_names = fields.map((f) => f.name);
 
-    /**  Link field[values] to model[values] */
-    if (from_fields_to_model) {
-      model[name as keyof T] = value
-        ? parseIntOrValue(value)
-        : parseIntOrValue(get(val));
-      // model[name as keyof T] = parseIntOrValue(get(val));
-    } else {
-      /**  Link form.model[values] to the form.fields[values] */
-      val.set(model[name as keyof T]);
-    }
-  });
-}
+  for (; len > i; ++i) {
+    const field_index = all_field_names.indexOf(target_fields[i]);
 
-export function _linkValueFromEvent<T extends Object>(
-  field: FieldConfig<T>,
-  model: T,
-  event?: Event
-): void {
-  const value = parseIntOrValue(getValueFromEvent(event));
-  field.value.set(value);
-  model[field.name] = value;
-}
+    if (field_index !== -1) {
+      const field_name = all_field_names[field_index];
 
-function parseIntOrValue(value: any) {
-  const value_as_number = Number.parseInt(value);
-  if (
-    Number.isInteger(value_as_number) ||
-    Number.isSafeInteger(value_as_number)
-  ) {
-    return value_as_number;
-  } else return value;
-}
-
-/**
- * Returns the value of the event.
- * Can be date, number or string
- */
-function getValueFromEvent(event?: Event): Date | Number | String {
-  let result;
-  if (event) {
-    if (event.target) {
-      const target = event.target;
-
-      /** @ts-ignore */
-      if (target.valueAsDate) {
-        /** @ts-ignore */
-        result = target.valueAsDate;
-        /** @ts-ignore */
-      } else if (
-        /** @ts-ignore */
-        target.valueAsNumber ||
-        /** @ts-ignore */
-        target.valueAsNumber === 0
-      ) {
-        /** @ts-ignore */
-        result = target.valueAsNumber;
-        /** @ts-ignore */
-      } else if (target.value) {
-        /** @ts-ignore */
-        result = target.value;
-      }
+      _setFieldAttribute(field_name, fields, attributes);
     }
   }
-  return result;
 }
 
-//#endregion
+/**
+ * Set any attributes on the given field.
+ */
+function _setFieldAttribute<T extends Object>(
+  name: keyof T,
+  fields: FieldConfig<T>[],
+  attributes: Partial<FieldConfig<T>>
+): void {
+  /**  Get field config */
+  const f: FieldConfig<T> = _get(name, fields);
+  /**  Loop over key of Partial FieldConfig */
+  let k: keyof typeof attributes;
+  for (k in attributes) {
+    /**  If we hit the attributes property then we set the field.attributes */
+    if (k === "attributes") {
+      Object.assign(f.attributes, attributes[k]);
+    } else if (k !== "name") {
+      /**  "name" is readonly on FieldConfig */
+      setFieldProperty(f, k, attributes[k]);
+    }
+  }
+}
+
+/**
+ * Initially created to deal with TS compiler errors.
+ * Dynamically assigning a value to f[key] wouldn't play nice.
+ */
+function setFieldProperty<T extends Object, K extends keyof FieldConfig<T>>(
+  f: FieldConfig<T>,
+  key: K,
+  value: FieldConfig<T>[K]
+) {
+  f[key] = value;
+}
+
+export { _get, _setFieldAttributes, _setFieldAttribute };

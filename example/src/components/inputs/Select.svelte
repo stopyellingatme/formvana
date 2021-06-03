@@ -3,7 +3,6 @@
 
   export let field;
   export let options;
-  export let useInput;
 
   let name = field.name;
 
@@ -12,6 +11,10 @@
   const error_class =
     "bg-white relative w-full text-red-900 border border-red-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 sm:text-sm";
 
+  /**
+   * If we want the ability to programatically update the value then
+   * we have to bind the field.value to the input.
+   */
   $: valueStore = field.value;
   $: errorsStore = field.errors;
   $: attributes = Object.assign({}, field.attributes || {});
@@ -25,7 +28,7 @@
       {field.label}
     </label>
     <div class="relative m-1 rounded-md shadow-sm">
-      <select {name} {...attributes} class={cls} use:useInput>
+      <select {name} {...attributes} class={cls}>
         {#if $valueStore === undefined || null}
           <option selected value={undefined}> -- </option>
         {/if}

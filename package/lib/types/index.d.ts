@@ -50,11 +50,11 @@ interface ValidationOptions {
      * See the examples for more details.
      */
     options?: Record<string, any> | Object;
-    /**
-     * Optional field layout, if you aren't using a class object.
-     * "no-class" method of building the fields.
-     */
-    field_schema?: Record<string, Partial<FieldConfig<Object>>>;
+    // /**
+    //  * Optional field layout, if you aren't using a class object.
+    //  * "no-class" method of building the fields.
+    //  */
+    // field_schema?: Record<string, Partial<FieldConfig<Object>>>;
     /**
      * Which events should the form do things on?
      * @examples validate, link values, hide/disable fields, callbacks
@@ -405,6 +405,21 @@ declare class FieldStepper {
     active_step: keyof FieldDictionary | undefined;
     get fields_valid(): Writable<boolean>;
 }
+// import {
+//   _buildFormFields,
+//   _get,
+//   _attachEventListeners,
+//   _linkAllErrors,
+//   _linkAllValues,
+//   _requiredFieldsValid,
+//   _setFieldOrder,
+//   _setInitialState,
+//   _resetState,
+//   _executeValidationEvent,
+//   _addCallbackToField,
+//   _setFieldAttributes,
+//   _buildFormFieldsWithSchema,
+// } from "./formMethods";
 /**
  * @Recomended_Use
  *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
@@ -499,6 +514,11 @@ declare class Form<ModelType extends Object> {
      * to remove TS import error of .svelte files (for your template)
      */
     template?: string | typeof SvelteComponentDev | typeof SvelteComponent$0 | typeof SvelteComponent$0;
+    /**
+     * Optional field layout, if you aren't using a class object.
+     * "no-class" method of building the fields.
+     */
+    field_schema?: Record<string, Partial<FieldConfig<Object>>>;
     /**
      * refs hold any reference data you'll be using in the form
      * e.g. seclet dropdowns, radio buttons, etc.

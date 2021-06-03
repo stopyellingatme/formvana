@@ -5,9 +5,10 @@ import {
   RefData,
   ValidationCallback,
   ValidationError,
+  ValidationOptions,
 } from "@formvana";
 import { ExampleModel } from "../../../models/ExampleClass";
-import { validate, ValidationError as VError } from "class-validator";
+import { validate, ValidationError as VError, ValidatorOptions } from "class-validator";
 import ExampleTemplate from "../../../templates/ExampleTemplate.svelte";
 
 const ref_data: RefData = {
@@ -36,8 +37,14 @@ async function vali(model: any, options: any): Promise<ValidationError[]> {
   return [];
 }
 
-/** (Optional) Tweak for better perf, if needed. */
-const class_validator_options = {
+const validator = async (model, options) => {
+  return validate(model, options).then((errors: VError[]) => {
+    return errors.map((error) => {
+      return new ValidationError(error.property, error.constraints);
+    });
+  });
+};
+const class_validator_options: ValidatorOptions = {
   skipMissingProperties: false,
   dismissDefaultMessages: false,
   validationError: {
@@ -46,27 +53,20 @@ const class_validator_options = {
   },
   forbidUnknownValues: true,
   stopAtFirstError: true,
-};
+}
 
-const validator = async (model, options) => {
-  return validate(model, options).then((errors: VError[]) => {
-    return errors.map((error) => {
-      // console.log(error.property === "status_97");
-
-      return new ValidationError(error.property, error.constraints);
-    });
-  });
+const validation_options: ValidationOptions = {
+  validator: validator,
+  on_events: new OnEvents({ focus: false }),
+  /** (Optional) Tweak for better perf, if needed. */
+  options: class_validator_options,
 };
 
 function initStore() {
-  // Set up the form(vana) object
+  // Initialize the form(vana) object
   let form = new Form(
     new ExampleModel(),
-    {
-      validator: validator,
-      on_events: new OnEvents({ focus: false }),
-      ...class_validator_options,
-    },
+    validation_options,
     /** Partial Form Model Properties */
     {
       template: ExampleTemplate,
@@ -114,6 +114,7 @@ export const init = () => {
         {
           callback: () => {
             get(form_state).setValue("name_100", "some value jfkdsalfjdsk");
+            get(form_state).setValue("status_97", 1);
           },
           when: "before",
         },

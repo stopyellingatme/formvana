@@ -61,11 +61,11 @@ export interface ValidationOptions {
    */
   options?: Record<string, any> | Object;
 
-  /**
-   * Optional field layout, if you aren't using a class object.
-   * "no-class" method of building the fields.
-   */
-  field_schema?: Record<string, Partial<FieldConfig<Object>>>;
+  // /**
+  //  * Optional field layout, if you aren't using a class object.
+  //  * "no-class" method of building the fields.
+  //  */
+  // field_schema?: Record<string, Partial<FieldConfig<Object>>>;
 
   /**
    * Which events should the form do things on?

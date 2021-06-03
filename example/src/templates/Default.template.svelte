@@ -25,7 +25,7 @@
   onDestroy(() => {
     $form.destroy();
   });
-  
+
   $: loading = $form.loading;
 
   let fw, fh;
@@ -36,6 +36,7 @@
     <div class="w-full space-y-6">
       <section>
         <form
+          use:$form.useForm
           on:submit|preventDefault={handleSubmit}
           bind:clientHeight={fh}
           bind:clientWidth={fw}

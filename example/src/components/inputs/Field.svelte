@@ -13,13 +13,13 @@
 {#if !hidden}
   <div class={field.classes}>
     {#if field.selector === "input"}
-      <Input {field} useInput={$form.useField} />
+      <Input {field} />
     {:else if field.selector === "select" || field.selector === "dropdown"}
-      <!-- <Dropdown {field} options={field.options} useInput={$form.useField} /> -->
-      <Select {field} options={field.options} useInput={$form.useField} />
+      <!-- <Dropdown {field} options={field.options} /> -->
+      <Select {field} options={field.options} />
     {:else if field.selector === "textarea"}
       <!-- More fields go here! -->
-      <Textarea {field} useInput={$form.useField} />
+      <Textarea {field} />
     {/if}
   </div>
 {/if}
