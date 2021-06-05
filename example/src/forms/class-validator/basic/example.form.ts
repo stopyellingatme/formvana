@@ -17,29 +17,12 @@ import ExampleTemplate from "../../../templates/ExampleTemplate.svelte";
 
 const ref_data: RefData = {
   statuses: [
-    {
-      label: "ACTIVE",
-      value: 0,
-    },
-    {
-      label: "PENDING",
-      value: 1,
-    },
-    {
-      label: "SUSPENDED",
-      value: 2,
-    },
-    {
-      label: "ARCHIVED",
-      value: 3,
-    },
+    { label: "ACTIVE", value: 0 },
+    { label: "PENDING", value: 1 },
+    { label: "SUSPENDED", value: 2 },
+    { label: "ARCHIVED", value: 3 },
   ],
 };
-
-/** Can pass this function and form still works, albeit without validation. */
-async function vali(model: any, options: any): Promise<ValidationError[]> {
-  return [];
-}
 
 const validator = async (model, options) => {
   return validate(model, options).then((errors: VError[]) => {
@@ -59,17 +42,15 @@ const class_validator_options: ValidatorOptions = {
   stopAtFirstError: true,
 };
 
-const validation_options: ValidationOptions = {
-  validator: validator,
-  /** (Optional) Tweak for better perf, if needed. */
-  options: class_validator_options,
-};
-
 function initStore() {
   // Initialize the form(vana) object
   let form = new Form(
     new ExampleModel(),
-    validation_options,
+    {
+      validator: validator,
+      /** (Optional) Tweak for better perf, if needed. */
+      options: class_validator_options,
+    },
     /** Partial Form Model Properties */
     {
       on_events: new OnEvents({ focus: false }),
@@ -124,11 +105,11 @@ export const init = () => {
         },
       ];
       get(form_state).validate(callbacks);
-    }, 2000);
+    }, 500);
 
     setTimeout(() => {
       get(form_state).updateInitialState();
-    }, 3000);
+    }, 1100);
 
     // get(form_state).value_changes.subscribe((val) => {
     //   console.log("CHANGE: ", val);

@@ -23,9 +23,9 @@
       </div>
       <div class="sm:col-span-2">
         <div class="max-w-lg">
-          <p class="text-sm text-gray-500">
+          <!-- <p class="text-sm text-gray-500">
             {field.hint}
-          </p>
+          </p> -->
           <div class="mt-4 space-y-4">
             {#each options as option, index}
               <RadioButton {option} {index} {field} />

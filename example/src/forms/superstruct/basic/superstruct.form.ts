@@ -22,6 +22,18 @@ const refs: RefData = {
     { label: "News", value: "news" },
     { label: "Features", value: "features" },
   ],
+  parts: [
+    { label: "RTX 3090", value: 0 },
+    { label: "Ryzen Threadripper", value: 1 },
+    { label: "A House", value: 2 },
+    { label: "Wood!", value: 3 },
+  ],
+  food: [
+    { label: "Burger", value: 0 },
+    { label: "Hotdog", value: 1 },
+    { label: "Pho", value: 2 },
+    { label: "Steamed Buns", value: 3 },
+  ],
 };
 
 /**
@@ -35,6 +47,7 @@ const field_configs: FormFieldSchema = {
     label: "ID",
     required: true,
     value: writable(0),
+    attributes: { type: "number" },
   },
   title: {
     selector: "input",
@@ -56,11 +69,21 @@ const field_configs: FormFieldSchema = {
   taggers: {
     selector: "checkbox",
     data_type: "array",
-    label: "Tags:",
+    label: "Stuff I want:",
     required: true,
-    ref_key: "tags",
-    hint: "Select one or more tags",
+    ref_key: "parts",
+    hint: "These are hard to aquire in 2021!",
     value: writable([]),
+    exclude_events: ["input", "focus", "blur"],
+  },
+  foods: {
+    selector: "radio",
+    data_type: "number",
+    label: "Fooooood:",
+    required: true,
+    ref_key: "food",
+    hint: "Whatcha gonna eat?",
+    value: writable(null),
     exclude_events: ["input", "focus", "blur"],
   },
   author: {
@@ -77,6 +100,7 @@ const Article = object({
   title: string(),
   tags: array(string()),
   taggers: array(string()),
+  foods: array(number()),
   author: object({
     id: number(),
   }),
@@ -103,7 +127,7 @@ const doValidation = async (model, struct): Promise<ValidationError[]> => {
    * Otherwise if the value is above Number.MAX_SAFE_INTEGER, we return the
    * value as string. Seems sensible to me.
    */
-  // model.id = parseInt(model.id);
+  model.id = parseInt(model.id);
   /** console.log(model.id); */
 
   /** Validate the struct */

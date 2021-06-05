@@ -65,20 +65,27 @@ interface ValidationOptions {
 }
 //#endregion
 // #region Events
-/**
- * Determines which events to validate on.
- * You can insert event listeners just by adding a [string]: boolean
- * to the constructor's init object.
- * Enabled By Default: blue, change, focus, input, submit
- */
 declare class OnEvents<T extends HTMLElementEventMap> {
+    /**
+     * Determines which events to validate on.
+     * You can insert event listeners just by adding a [string]: boolean
+     * to the constructor's init object.
+     * Enabled By Default: blur, change, focus, input, submit
+     */
     constructor(init?: Partial<OnEvents<T>>, disableAll?: boolean);
+    /** On each keystroke */
+    aggressive: boolean;
+    /** Essentially on blur */
+    lazy: boolean;
+    /** On form submission */
+    passive: boolean;
     /**
      * @TODO Create easy mechanism for using "eager" validation.
+     *
+     * First, use passive.
+     * If invalid, use aggressive validation.
+     * When valid, use passive again.
      */
-    aggressive: boolean;
-    lazy: boolean;
-    passive: boolean;
     eager: boolean;
     blur: boolean;
     change: boolean;
@@ -407,7 +414,15 @@ declare class FieldConfig<T extends Object> {
     hidden?: boolean;
     /** Element.dataset hook, so you can do the really wild things! */
     data_set?: string[];
-    /** In case you'd like to filter some fields for a specific form */
+    /**
+     * * If you set this, you must set form.meta.name!
+     * * If you set this, you must set form.meta.name!
+     *
+     * In case you'd like to filter some fields for a specific form
+     *
+     * @example if you have a class to use on multiple forms, but want to
+     * use this specific field on one form instead of other. Or whatever.
+     */
     for_form?: string | string[];
     /**
      * If you're using a validation library that supports
@@ -457,9 +472,10 @@ declare class FieldStepper {
  * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
  * @TODO Do the stepper example and clean up the Form Manager interface
- * @TODO More robust testing with different input types
+ * @TODO Add more data type parsers (Object, etc.)
  * @TODO Add several plain html/css examples (without tailwind)
  *
+ * @TODO Might want to add a debug mode to inspect event listeners and stuff
  *
  */
 /**

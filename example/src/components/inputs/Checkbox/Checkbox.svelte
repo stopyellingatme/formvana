@@ -24,7 +24,8 @@
       name={field.name}
       bind:value={option.value}
       type="checkbox"
-      checked={$value.includes(option.value)}
+      checked={$value.includes(option.value) ||
+        $value.includes(parseInt(option.value))}
       {...attributes}
       class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
       id={`${field.name}-${index}`}

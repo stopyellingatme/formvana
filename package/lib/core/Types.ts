@@ -89,13 +89,14 @@ export interface ValidationOptions {
 //#endregion
 
 // #region Events
-/**
- * Determines which events to validate on.
- * You can insert event listeners just by adding a [string]: boolean
- * to the constructor's init object.
- * Enabled By Default: blue, change, focus, input, submit
- */
+
 export class OnEvents<T extends HTMLElementEventMap> {
+  /**
+   * Determines which events to validate on.
+   * You can insert event listeners just by adding a [string]: boolean
+   * to the constructor's init object.
+   * Enabled By Default: blur, change, focus, input, submit
+   */
   constructor(init?: Partial<OnEvents<T>>, disableAll: boolean = false) {
     // If disableAll is false, turn off all event listeners
     if (disableAll) {
@@ -107,12 +108,19 @@ export class OnEvents<T extends HTMLElementEventMap> {
     Object.assign(this, init);
   }
 
+  /** On each keystroke */
+  aggressive: boolean = false;
+  /** Essentially on blur */
+  lazy: boolean = false;
+  /** On form submission */
+  passive: boolean = false;
   /**
    * @TODO Create easy mechanism for using "eager" validation.
+   *
+   * First, use passive.
+   * If invalid, use aggressive validation.
+   * When valid, use passive again.
    */
-  aggressive: boolean = false;
-  lazy: boolean = false;
-  passive: boolean = false;
   eager: boolean = false;
 
   blur: boolean = true;

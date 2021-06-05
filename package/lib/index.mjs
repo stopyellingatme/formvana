@@ -175,7 +175,15 @@ class FieldConfig {
     hidden;
     /** Element.dataset hook, so you can do the really wild things! */
     data_set;
-    /** In case you'd like to filter some fields for a specific form */
+    /**
+     * * If you set this, you must set form.meta.name!
+     * * If you set this, you must set form.meta.name!
+     *
+     * In case you'd like to filter some fields for a specific form
+     *
+     * @example if you have a class to use on multiple forms, but want to
+     * use this specific field on one form instead of other. Or whatever.
+     */
     for_form;
     /**
      * If you're using a validation library that supports
@@ -268,13 +276,13 @@ class ValidationError {
 }
 //#endregion
 // #region Events
-/**
- * Determines which events to validate on.
- * You can insert event listeners just by adding a [string]: boolean
- * to the constructor's init object.
- * Enabled By Default: blue, change, focus, input, submit
- */
 class OnEvents {
+    /**
+     * Determines which events to validate on.
+     * You can insert event listeners just by adding a [string]: boolean
+     * to the constructor's init object.
+     * Enabled By Default: blur, change, focus, input, submit
+     */
     constructor(init, disableAll = false) {
         // If disableAll is false, turn off all event listeners
         if (disableAll) {
@@ -285,12 +293,19 @@ class OnEvents {
         }
         Object.assign(this, init);
     }
+    /** On each keystroke */
+    aggressive = false;
+    /** Essentially on blur */
+    lazy = false;
+    /** On form submission */
+    passive = false;
     /**
      * @TODO Create easy mechanism for using "eager" validation.
+     *
+     * First, use passive.
+     * If invalid, use aggressive validation.
+     * When valid, use passive again.
      */
-    aggressive = false;
-    lazy = false;
-    passive = false;
     eager = false;
     blur = true;
     change = true;
@@ -488,6 +503,7 @@ function _linkValueFromEvent(field, model, event) {
 }
 const int_word_list = ["number", "decimal", "range", "int", "integer", "num"];
 const array_word_list = ["array", "list", "collection", "group"];
+const obj_word_list = ["object", "obj", "record", "rec", "dictionary", "dict"];
 /**
  * Ok, there's a lot going on here.
  * But we're really just checking the data_type for special cases.
@@ -502,8 +518,12 @@ const array_word_list = ["array", "list", "collection", "group"];
 function _getValueFromEvent(event, field) {
     if (event && event.target) {
         if (field) {
-            /** Check if data_type is number-like */
+            /**
+             * Yeah, we do a lot of checking in this bitch.
+             * Deep fucking ribbit hole.
+             */
             if (int_word_list.indexOf(field.data_type) !== -1) {
+                /** Check if data_type is number-like */
                 return _parseNumberOrValue(event.target.value);
             }
             else if (field.data_type === "boolean") {
@@ -512,21 +532,31 @@ function _getValueFromEvent(event, field) {
             }
             else if (array_word_list.indexOf(field.data_type) !== -1) {
                 /** Check if data_type is Array-like */
-                let vals = [...get_store_value(field.value)];
-                if (event.target.checked && vals.indexOf(event.target.value) === -1) {
-                    vals.push(event.target.value);
-                }
-                else {
-                    vals.splice(vals.indexOf(event.target.value), 1);
-                }
-                return vals;
+                return _parseArray(event, field);
             }
+            else if (obj_word_list.indexOf(field.data_type) !== -1) ;
         }
         /** If none of the above, just retrun the unaltered value */
         return event.target.value;
     }
     else
         return undefined;
+}
+function _parseArray(event, field) {
+    let vals = [...get_store_value(field.value)];
+    /**
+     * If the target is checked and the target value isn't in the field.value
+     * then add the target value to the field value.
+     */
+    if (event.target.checked && vals.indexOf(event.target.value) === -1) {
+        vals.push(event.target.value);
+    }
+    else {
+        /** Else remove the target.value from the field.value */
+        vals.splice(vals.indexOf(event.target.value), 1);
+    }
+    /** Return the array of values */
+    return vals;
 }
 /**
  * Check if the value is a (safe) intiger.
@@ -956,9 +986,10 @@ function _addCallbackToField(form, field, event, callback, required_fields) {
  * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
  * @TODO Do the stepper example and clean up the Form Manager interface
- * @TODO More robust testing with different input types
+ * @TODO Add more data type parsers (Object, etc.)
  * @TODO Add several plain html/css examples (without tailwind)
  *
+ * @TODO Might want to add a debug mode to inspect event listeners and stuff
  *
  */
 /**

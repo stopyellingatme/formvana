@@ -76,7 +76,15 @@ export declare class FieldConfig<T extends Object> {
     hidden?: boolean;
     /** Element.dataset hook, so you can do the really wild things! */
     data_set?: string[];
-    /** In case you'd like to filter some fields for a specific form */
+    /**
+     * * If you set this, you must set form.meta.name!
+     * * If you set this, you must set form.meta.name!
+     *
+     * In case you'd like to filter some fields for a specific form
+     *
+     * @example if you have a class to use on multiple forms, but want to
+     * use this specific field on one form instead of other. Or whatever.
+     */
     for_form?: string | string[];
     /**
      * If you're using a validation library that supports

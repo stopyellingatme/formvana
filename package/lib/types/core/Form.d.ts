@@ -21,9 +21,10 @@ import { OnEvents, RefData, ValidationError, ValidationCallback, Callback, Valid
  * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
  * @TODO Do the stepper example and clean up the Form Manager interface
- * @TODO More robust testing with different input types
+ * @TODO Add more data type parsers (Object, etc.)
  * @TODO Add several plain html/css examples (without tailwind)
  *
+ * @TODO Might want to add a debug mode to inspect event listeners and stuff
  *
  */
 /**

@@ -62,20 +62,27 @@ export interface ValidationOptions {
     /** When to link this.field values to this.model values */
     when_link_fields_to_model?: LinkOnEvent;
 }
-/**
- * Determines which events to validate on.
- * You can insert event listeners just by adding a [string]: boolean
- * to the constructor's init object.
- * Enabled By Default: blue, change, focus, input, submit
- */
 export declare class OnEvents<T extends HTMLElementEventMap> {
+    /**
+     * Determines which events to validate on.
+     * You can insert event listeners just by adding a [string]: boolean
+     * to the constructor's init object.
+     * Enabled By Default: blur, change, focus, input, submit
+     */
     constructor(init?: Partial<OnEvents<T>>, disableAll?: boolean);
+    /** On each keystroke */
+    aggressive: boolean;
+    /** Essentially on blur */
+    lazy: boolean;
+    /** On form submission */
+    passive: boolean;
     /**
      * @TODO Create easy mechanism for using "eager" validation.
+     *
+     * First, use passive.
+     * If invalid, use aggressive validation.
+     * When valid, use passive again.
      */
-    aggressive: boolean;
-    lazy: boolean;
-    passive: boolean;
     eager: boolean;
     blur: boolean;
     change: boolean;
