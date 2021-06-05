@@ -43,7 +43,7 @@ export class ExampleModel {
 `;
 
 const field = (
-  type,
+  data_type,
   name,
   label,
   req,
@@ -53,16 +53,16 @@ const field = (
   initial_val,
   ref_key,
   is_group,
-  is_step
+  is_step,
+  input_type
 ) => `
   ${validators.join("\n")}
   @field({
       selector: "${el}",
-      type: "${type}",
+      data_type: "${data_type}",
       label: "${label}",
       required: ${req},${("\n", hint ? 'hint: "' + hint + '",' : "")}
-      classes: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "${label}" },${
+      attributes: { placeholder: "${label}", type: "${input_type}" },${
   ("\n", ref_key ? 'ref_key: "' + ref_key + '",' : "")
 }${
   ("\n", is_group ? "group: { name: " + name + ", label: " + label + " }," : "")
@@ -78,7 +78,7 @@ function psudoRandomGetField(i) {
   let f = null;
   if (i % 5 === 0) {
     f = field(
-      "text",
+      "string",
       "name_" + i,
       "Name " + i,
       true,
@@ -91,11 +91,12 @@ function psudoRandomGetField(i) {
       "",
       null,
       null,
-      null
+      null,
+      "text"
     );
   } else if (i % 2 === 0) {
     f = field(
-      "email",
+      "string",
       "email_" + i,
       "Email " + i,
       true,
@@ -105,11 +106,12 @@ function psudoRandomGetField(i) {
       "",
       null,
       null,
-      null
+      null,
+      "email"
     );
   } else if (i % 3 === 0) {
     f = field(
-      "text",
+      "string",
       "description_" + i,
       "Description " + i,
       false,
@@ -119,11 +121,12 @@ function psudoRandomGetField(i) {
       "",
       null,
       null,
-      null
+      null,
+      "text"
     );
   } else {
     f = field(
-      "select",
+      "number",
       "status_" + i,
       "Status " + i,
       true,
@@ -133,7 +136,8 @@ function psudoRandomGetField(i) {
       null,
       "statuses",
       null,
-      null
+      null,
+      "number"
     );
   }
   return f;

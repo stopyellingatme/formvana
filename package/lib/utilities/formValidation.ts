@@ -1,9 +1,11 @@
+import { get } from "svelte/store";
 import {
   Form,
   FieldConfig,
   ValidationCallback,
   ValidationError,
   Callback,
+  ElementEvent,
 } from "../core";
 import { _setValueChanges, _hasStateChanged } from "./formState";
 import {
@@ -32,10 +34,12 @@ function _executeValidationEvent<T extends Object>(
   required_fields: Array<keyof T>,
   field?: FieldConfig<T>,
   callbacks?: ValidationCallback[],
-  event?: Event
+  event?: ElementEvent
 ): Promise<ValidationError[]> | undefined {
   /** The form has been altered (no longer pristine) */
   form.pristine.set(false);
+  /** If field && it hasn't been marked as touched... touch it. */
+  if (field && !get(field.touched)) field.touched.set(true);
 
   /** Execute pre-validation callbacks */
   _executeCallbacks([
@@ -51,23 +55,34 @@ function _executeValidationEvent<T extends Object>(
    * @TODO This section needs a rework.
    * Too many moving parts.
    * Hard to pass in custom validation parameters.
+   *
+   * If there's validation options, use them.
+   * Else, just fire the callbacks and be done.
    */
-  return form.validation_options
-    .validator(form.model, form.validation_options.options)
-    .then((errors: ValidationError[]) => {
-      _executeCallbacks([
-        _handleValidationSideEffects(
-          form,
-          errors,
-          required_fields,
-          field,
-          event
-        ),
-        _hasStateChanged(form.value_changes, form.changed),
-        callbacks && _executeValidationCallbacks("after", callbacks),
-      ]);
-      return errors;
-    });
+  if (form.validation_options) {
+    return form.validation_options
+      .validator(form.model, form.validation_options.options)
+      .then((errors: ValidationError[]) => {
+        _executeCallbacks([
+          _handleValidationSideEffects(
+            form,
+            errors,
+            required_fields,
+            field,
+            event
+          ),
+          _hasStateChanged(form.value_changes, form.changed),
+          callbacks && _executeValidationCallbacks("after", callbacks),
+        ]);
+        return errors;
+      });
+  } else {
+    _executeCallbacks([
+      _hasStateChanged(form.value_changes, form.changed),
+      callbacks && _executeValidationCallbacks("after", callbacks),
+    ]);
+    return undefined;
+  }
 }
 
 /**
@@ -129,7 +144,7 @@ async function _handleValidationSideEffects<T extends Object>(
   errors: ValidationError[],
   required_fields: Array<keyof T>,
   field?: FieldConfig<T>,
-  event?: Event
+  event?: ElementEvent
 ): Promise<ValidationError[]> {
   /**  There are errors! */
   if (errors && errors.length > 0) {

@@ -5,16 +5,12 @@
 
   let name = field.name;
 
-  let default_class =
-    "block w-full px-3 py-2 placeholder-gray-400 border border-gray-300 appearance-none transition duration-150 ease-in-out rounded-md focus:outline-none focus:shadow-outline-blue focus:border-blue-300 sm:text-sm sm:leading-5 disabled:cursor-not-allowed";
-  let error_class =
-    "block w-full px-3 py-2 placeholder-red-300 border border-red-300 appearance-none transition text-red-900 duration-150 ease-in-out rounded-md focus:outline-none focus:ring-red-500 focus:shadow-outline-red focus:border-red-300 sm:text-sm sm:leading-5 disabled:cursor-not-allowed";
-
   /**
-   * If we want the ability to programatically update the value then
-   * we have to bind the field.value to the input.
+   * If we want the ability to programatically/automatically update the value then
+   * we have to bind field.value to the input.
    */
   $: value = field.value;
+
   $: errorsStore = field.errors;
   $: errors = $errorsStore && $errorsStore.errors;
 
@@ -28,7 +24,12 @@
     field.attributes || {}
   );
 
-  $: cls = $errorsStore && $errorsStore.errors ? error_class : default_class;
+  /** Tailwind input classes. Changed base on errors */
+  $: classes = `block w-full px-3 py-2 border appearance-none transition duration-150 ease-in-out rounded-md focus:outline-none sm:text-sm sm:leading-5 disabled:cursor-not-allowed ${
+    errors
+      ? "placeholder-red-300 border-red-300 focus:ring-red-500 focus:border-red-300"
+      : "placeholder-gray-300 border-gray-300 focus:shadow-outline-blue focus:border-blue-300"
+  }`;
 </script>
 
 <div>
@@ -36,7 +37,7 @@
     {field.label}
   </label>
   <div class="relative mt-1 rounded-md shadow-sm">
-    <input {name} {...attributes} class={cls} bind:value={$value} />
+    <input {name} {...attributes} class={classes} bind:value={$value} />
     {#if errors}
       <!-- This is the red X in the input box -->
       <div

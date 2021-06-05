@@ -1,7 +1,7 @@
 import { Writable } from "svelte/store";
 import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
-import { FieldConfig } from ".";
-import { RefData, ValidationError, ValidationCallback, Callback, ValidationOptions, InitialFormState } from "./Types";
+import { FieldConfig } from "./FieldConfig";
+import { OnEvents, RefData, ValidationError, ValidationCallback, Callback, ValidationOptions, InitialFormState, FormFieldSchema } from "./Types";
 /**
  * @Recomended_Use
  *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
@@ -23,13 +23,8 @@ import { RefData, ValidationError, ValidationCallback, Callback, ValidationOptio
  * @TODO Do the stepper example and clean up the Form Manager interface
  * @TODO More robust testing with different input types
  * @TODO Add several plain html/css examples (without tailwind)
- * @TODO Clean up form control creation/binding - too complex, currently.
  *
  *
- *
- * @TODO Make a use:Form directive that grabs the fields by name and adds the
- * relevant listeners and hookups. This will remove the need for value:binding
- * and on:event shit.
  */
 /**
  * Formvana Form Class
@@ -48,7 +43,11 @@ import { RefData, ValidationError, ValidationCallback, Callback, ValidationOptio
  */
 export declare class Form<ModelType extends Object> {
     #private;
-    constructor(model: ModelType, validation_options: Partial<ValidationOptions>, form_properties?: Partial<Form<ModelType>>);
+    constructor(model: ModelType, validation_options?: Partial<ValidationOptions>, form_properties?: Partial<Form<ModelType>>);
+    /**
+     * HTML Node of form object.
+     */
+    node?: HTMLFormElement;
     /**
      * This is your form Model/Schema.
      * Used to build the form.fields.
@@ -73,9 +72,10 @@ export declare class Form<ModelType extends Object> {
     /**
      * validation_options contains the logic and configuration for
      * validating the form as well as linking errors to fields.
-     * If you're using class-validator, just pass in the validate func
      */
     validation_options: ValidationOptions;
+    /** Which events should the form dispatch side effects? */
+    on_events: OnEvents<HTMLElementEventMap>;
     /** Is the form valid? */
     valid: Writable<boolean>;
     /** Has the form state changed from it's initial value? */
@@ -99,7 +99,7 @@ export declare class Form<ModelType extends Object> {
      * Optional field layout, if you aren't using a class object.
      * "no-class" method of building the fields.
      */
-    field_schema?: Record<string, Partial<FieldConfig<Object>>>;
+    field_schema?: FormFieldSchema;
     /**
      * refs hold any reference data you'll be using in the form
      * e.g. seclet dropdowns, radio buttons, etc.
@@ -155,21 +155,6 @@ export declare class Form<ModelType extends Object> {
      */
     useForm: (node: HTMLFormElement) => void;
     /**
-     * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!
-     * This hooks up the event listeners!
-     *
-     * This is for Svelte's "use:FUNCTION" feature.
-     * The "use" directive passes the HTML Node as a parameter
-     * to the given function (e.g. use:useField(node: HTMLElement)).
-     *
-     * Use on the element that will be interacted with.
-     * e.g. <input/> -- <button/> -- <select/> -- etc.
-     * Check examples folder for more details.
-     */
-    useField: (node: HTMLElement & {
-        name: keyof ModelType;
-    }) => void;
-    /**
      * Validate the form!
      * You can pass in callbacks as needed.
      * Callbacks can be called "before" or "after" validation.
@@ -209,7 +194,11 @@ export declare class Form<ModelType extends Object> {
      * Removes all event listeners and clears the form state.
      */
     destroy: () => void;
-    /** Resets to the inital state of the form. */
+    /**
+     * Resets to the inital state of the form.
+     *
+     * Only model and errors are saved in initial state.
+     */
     reset: () => void;
     /** Well, this updates the initial state of the form. */
     updateInitialState: () => void;

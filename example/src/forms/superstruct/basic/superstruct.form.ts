@@ -3,11 +3,10 @@ import {
   Form,
   OnEvents,
   RefData,
-  ValidationCallback,
   ValidationError,
   FieldConfig,
+  FormFieldSchema,
 } from "@formvana";
-import { ExampleModel } from "../../../models/ExampleClass";
 import {
   validate,
   object,
@@ -18,42 +17,58 @@ import {
 } from "superstruct";
 import ExampleTemplate from "../../../templates/ExampleTemplate.svelte";
 
+const refs: RefData = {
+  tags: [
+    { label: "News", value: "news" },
+    { label: "Features", value: "features" },
+  ],
+};
+
 /**
  * All of the following is what's needed to configure a formvana instance
  * without using classes while using a different validator.
  */
-const field_configs: Record<string, Partial<FieldConfig<Object>>> = {
+const field_configs: FormFieldSchema = {
   id: {
     selector: "input",
-    type: "number",
+    data_type: "number",
     label: "ID",
     required: true,
     value: writable(0),
-    classes: "col-span-4 sm:col-span-2",
   },
   title: {
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Title",
     required: true,
     value: writable(undefined),
-    classes: "col-span-4 sm:col-span-2",
   },
   tags: {
-    selector: "checkboxes",
-    type: "checkbox",
-    label: "Tags",
+    selector: "checkbox",
+    data_type: "array",
+    label: "Tags:",
     required: true,
-    value: writable(["news", "features"]),
-    classes: "col-span-4 sm:col-span-2",
+    ref_key: "tags",
+    hint: "Select one or more tags",
+    value: writable([]),
+    exclude_events: ["input", "focus", "blur"],
+  },
+  taggers: {
+    selector: "checkbox",
+    data_type: "array",
+    label: "Tags:",
+    required: true,
+    ref_key: "tags",
+    hint: "Select one or more tags",
+    value: writable([]),
+    exclude_events: ["input", "focus", "blur"],
   },
   author: {
     selector: "list",
-    type: "object",
+    data_type: "object",
     label: "author",
     required: true,
     value: writable({ id: 1 }),
-    classes: "col-span-4 sm:col-span-2",
   },
 };
 
@@ -61,6 +76,7 @@ const Article = object({
   id: number(),
   title: string(),
   tags: array(string()),
+  taggers: array(string()),
   author: object({
     id: number(),
   }),
@@ -74,7 +90,7 @@ const data = Object.assign(
 );
 
 /**
- * ! TESTING TO SEE IF THIS WORKS!
+ * ! TESTING TO SEE IF THIS WORKS! -- IT WORKS! :)
  *
  * This was a test to see if it's possible/easy to coop the ValidationError
  * in order to conform other validator's error types into the proper shape.
@@ -87,7 +103,7 @@ const doValidation = async (model, struct): Promise<ValidationError[]> => {
    * Otherwise if the value is above Number.MAX_SAFE_INTEGER, we return the
    * value as string. Seems sensible to me.
    */
-  model.id = parseInt(model.id);
+  // model.id = parseInt(model.id);
   /** console.log(model.id); */
 
   /** Validate the struct */
@@ -110,7 +126,7 @@ const doValidation = async (model, struct): Promise<ValidationError[]> => {
                 .filter((failure) => failure.key === fail.key)
                 .map((err) => ({ [err.type]: err.message }))
             );
-            /** Add the validaiton error with the given field key and errors */
+            /** Return the validaiton error with the given field key and errors */
             return new ValidationError(fail.key, constraints);
           });
         }
@@ -126,13 +142,14 @@ function initStore() {
     data,
     {
       validator: doValidation,
-      on_events: new OnEvents({ focus: false }),
       options: Article,
     },
     /** Partial Form Model Properties */
     {
       template: ExampleTemplate,
       field_schema: field_configs,
+      on_events: new OnEvents({ focus: false }),
+      refs: refs,
       // disabled_fields: ["title"],
     }
   );
@@ -158,12 +175,6 @@ let initialized = false;
  */
 export const init = () => {
   if (!initialized) {
-    // get(form_state).loading.set(true);
-
-    // setTimeout(() => {
-    //   get(form_state).loading.set(false);
-    // }, 1000);
-
     setTimeout(() => {
       // const callbacks: ValidationCallback[] = [
       //   {
@@ -190,7 +201,6 @@ export const init = () => {
 
     // get(form_state).value_changes.subscribe((val) => {
     //   console.log("CHANGE: ", val);
-    //   console.log(get(form_state));
     // });
 
     /**

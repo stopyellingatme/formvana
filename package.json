@@ -5,7 +5,7 @@
   "author": "Taylor King <tking@kingking.io>",
   "description": "Searching for Form Nirvana with Typescript and Svelte.",
   "scripts": {
-    "try:vite": "cd example && pnpm run build:vite",
+    "dev:vite": "cd example && pnpm run dev:vite",
     "dev": "cd example && pnpm run dev",
     "gen:test": "node test.js",
     "gen:decorators": "tsc -p ./package",

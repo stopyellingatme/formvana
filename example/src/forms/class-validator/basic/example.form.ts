@@ -8,7 +8,11 @@ import {
   ValidationOptions,
 } from "@formvana";
 import { ExampleModel } from "../../../models/ExampleClass";
-import { validate, ValidationError as VError, ValidatorOptions } from "class-validator";
+import {
+  validate,
+  ValidationError as VError,
+  ValidatorOptions,
+} from "class-validator";
 import ExampleTemplate from "../../../templates/ExampleTemplate.svelte";
 
 const ref_data: RefData = {
@@ -53,11 +57,10 @@ const class_validator_options: ValidatorOptions = {
   },
   forbidUnknownValues: true,
   stopAtFirstError: true,
-}
+};
 
 const validation_options: ValidationOptions = {
   validator: validator,
-  on_events: new OnEvents({ focus: false }),
   /** (Optional) Tweak for better perf, if needed. */
   options: class_validator_options,
 };
@@ -69,10 +72,11 @@ function initStore() {
     validation_options,
     /** Partial Form Model Properties */
     {
+      on_events: new OnEvents({ focus: false }),
       template: ExampleTemplate,
       refs: ref_data,
       hidden_fields: ["description_3"],
-      disabled_fields: ["email_2", "email_8"],
+      disabled_fields: ["email_72", "email_8"],
     }
   );
 

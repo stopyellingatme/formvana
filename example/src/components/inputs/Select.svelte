@@ -2,24 +2,26 @@
   import InputErrors from "./InputErrors.svelte";
 
   export let field;
-  export let options;
+  let options = field.options;
 
   let name = field.name;
-
-  const default_class =
-    "bg-white relative w-full border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm";
-  const error_class =
-    "bg-white relative w-full text-red-900 border border-red-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 sm:text-sm";
 
   /**
    * If we want the ability to programatically update the value then
    * we have to bind the field.value to the input.
    */
-  $: valueStore = field.value;
+  $: value = field.value;
+
   $: errorsStore = field.errors;
-  $: attributes = Object.assign({}, field.attributes || {});
   $: errors = $errorsStore && $errorsStore.errors;
-  $: cls = errors ? error_class : default_class;
+
+  $: attributes = Object.assign({}, field.attributes || {});
+
+  $: classes = `bg-white relative w-full border rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 sm:text-sm ${
+    errors
+      ? "text-red-900 border-red-300 focus:ring-red-500 focus:border-red-300"
+      : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-300"
+  }`;
 </script>
 
 <div>
@@ -28,12 +30,12 @@
       {field.label}
     </label>
     <div class="relative m-1 rounded-md shadow-sm">
-      <select {name} {...attributes} class={cls}>
-        {#if $valueStore === undefined || null}
+      <select {name} {...attributes} class={classes}>
+        {#if $value === undefined || null}
           <option selected value={undefined}> -- </option>
         {/if}
         {#each options as option}
-          <option selected={$valueStore === option.value} value={option.value}
+          <option selected={$value === option.value} value={option.value}
             >{option.label}</option
           >
         {/each}

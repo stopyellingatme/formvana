@@ -3,6 +3,8 @@ import { get, writable, Writable } from "svelte/store";
 import {
   Callback,
   FieldAttributes,
+  FieldNode,
+  OnEvents,
   RefDataItem,
   ValidationCallback,
   ValidationError,
@@ -34,49 +36,11 @@ export class FieldConfig<T extends Object> {
       );
     }
 
-    /** Check if the value is still a Writable store */
+    /** Is value Writable store? */
     if (!this.value || !(<Writable<any>>this.value).subscribe) {
       /** If it's not, make it a writable store. */
       this.value = writable(this.value);
     }
-
-    /**  Set the type attribute if it's not already set */
-    if (this.attributes && !this.attributes["type"]) {
-      this.attributes["type"] = this.type;
-    } else if (!this.attributes) {
-      this.attributes = {};
-      this.attributes["type"] = this.type;
-    }
-
-    /**
-     * Trying to set some sane defaults when initializing field.
-     * These can be over-written easily by simply adding a value to your
-     * class field.
-     * E.g. class YourClass{ description: string = "This is a descriptor." }
-     * The text "This is a descriptor." will be linked to the FieldConfig.value
-     * when the fields are built from the model (in Form.buildFields();)
-     */
-    // switch (this.type) {
-    //   case "text" || "email" || "password" || "string":
-    //     this.value.set("");
-    //     break;
-    //   case "decimal" || "double":
-    //     this.value.set(0.0);
-    //     break;
-    //   case "number" || "int" || "integer":
-    //     this.value.set(0);
-    //     break;
-    //   case "boolean" || "choice" || "radio" || "checkbox":
-    //     this.value.set(false);
-    //     this.options = [];
-    //     break;
-    //   case "select" || "dropdown":
-    //     this.options = [];
-    //     break;
-    //   default:
-    //     this.value.set(undefined);
-    //     break;
-    // }
 
     /**
      * I'm doing this because there's not enough thought about accessibility
@@ -105,7 +69,7 @@ export class FieldConfig<T extends Object> {
    * HTML Element which the field is attached to.
    * Attached using the form.useField method.
    */
-  node?: HTMLElement;
+  node?: FieldNode<T>;
 
   /**
    * el can be either String or Svelte Component.
@@ -116,26 +80,48 @@ export class FieldConfig<T extends Object> {
 
   /** Value is a writable store defaulting to undefined. */
   value: Writable<any> = writable(undefined);
-  /** Defaults to text, can be set to anything though. */
-  type: string = "text";
-  required?: boolean;
 
-  label?: string;
-  hint?: string | string[];
+  /**
+   * This is the DATA TYPE of the value!
+   * If set to number (or decimal, or int, etc.) it will be parsed as number.
+   * If the type is not accounted for in this library, we return the original
+   * event.target.value.
+   *
+   * This is not the input.type.
+   *
+   * Defaults to "string"
+   */
+  data_type: string = "string";
 
   /**
    * Validation Errors!
-   * We're mainly looking for the "constraints".
-   * One ValidationError object can have multiple errors (constraints)
+   * We're mainly looking in the "errors" field.
+   * One ValidationError object can have multiple errors.
    */
   errors: Writable<ValidationError | undefined> = writable(undefined);
 
   /**
-   * Use styles and classes to apply styling.
-   * However, using a template/component is recommended.
+   * Attributes uses a fairly exhaustive map of most HTML Field-ish
+   * attributes.
+   *
+   * @example attributes["type"] get's set here.
+   *
+   * You also have the option to use a plain Object, for extra flexibility.
+   *
+   * @example attrubutes["description"] is ok without being a FieldAttribute
    */
-  styles?: string;
-  classes?: string;
+  attributes: Partial<FieldAttributes> | Record<string | number | symbol, any> =
+    {};
+
+  /** Has the input been altered? */
+  touched: Writable<boolean> = writable(false);
+
+  /** Is this a required field? */
+  required?: boolean;
+  /** Label can be sting or array of strings */
+  label?: string | string[];
+  /** Hint can be sting or array of strings */
+  hint?: string | string[];
 
   /** Linked to form.refs via RefData[ref_key] */
   ref_key?: string;
@@ -147,45 +133,46 @@ export class FieldConfig<T extends Object> {
   /** Pretty self-explainitory, hide the field. */
   hidden?: boolean;
 
-  /**
-   * Attributes uses a fairly exhaustive map of most HTML Field-ish
-   * attributes.
-   * You also have the option to use a plain JSON Object, for
-   * extra flexibility.
-   *
-   * @example attrubutes["description"] is ok without being a FieldAttribute
-   */
-  attributes?: Partial<FieldAttributes> | Record<string | number | symbol, any>;
   /** Element.dataset hook, so you can do the really wild things! */
   data_set?: string[];
 
-  /** In case you'd like to filter some fields for a specific form */
+  /**
+   * * If you set this, you must set form.meta.name!
+   * * If you set this, you must set form.meta.name!
+   *
+   * In case you'd like to filter some fields for a specific form
+   *
+   * @example if you have a class to use on multiple forms, but want to
+   * use this specific field on one form instead of other. Or whatever.
+   */
   for_form?: string | string[];
 
   /**
    * If you're using a validation library that supports
-   * a validation rules, validation pattern.
+   * a validation rules pattern, this is here for you.
    */
   validation_rules?: Object;
 
   /**
-   * Group is optional.
-   * Use when you'd like to group multiple fields togethter.
+   * You may need to excude some event listeners.
+   *
+   * @example exclude blur and focus events for a checkbox
    */
+  exclude_events?: Array<keyof OnEvents<HTMLElementEventMap>>;
+
+  /** Are you grouping multiple fields togethter? */
   group?: string | string[];
   /**
    * Step is used when field is part of a multi-step form.
    */
   step?: number | string;
 
-  private clearErrors = (): void => {
+  /** Clear the field's errors */
+  clearErrors = (): void => {
     this.errors.set(undefined);
   };
 
-  clear = (): void | undefined => {
-    this.clearErrors();
-  };
-
+  /** Add event listeners to the field in a more typesafe way. */
   addEventListener = (
     event: keyof HTMLElementEventMap,
     callback: ValidationCallback | Callback
@@ -194,7 +181,7 @@ export class FieldConfig<T extends Object> {
       this.node.addEventListener(
         event,
         /** Check if the callback is directly executable */
-        (e) => (callback instanceof Function ? callback(e) : callback),
+        (e: Event) => (callback instanceof Function ? callback(e) : callback),
         /** No extra options being passed in */
         false
       );

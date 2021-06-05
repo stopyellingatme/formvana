@@ -1,6 +1,6 @@
 import { SvelteComponent } from "svelte";
 import { Writable } from "svelte/store";
-import { Callback, FieldAttributes, RefDataItem, ValidationCallback, ValidationError } from "./Types";
+import { Callback, FieldAttributes, FieldNode, OnEvents, RefDataItem, ValidationCallback, ValidationError } from "./Types";
 /**
  * FieldConfig is used to help with the form auto generation functionality.
  *
@@ -21,7 +21,7 @@ export declare class FieldConfig<T extends Object> {
      * HTML Element which the field is attached to.
      * Attached using the form.useField method.
      */
-    node?: HTMLElement;
+    node?: FieldNode<T>;
     /**
      * el can be either String or Svelte Component.
      * This allows us a more flexible dynamic field generator.
@@ -30,23 +30,42 @@ export declare class FieldConfig<T extends Object> {
     selector?: string | SvelteComponent;
     /** Value is a writable store defaulting to undefined. */
     value: Writable<any>;
-    /** Defaults to text, can be set to anything though. */
-    type: string;
-    required?: boolean;
-    label?: string;
-    hint?: string | string[];
+    /**
+     * This is the DATA TYPE of the value!
+     * If set to number (or decimal, or int, etc.) it will be parsed as number.
+     * If the type is not accounted for in this library, we return the original
+     * event.target.value.
+     *
+     * This is not the input.type.
+     *
+     * Defaults to "string"
+     */
+    data_type: string;
     /**
      * Validation Errors!
-     * We're mainly looking for the "constraints".
-     * One ValidationError object can have multiple errors (constraints)
+     * We're mainly looking in the "errors" field.
+     * One ValidationError object can have multiple errors.
      */
     errors: Writable<ValidationError | undefined>;
     /**
-     * Use styles and classes to apply styling.
-     * However, using a template/component is recommended.
+     * Attributes uses a fairly exhaustive map of most HTML Field-ish
+     * attributes.
+     *
+     * @example attributes["type"] get's set here.
+     *
+     * You also have the option to use a plain Object, for extra flexibility.
+     *
+     * @example attrubutes["description"] is ok without being a FieldAttribute
      */
-    styles?: string;
-    classes?: string;
+    attributes: Partial<FieldAttributes> | Record<string | number | symbol, any>;
+    /** Has the input been altered? */
+    touched: Writable<boolean>;
+    /** Is this a required field? */
+    required?: boolean;
+    /** Label can be sting or array of strings */
+    label?: string | string[];
+    /** Hint can be sting or array of strings */
+    hint?: string | string[];
     /** Linked to form.refs via RefData[ref_key] */
     ref_key?: string;
     /** Used if there is a set of "options" to choose from. */
@@ -55,35 +74,30 @@ export declare class FieldConfig<T extends Object> {
     disabled?: boolean;
     /** Pretty self-explainitory, hide the field. */
     hidden?: boolean;
-    /**
-     * Attributes uses a fairly exhaustive map of most HTML Field-ish
-     * attributes.
-     * You also have the option to use a plain JSON Object, for
-     * extra flexibility.
-     *
-     * @example attrubutes["description"] is ok without being a FieldAttribute
-     */
-    attributes?: Partial<FieldAttributes> | Record<string | number | symbol, any>;
     /** Element.dataset hook, so you can do the really wild things! */
     data_set?: string[];
     /** In case you'd like to filter some fields for a specific form */
     for_form?: string | string[];
     /**
      * If you're using a validation library that supports
-     * a validation rules, validation pattern.
+     * a validation rules pattern, this is here for you.
      */
     validation_rules?: Object;
     /**
-     * Group is optional.
-     * Use when you'd like to group multiple fields togethter.
+     * You may need to excude some event listeners.
+     *
+     * @example exclude blur and focus events for a checkbox
      */
+    exclude_events?: Array<keyof OnEvents<HTMLElementEventMap>>;
+    /** Are you grouping multiple fields togethter? */
     group?: string | string[];
     /**
      * Step is used when field is part of a multi-step form.
      */
     step?: number | string;
-    private clearErrors;
-    clear: () => void | undefined;
+    /** Clear the field's errors */
+    clearErrors: () => void;
+    /** Add event listeners to the field in a more typesafe way. */
     addEventListener: (event: keyof HTMLElementEventMap, callback: ValidationCallback | Callback) => void;
 }
 declare type FieldDictionary = Array<FieldConfig<Object>>;

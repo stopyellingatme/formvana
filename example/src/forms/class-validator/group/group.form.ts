@@ -46,8 +46,9 @@ function initStore() {
   // Set up the form(vana) class
   let form_1 = new Form(
     new ExampleModel(),
-    { validator: validator, on_events: new OnEvents({ focus: false }) },
+    { validator: validator },
     {
+      on_events: new OnEvents({ focus: false }),
       template: GroupTemplate,
       refs: ref_data,
       hidden_fields: ["description_3", "name_10"],
@@ -57,8 +58,9 @@ function initStore() {
 
   let form_2 = new Form(
     new ExampleModel3(),
-    { validator: validator, on_events: new OnEvents({ focus: false }) },
+    { validator: validator },
     {
+      on_events: new OnEvents({ focus: false }),
       template: GroupTemplate,
       refs: ref_data,
       hidden_fields: ["email_4"],

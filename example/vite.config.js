@@ -12,19 +12,38 @@ import json from "@rollup/plugin-json";
 export default defineConfig({
   build: {
     rollupOptions: {
+      // input: "./src/main.js",
+      // output: [
+      //   {
+      //     sourcemap: true,
+      //     format: "iife",
+      //     name: "app",
+      //     file: "./public/build/bundle.js",
+      //   },
+      // ],
+      // plugins: [
+      //   postcss({
+      //     extract: true,
+      //   }),
+      //   svelte(),
+      //   resolve({
+      //     browser: true,
+      //     module: true,
+      //     dedupe: (importee) =>
+      //       importee === "svelte" || importee.startsWith("svelte/"),
+      //   }),
+      //   commonjs(),
+      //   json(),
+      // ],
+
       input: "./src/main.js",
-      output: [
-        {
-          sourcemap: true,
-          format: "iife",
-          name: "app",
-          file: "./public/build/bundle.js",
-        },
-      ],
+      output: {
+        sourcemap: true,
+        format: "iife",
+        name: "app",
+        file: "./public/build/bundle.js",
+      },
       plugins: [
-        postcss({
-          extract: true,
-        }),
         svelte(),
         resolve({
           browser: true,
@@ -32,20 +51,26 @@ export default defineConfig({
           dedupe: (importee) =>
             importee === "svelte" || importee.startsWith("svelte/"),
         }),
-        commonjs(),
-        // !production && serve(),
-        // !production && livereload("./public"),
-        // production && terser(),
-        ts(),
+        // commonjs(),
         json(),
+        postcss({
+          extract: true,
+        }),
       ],
-      watch: {
-        clearScreen: false,
-      },
+      // watch: {
+      //   clearScreen: false,
+      // },
     },
+    outDir: "/public/build/dist",
+    commonjsOptions: commonjs(),
   },
-  plugins: [svelte()],
+  // resolve: {
+  //   dedupe: (importee) =>
+  //     importee === "svelte" || importee.startsWith("svelte/"),
+  // },
+  publicDir: "/public/build",
   server: {
+    base: "/pubilc",
     port: 5000,
   },
 });

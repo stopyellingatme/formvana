@@ -46,7 +46,7 @@ interface ValidationOptions {
      * THIS IS THE SECOND PARAMETER BEING PASSED TO THE VALIDATOR FUNCTION.
      * The other is form.model.
      *
-     * This makes using other validation libraries easy.
+     * This makes using other validation libraries easier.
      * See the examples for more details.
      */
     options?: Record<string, any> | Object;
@@ -59,7 +59,7 @@ interface ValidationOptions {
      * Which events should the form do things on?
      * @examples validate, link values, hide/disable fields, callbacks
      */
-    on_events: OnEvents<HTMLElementEventMap>;
+    // on_events: OnEvents<HTMLElementEventMap>;
     /** When to link this.field values to this.model values */
     when_link_fields_to_model?: LinkOnEvent;
 }
@@ -73,6 +73,13 @@ interface ValidationOptions {
  */
 declare class OnEvents<T extends HTMLElementEventMap> {
     constructor(init?: Partial<OnEvents<T>>, disableAll?: boolean);
+    /**
+     * @TODO Create easy mechanism for using "eager" validation.
+     */
+    aggressive: boolean;
+    lazy: boolean;
+    passive: boolean;
+    eager: boolean;
     blur: boolean;
     change: boolean;
     click: boolean;
@@ -100,6 +107,18 @@ type LinkOnEvent = "always" | "valid";
 type LinkValuesOnEvent = "all" | "field";
 //#endregion
 // #region Misc
+type FieldNode<T extends Object> = (HTMLInputElement | (HTMLElement & {
+    type: string;
+}) | HTMLSelectElement | HTMLTextAreaElement) & {
+    name: keyof T;
+};
+type ElementEvent = InputEvent & {
+    target: {
+        value: any;
+        checked: boolean;
+    };
+};
+type FormFieldSchema = Record<string, Partial<FieldConfig<Object>>>;
 /**
  * Keeping it simple. Just keep up with model and errors.
  */
@@ -114,7 +133,7 @@ type InitialFormState<ModelType extends Object> = {
 interface RefDataItem {
     label: string;
     value: any;
-    data?: any;
+    meta?: any;
 }
 /** Helpful shape for loading in reference data for the Form */
 type RefData = Record<string, RefDataItem[]>;
@@ -333,7 +352,7 @@ declare class FieldConfig<T extends Object> {
      * HTML Element which the field is attached to.
      * Attached using the form.useField method.
      */
-    node?: HTMLElement;
+    node?: FieldNode<T>;
     /**
      * el can be either String or Svelte Component.
      * This allows us a more flexible dynamic field generator.
@@ -342,23 +361,42 @@ declare class FieldConfig<T extends Object> {
     selector?: string | SvelteComponent;
     /** Value is a writable store defaulting to undefined. */
     value: Writable<any>;
-    /** Defaults to text, can be set to anything though. */
-    type: string;
-    required?: boolean;
-    label?: string;
-    hint?: string | string[];
+    /**
+     * This is the DATA TYPE of the value!
+     * If set to number (or decimal, or int, etc.) it will be parsed as number.
+     * If the type is not accounted for in this library, we return the original
+     * event.target.value.
+     *
+     * This is not the input.type.
+     *
+     * Defaults to "string"
+     */
+    data_type: string;
     /**
      * Validation Errors!
-     * We're mainly looking for the "constraints".
-     * One ValidationError object can have multiple errors (constraints)
+     * We're mainly looking in the "errors" field.
+     * One ValidationError object can have multiple errors.
      */
     errors: Writable<ValidationError | undefined>;
     /**
-     * Use styles and classes to apply styling.
-     * However, using a template/component is recommended.
+     * Attributes uses a fairly exhaustive map of most HTML Field-ish
+     * attributes.
+     *
+     * @example attributes["type"] get's set here.
+     *
+     * You also have the option to use a plain Object, for extra flexibility.
+     *
+     * @example attrubutes["description"] is ok without being a FieldAttribute
      */
-    styles?: string;
-    classes?: string;
+    attributes: Partial<FieldAttributes> | Record<string | number | symbol, any>;
+    /** Has the input been altered? */
+    touched: Writable<boolean>;
+    /** Is this a required field? */
+    required?: boolean;
+    /** Label can be sting or array of strings */
+    label?: string | string[];
+    /** Hint can be sting or array of strings */
+    hint?: string | string[];
     /** Linked to form.refs via RefData[ref_key] */
     ref_key?: string;
     /** Used if there is a set of "options" to choose from. */
@@ -367,35 +405,30 @@ declare class FieldConfig<T extends Object> {
     disabled?: boolean;
     /** Pretty self-explainitory, hide the field. */
     hidden?: boolean;
-    /**
-     * Attributes uses a fairly exhaustive map of most HTML Field-ish
-     * attributes.
-     * You also have the option to use a plain JSON Object, for
-     * extra flexibility.
-     *
-     * @example attrubutes["description"] is ok without being a FieldAttribute
-     */
-    attributes?: Partial<FieldAttributes> | Record<string | number | symbol, any>;
     /** Element.dataset hook, so you can do the really wild things! */
     data_set?: string[];
     /** In case you'd like to filter some fields for a specific form */
     for_form?: string | string[];
     /**
      * If you're using a validation library that supports
-     * a validation rules, validation pattern.
+     * a validation rules pattern, this is here for you.
      */
     validation_rules?: Object;
     /**
-     * Group is optional.
-     * Use when you'd like to group multiple fields togethter.
+     * You may need to excude some event listeners.
+     *
+     * @example exclude blur and focus events for a checkbox
      */
+    exclude_events?: Array<keyof OnEvents<HTMLElementEventMap>>;
+    /** Are you grouping multiple fields togethter? */
     group?: string | string[];
     /**
      * Step is used when field is part of a multi-step form.
      */
     step?: number | string;
-    private clearErrors;
-    clear: () => void | undefined;
+    /** Clear the field's errors */
+    clearErrors: () => void;
+    /** Add event listeners to the field in a more typesafe way. */
     addEventListener: (event: keyof HTMLElementEventMap, callback: ValidationCallback | Callback) => void;
 }
 type FieldDictionary = Array<FieldConfig<Object>>;
@@ -405,21 +438,6 @@ declare class FieldStepper {
     active_step: keyof FieldDictionary | undefined;
     get fields_valid(): Writable<boolean>;
 }
-// import {
-//   _buildFormFields,
-//   _get,
-//   _attachEventListeners,
-//   _linkAllErrors,
-//   _linkAllValues,
-//   _requiredFieldsValid,
-//   _setFieldOrder,
-//   _setInitialState,
-//   _resetState,
-//   _executeValidationEvent,
-//   _addCallbackToField,
-//   _setFieldAttributes,
-//   _buildFormFieldsWithSchema,
-// } from "./formMethods";
 /**
  * @Recomended_Use
  *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
@@ -441,13 +459,8 @@ declare class FieldStepper {
  * @TODO Do the stepper example and clean up the Form Manager interface
  * @TODO More robust testing with different input types
  * @TODO Add several plain html/css examples (without tailwind)
- * @TODO Clean up form control creation/binding - too complex, currently.
  *
  *
- *
- * @TODO Make a use:Form directive that grabs the fields by name and adds the
- * relevant listeners and hookups. This will remove the need for value:binding
- * and on:event shit.
  */
 /**
  * Formvana Form Class
@@ -466,8 +479,12 @@ declare class FieldStepper {
  */
 declare class Form<ModelType extends Object> {
     #private;
-    constructor(model: ModelType, validation_options: Partial<ValidationOptions>, form_properties?: Partial<Form<ModelType>>);
+    constructor(model: ModelType, validation_options?: Partial<ValidationOptions>, form_properties?: Partial<Form<ModelType>>);
     //#region ** Fields **
+    /**
+     * HTML Node of form object.
+     */
+    node?: HTMLFormElement;
     /**
      * This is your form Model/Schema.
      * Used to build the form.fields.
@@ -492,9 +509,10 @@ declare class Form<ModelType extends Object> {
     /**
      * validation_options contains the logic and configuration for
      * validating the form as well as linking errors to fields.
-     * If you're using class-validator, just pass in the validate func
      */
     validation_options: ValidationOptions;
+    /** Which events should the form dispatch side effects? */
+    on_events: OnEvents<HTMLElementEventMap>;
     /** Is the form valid? */
     valid: Writable<boolean>;
     /** Has the form state changed from it's initial value? */
@@ -518,7 +536,7 @@ declare class Form<ModelType extends Object> {
      * Optional field layout, if you aren't using a class object.
      * "no-class" method of building the fields.
      */
-    field_schema?: Record<string, Partial<FieldConfig<Object>>>;
+    field_schema?: FormFieldSchema;
     /**
      * refs hold any reference data you'll be using in the form
      * e.g. seclet dropdowns, radio buttons, etc.
@@ -576,21 +594,6 @@ declare class Form<ModelType extends Object> {
      * Also allows for a better single source of truth for data input.
      */
     useForm: (node: HTMLFormElement) => void;
-    /**
-     * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!
-     * This hooks up the event listeners!
-     *
-     * This is for Svelte's "use:FUNCTION" feature.
-     * The "use" directive passes the HTML Node as a parameter
-     * to the given function (e.g. use:useField(node: HTMLElement)).
-     *
-     * Use on the element that will be interacted with.
-     * e.g. <input/> -- <button/> -- <select/> -- etc.
-     * Check examples folder for more details.
-     */
-    useField: (node: HTMLElement & {
-        name: keyof ModelType;
-    }) => void;
     //#endregion
     // #region - Validation
     /**
@@ -637,7 +640,11 @@ declare class Form<ModelType extends Object> {
     destroy: () => void;
     //#endregion
     // #region - Form State
-    /** Resets to the inital state of the form. */
+    /**
+     * Resets to the inital state of the form.
+     *
+     * Only model and errors are saved in initial state.
+     */
     reset: () => void;
     /** Well, this updates the initial state of the form. */
     updateInitialState: () => void;
@@ -700,4 +707,4 @@ declare class FormStepper extends FormManager {
 declare class FormGroup extends FormManager {
     constructor(forms: FormDictionary, props?: Partial<FormManager>);
 }
-export { FieldConfig, FieldStepper, Form, field, ValidationCallback, ValidatorFunction, ValidationError, ValidationOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, InitialFormState, RefDataItem, RefData, FieldAttributes, ElementAttributesMap, Callback, FormManager, FormStepper, FormGroup };
+export { FieldConfig, FieldStepper, Form, field, ValidationCallback, ValidatorFunction, ValidationError, ValidationOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, FieldNode, ElementEvent, FormFieldSchema, InitialFormState, RefDataItem, RefData, FieldAttributes, ElementAttributesMap, Callback, FormManager, FormStepper, FormGroup };

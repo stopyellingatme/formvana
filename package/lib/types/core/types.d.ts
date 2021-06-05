@@ -1,3 +1,13 @@
+/**
+ * ---------------------------------------------------------------------------
+ *
+ * *** Data Shapes (Types) ***
+ *
+ * Will write later. Files delted and source control didnt catch.
+ *
+ * ---------------------------------------------------------------------------
+ */
+import { FieldConfig } from "./FieldConfig";
 /** Using "when" gives us a little more flexibilty. */
 export interface ValidationCallback {
     callback: Callback;
@@ -41,7 +51,7 @@ export interface ValidationOptions {
      * THIS IS THE SECOND PARAMETER BEING PASSED TO THE VALIDATOR FUNCTION.
      * The other is form.model.
      *
-     * This makes using other validation libraries easy.
+     * This makes using other validation libraries easier.
      * See the examples for more details.
      */
     options?: Record<string, any> | Object;
@@ -49,7 +59,6 @@ export interface ValidationOptions {
      * Which events should the form do things on?
      * @examples validate, link values, hide/disable fields, callbacks
      */
-    on_events: OnEvents<HTMLElementEventMap>;
     /** When to link this.field values to this.model values */
     when_link_fields_to_model?: LinkOnEvent;
 }
@@ -61,6 +70,13 @@ export interface ValidationOptions {
  */
 export declare class OnEvents<T extends HTMLElementEventMap> {
     constructor(init?: Partial<OnEvents<T>>, disableAll?: boolean);
+    /**
+     * @TODO Create easy mechanism for using "eager" validation.
+     */
+    aggressive: boolean;
+    lazy: boolean;
+    passive: boolean;
+    eager: boolean;
     blur: boolean;
     change: boolean;
     click: boolean;
@@ -86,6 +102,18 @@ export declare class OnEvents<T extends HTMLElementEventMap> {
  */
 export declare type LinkOnEvent = "always" | "valid";
 export declare type LinkValuesOnEvent = "all" | "field";
+export declare type FieldNode<T extends Object> = (HTMLInputElement | (HTMLElement & {
+    type: string;
+}) | HTMLSelectElement | HTMLTextAreaElement) & {
+    name: keyof T;
+};
+export declare type ElementEvent = InputEvent & {
+    target: {
+        value: any;
+        checked: boolean;
+    };
+};
+export declare type FormFieldSchema = Record<string, Partial<FieldConfig<Object>>>;
 /**
  * Keeping it simple. Just keep up with model and errors.
  */
@@ -100,7 +128,7 @@ export declare type InitialFormState<ModelType extends Object> = {
 export interface RefDataItem {
     label: string;
     value: any;
-    data?: any;
+    meta?: any;
 }
 /** Helpful shape for loading in reference data for the Form */
 export declare type RefData = Record<string, RefDataItem[]>;

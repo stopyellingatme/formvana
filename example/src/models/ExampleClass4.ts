@@ -24,11 +24,10 @@ export class ExampleModel {
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
       selector: "select",
-      type: "select",
+      data_type: "number",
       label: "Status 1",
       required: true,
-      classes: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 1" },ref_key: "statuses",
+      attributes: { placeholder: "Status 1", type: "number" },ref_key: "statuses",
     }
   )
   status_1;
@@ -37,11 +36,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
       selector: "input",
-      type: "email",
+      data_type: "string",
       label: "Email 2",
       required: true,
-      classes: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Email 2" },
+      attributes: { placeholder: "Email 2", type: "email" },
     }
   )
   email_2;
@@ -51,11 +49,10 @@ export class ExampleModel {
 @IsString()
   @field({
       selector: "textarea",
-      type: "text",
+      data_type: "string",
       label: "Description 3",
       required: false,hint: "This is a hint!",
-      classes: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Description 3" },
+      attributes: { placeholder: "Description 3", type: "text" },
     }
   )
   description_3;
@@ -64,11 +61,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
       selector: "input",
-      type: "email",
+      data_type: "string",
       label: "Email 4",
       required: true,
-      classes: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Email 4" },
+      attributes: { placeholder: "Email 4", type: "email" },
     }
   )
   email_4;
@@ -78,11 +74,10 @@ export class ExampleModel {
 @IsString()
   @field({
       selector: "input",
-      type: "text",
+      data_type: "string",
       label: "Name 5",
       required: true,
-      classes: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Name 5" },
+      attributes: { placeholder: "Name 5", type: "text" },
     }
   )
   name_5;
@@ -91,11 +86,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
       selector: "input",
-      type: "email",
+      data_type: "string",
       label: "Email 6",
       required: true,
-      classes: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Email 6" },
+      attributes: { placeholder: "Email 6", type: "email" },
     }
   )
   email_6;
@@ -104,11 +98,10 @@ export class ExampleModel {
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
       selector: "select",
-      type: "select",
+      data_type: "number",
       label: "Status 7",
       required: true,
-      classes: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Status 7" },ref_key: "statuses",
+      attributes: { placeholder: "Status 7", type: "number" },ref_key: "statuses",
     }
   )
   status_7;
@@ -117,11 +110,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
       selector: "input",
-      type: "email",
+      data_type: "string",
       label: "Email 8",
       required: true,
-      classes: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Email 8" },
+      attributes: { placeholder: "Email 8", type: "email" },
     }
   )
   email_8;
@@ -131,11 +123,10 @@ export class ExampleModel {
 @IsString()
   @field({
       selector: "textarea",
-      type: "text",
+      data_type: "string",
       label: "Description 9",
       required: false,hint: "This is a hint!",
-      classes: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Description 9" },
+      attributes: { placeholder: "Description 9", type: "text" },
     }
   )
   description_9;
@@ -145,11 +136,10 @@ export class ExampleModel {
 @IsString()
   @field({
       selector: "input",
-      type: "text",
+      data_type: "string",
       label: "Name 10",
       required: true,
-      classes: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Name 10" },
+      attributes: { placeholder: "Name 10", type: "text" },
     }
   )
   name_10;

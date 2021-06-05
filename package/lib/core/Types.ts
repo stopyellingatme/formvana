@@ -1,3 +1,13 @@
+/**
+ * ---------------------------------------------------------------------------
+ *
+ * *** Data Shapes (Types) ***
+ *
+ * Will write later. Files delted and source control didnt catch.
+ *
+ * ---------------------------------------------------------------------------
+ */
+
 import { FieldConfig } from "./FieldConfig";
 
 // #region Validation
@@ -56,7 +66,7 @@ export interface ValidationOptions {
    * THIS IS THE SECOND PARAMETER BEING PASSED TO THE VALIDATOR FUNCTION.
    * The other is form.model.
    *
-   * This makes using other validation libraries easy.
+   * This makes using other validation libraries easier.
    * See the examples for more details.
    */
   options?: Record<string, any> | Object;
@@ -71,7 +81,7 @@ export interface ValidationOptions {
    * Which events should the form do things on?
    * @examples validate, link values, hide/disable fields, callbacks
    */
-  on_events: OnEvents<HTMLElementEventMap>;
+  // on_events: OnEvents<HTMLElementEventMap>;
 
   /** When to link this.field values to this.model values */
   when_link_fields_to_model?: LinkOnEvent;
@@ -96,6 +106,14 @@ export class OnEvents<T extends HTMLElementEventMap> {
     }
     Object.assign(this, init);
   }
+
+  /**
+   * @TODO Create easy mechanism for using "eager" validation.
+   */
+  aggressive: boolean = false;
+  lazy: boolean = false;
+  passive: boolean = false;
+  eager: boolean = false;
 
   blur: boolean = true;
   change: boolean = true;
@@ -129,6 +147,19 @@ export type LinkValuesOnEvent = "all" | "field";
 
 // #region Misc
 
+export type FieldNode<T extends Object> = (
+  | HTMLInputElement
+  | (HTMLElement & { type: string })
+  | HTMLSelectElement
+  | HTMLTextAreaElement
+) & { name: keyof T };
+
+export type ElementEvent = InputEvent & {
+  target: { value: any; checked: boolean };
+};
+
+export type FormFieldSchema = Record<string, Partial<FieldConfig<Object>>>;
+
 /**
  * Keeping it simple. Just keep up with model and errors.
  */
@@ -144,7 +175,7 @@ export type InitialFormState<ModelType extends Object> = {
 export interface RefDataItem {
   label: string;
   value: any;
-  data?: any;
+  meta?: any;
 }
 
 /** Helpful shape for loading in reference data for the Form */

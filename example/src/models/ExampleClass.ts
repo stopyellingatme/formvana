@@ -23,23 +23,21 @@ export class ExampleModel {
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 1",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 1" },
+    attributes: { placeholder: "Status 1", type: "number" },
     ref_key: "statuses",
   })
   status_1;
 
-  @IsEmail({}, { message: "Please enter a valid email address" })
+  @IsNumber()
   @field({
     selector: "input",
-    type: "email",
+    data_type: "number",
     label: "Email 2",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 2" },
+    attributes: { placeholder: "Email 2", type: "number" },
   })
   email_2;
 
@@ -47,57 +45,52 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "textarea",
-    type: "text",
+    data_type: "string",
     label: "Description 3",
     required: false,
     hint: "This is a hint!",
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Description 3" },
+    attributes: { placeholder: "Description 3", type: "text" },
   })
   description_3;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 4",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 4" },
+    attributes: { placeholder: "Email 4", type: "email" },
   })
   email_4;
 
-  // @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
-  @IsNumber()
+  @Length(10, 90, { message: "Name must be between 10 and 90 characters" })
+  @IsString()
   @field({
     selector: "input",
-    type: "number",
+    data_type: "string",
     label: "Name 5",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 5" },
+    attributes: { placeholder: "Name 5", type: "text" },
   })
   name_5;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 6",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 6" },
+    attributes: { placeholder: "Email 6", type: "email" },
   })
   email_6;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 7",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 7" },
+    attributes: { placeholder: "Status 7", type: "number" },
     ref_key: "statuses",
   })
   status_7;
@@ -105,11 +98,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 8",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 8" },
+    attributes: { placeholder: "Email 8", type: "email" },
   })
   email_8;
 
@@ -117,12 +109,11 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "textarea",
-    type: "text",
+    data_type: "string",
     label: "Description 9",
     required: false,
     hint: "This is a hint!",
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Description 9" },
+    attributes: { placeholder: "Description 9", type: "text" },
   })
   description_9;
 
@@ -130,22 +121,20 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 10",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 10" },
+    attributes: { placeholder: "Name 10", type: "text" },
   })
   name_10;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 11",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 11" },
+    attributes: { placeholder: "Status 11", type: "number" },
     ref_key: "statuses",
   })
   status_11;
@@ -153,22 +142,20 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 12",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 12" },
+    attributes: { placeholder: "Email 12", type: "email" },
   })
   email_12;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 13",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 13" },
+    attributes: { placeholder: "Status 13", type: "number" },
     ref_key: "statuses",
   })
   status_13;
@@ -176,11 +163,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 14",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 14" },
+    attributes: { placeholder: "Email 14", type: "email" },
   })
   email_14;
 
@@ -188,33 +174,30 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 15",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 15" },
+    attributes: { placeholder: "Name 15", type: "text" },
   })
   name_15;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 16",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 16" },
+    attributes: { placeholder: "Email 16", type: "email" },
   })
   email_16;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 17",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 17" },
+    attributes: { placeholder: "Status 17", type: "number" },
     ref_key: "statuses",
   })
   status_17;
@@ -222,22 +205,20 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 18",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 18" },
+    attributes: { placeholder: "Email 18", type: "email" },
   })
   email_18;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 19",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 19" },
+    attributes: { placeholder: "Status 19", type: "number" },
     ref_key: "statuses",
   })
   status_19;
@@ -246,11 +227,10 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 20",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 20" },
+    attributes: { placeholder: "Name 20", type: "text" },
   })
   name_20;
 
@@ -258,34 +238,31 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "textarea",
-    type: "text",
+    data_type: "string",
     label: "Description 21",
     required: false,
     hint: "This is a hint!",
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Description 21" },
+    attributes: { placeholder: "Description 21", type: "text" },
   })
   description_21;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 22",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 22" },
+    attributes: { placeholder: "Email 22", type: "email" },
   })
   email_22;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 23",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 23" },
+    attributes: { placeholder: "Status 23", type: "number" },
     ref_key: "statuses",
   })
   status_23;
@@ -293,11 +270,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 24",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 24" },
+    attributes: { placeholder: "Email 24", type: "email" },
   })
   email_24;
 
@@ -305,22 +281,20 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 25",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 25" },
+    attributes: { placeholder: "Name 25", type: "text" },
   })
   name_25;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 26",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 26" },
+    attributes: { placeholder: "Email 26", type: "email" },
   })
   email_26;
 
@@ -328,34 +302,31 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "textarea",
-    type: "text",
+    data_type: "string",
     label: "Description 27",
     required: false,
     hint: "This is a hint!",
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Description 27" },
+    attributes: { placeholder: "Description 27", type: "text" },
   })
   description_27;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 28",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 28" },
+    attributes: { placeholder: "Email 28", type: "email" },
   })
   email_28;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 29",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 29" },
+    attributes: { placeholder: "Status 29", type: "number" },
     ref_key: "statuses",
   })
   status_29;
@@ -364,22 +335,20 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 30",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 30" },
+    attributes: { placeholder: "Name 30", type: "text" },
   })
   name_30;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 31",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 31" },
+    attributes: { placeholder: "Status 31", type: "number" },
     ref_key: "statuses",
   })
   status_31;
@@ -387,11 +356,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 32",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 32" },
+    attributes: { placeholder: "Email 32", type: "email" },
   })
   email_32;
 
@@ -399,23 +367,21 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "textarea",
-    type: "text",
+    data_type: "string",
     label: "Description 33",
     required: false,
     hint: "This is a hint!",
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Description 33" },
+    attributes: { placeholder: "Description 33", type: "text" },
   })
   description_33;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 34",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 34" },
+    attributes: { placeholder: "Email 34", type: "email" },
   })
   email_34;
 
@@ -423,33 +389,30 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 35",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 35" },
+    attributes: { placeholder: "Name 35", type: "text" },
   })
   name_35;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 36",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 36" },
+    attributes: { placeholder: "Email 36", type: "email" },
   })
   email_36;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 37",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 37" },
+    attributes: { placeholder: "Status 37", type: "number" },
     ref_key: "statuses",
   })
   status_37;
@@ -457,11 +420,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 38",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 38" },
+    attributes: { placeholder: "Email 38", type: "email" },
   })
   email_38;
 
@@ -469,12 +431,11 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "textarea",
-    type: "text",
+    data_type: "string",
     label: "Description 39",
     required: false,
     hint: "This is a hint!",
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Description 39" },
+    attributes: { placeholder: "Description 39", type: "text" },
   })
   description_39;
 
@@ -482,22 +443,20 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 40",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 40" },
+    attributes: { placeholder: "Name 40", type: "text" },
   })
   name_40;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 41",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 41" },
+    attributes: { placeholder: "Status 41", type: "number" },
     ref_key: "statuses",
   })
   status_41;
@@ -505,22 +464,20 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 42",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 42" },
+    attributes: { placeholder: "Email 42", type: "email" },
   })
   email_42;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 43",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 43" },
+    attributes: { placeholder: "Status 43", type: "number" },
     ref_key: "statuses",
   })
   status_43;
@@ -528,11 +485,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 44",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 44" },
+    attributes: { placeholder: "Email 44", type: "email" },
   })
   email_44;
 
@@ -540,33 +496,30 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 45",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 45" },
+    attributes: { placeholder: "Name 45", type: "text" },
   })
   name_45;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 46",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 46" },
+    attributes: { placeholder: "Email 46", type: "email" },
   })
   email_46;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 47",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 47" },
+    attributes: { placeholder: "Status 47", type: "number" },
     ref_key: "statuses",
   })
   status_47;
@@ -574,22 +527,20 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 48",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 48" },
+    attributes: { placeholder: "Email 48", type: "email" },
   })
   email_48;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 49",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 49" },
+    attributes: { placeholder: "Status 49", type: "number" },
     ref_key: "statuses",
   })
   status_49;
@@ -598,11 +549,10 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 50",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 50" },
+    attributes: { placeholder: "Name 50", type: "text" },
   })
   name_50;
 
@@ -610,34 +560,31 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "textarea",
-    type: "text",
+    data_type: "string",
     label: "Description 51",
     required: false,
     hint: "This is a hint!",
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Description 51" },
+    attributes: { placeholder: "Description 51", type: "text" },
   })
   description_51;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 52",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 52" },
+    attributes: { placeholder: "Email 52", type: "email" },
   })
   email_52;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 53",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 53" },
+    attributes: { placeholder: "Status 53", type: "number" },
     ref_key: "statuses",
   })
   status_53;
@@ -645,11 +592,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 54",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 54" },
+    attributes: { placeholder: "Email 54", type: "email" },
   })
   email_54;
 
@@ -657,22 +603,20 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 55",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 55" },
+    attributes: { placeholder: "Name 55", type: "text" },
   })
   name_55;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 56",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 56" },
+    attributes: { placeholder: "Email 56", type: "email" },
   })
   email_56;
 
@@ -680,34 +624,31 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "textarea",
-    type: "text",
+    data_type: "string",
     label: "Description 57",
     required: false,
     hint: "This is a hint!",
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Description 57" },
+    attributes: { placeholder: "Description 57", type: "text" },
   })
   description_57;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 58",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 58" },
+    attributes: { placeholder: "Email 58", type: "email" },
   })
   email_58;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 59",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 59" },
+    attributes: { placeholder: "Status 59", type: "number" },
     ref_key: "statuses",
   })
   status_59;
@@ -716,22 +657,20 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 60",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 60" },
+    attributes: { placeholder: "Name 60", type: "text" },
   })
   name_60;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 61",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 61" },
+    attributes: { placeholder: "Status 61", type: "number" },
     ref_key: "statuses",
   })
   status_61;
@@ -739,11 +678,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 62",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 62" },
+    attributes: { placeholder: "Email 62", type: "email" },
   })
   email_62;
 
@@ -751,23 +689,21 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "textarea",
-    type: "text",
+    data_type: "string",
     label: "Description 63",
     required: false,
     hint: "This is a hint!",
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Description 63" },
+    attributes: { placeholder: "Description 63", type: "text" },
   })
   description_63;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 64",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 64" },
+    attributes: { placeholder: "Email 64", type: "email" },
   })
   email_64;
 
@@ -775,33 +711,30 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 65",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 65" },
+    attributes: { placeholder: "Name 65", type: "text" },
   })
   name_65;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 66",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 66" },
+    attributes: { placeholder: "Email 66", type: "email" },
   })
   email_66;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 67",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 67" },
+    attributes: { placeholder: "Status 67", type: "number" },
     ref_key: "statuses",
   })
   status_67;
@@ -809,11 +742,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 68",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 68" },
+    attributes: { placeholder: "Email 68", type: "email" },
   })
   email_68;
 
@@ -821,12 +753,11 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "textarea",
-    type: "text",
+    data_type: "string",
     label: "Description 69",
     required: false,
     hint: "This is a hint!",
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Description 69" },
+    attributes: { placeholder: "Description 69", type: "text" },
   })
   description_69;
 
@@ -834,22 +765,20 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 70",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 70" },
+    attributes: { placeholder: "Name 70", type: "text" },
   })
   name_70;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 71",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 71" },
+    attributes: { placeholder: "Status 71", type: "number" },
     ref_key: "statuses",
   })
   status_71;
@@ -857,22 +786,20 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 72",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 72" },
+    attributes: { placeholder: "Email 72", type: "email" },
   })
   email_72;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 73",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 73" },
+    attributes: { placeholder: "Status 73", type: "number" },
     ref_key: "statuses",
   })
   status_73;
@@ -880,11 +807,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 74",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 74" },
+    attributes: { placeholder: "Email 74", type: "email" },
   })
   email_74;
 
@@ -892,33 +818,30 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 75",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 75" },
+    attributes: { placeholder: "Name 75", type: "text" },
   })
   name_75;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 76",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 76" },
+    attributes: { placeholder: "Email 76", type: "email" },
   })
   email_76;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 77",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 77" },
+    attributes: { placeholder: "Status 77", type: "number" },
     ref_key: "statuses",
   })
   status_77;
@@ -926,22 +849,20 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 78",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 78" },
+    attributes: { placeholder: "Email 78", type: "email" },
   })
   email_78;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 79",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 79" },
+    attributes: { placeholder: "Status 79", type: "number" },
     ref_key: "statuses",
   })
   status_79;
@@ -950,11 +871,10 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 80",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 80" },
+    attributes: { placeholder: "Name 80", type: "text" },
   })
   name_80;
 
@@ -962,34 +882,31 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "textarea",
-    type: "text",
+    data_type: "string",
     label: "Description 81",
     required: false,
     hint: "This is a hint!",
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Description 81" },
+    attributes: { placeholder: "Description 81", type: "text" },
   })
   description_81;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 82",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 82" },
+    attributes: { placeholder: "Email 82", type: "email" },
   })
   email_82;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 83",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 83" },
+    attributes: { placeholder: "Status 83", type: "number" },
     ref_key: "statuses",
   })
   status_83;
@@ -997,11 +914,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 84",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 84" },
+    attributes: { placeholder: "Email 84", type: "email" },
   })
   email_84;
 
@@ -1009,22 +925,20 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 85",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 85" },
+    attributes: { placeholder: "Name 85", type: "text" },
   })
   name_85;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 86",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 86" },
+    attributes: { placeholder: "Email 86", type: "email" },
   })
   email_86;
 
@@ -1032,34 +946,31 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "textarea",
-    type: "text",
+    data_type: "string",
     label: "Description 87",
     required: false,
     hint: "This is a hint!",
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Description 87" },
+    attributes: { placeholder: "Description 87", type: "text" },
   })
   description_87;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 88",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 88" },
+    attributes: { placeholder: "Email 88", type: "email" },
   })
   email_88;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 89",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 89" },
+    attributes: { placeholder: "Status 89", type: "number" },
     ref_key: "statuses",
   })
   status_89;
@@ -1068,22 +979,20 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 90",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 90" },
+    attributes: { placeholder: "Name 90", type: "text" },
   })
   name_90;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 91",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 91" },
+    attributes: { placeholder: "Status 91", type: "number" },
     ref_key: "statuses",
   })
   status_91;
@@ -1091,11 +1000,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 92",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 92" },
+    attributes: { placeholder: "Email 92", type: "email" },
   })
   email_92;
 
@@ -1103,23 +1011,21 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "textarea",
-    type: "text",
+    data_type: "string",
     label: "Description 93",
     required: false,
     hint: "This is a hint!",
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Description 93" },
+    attributes: { placeholder: "Description 93", type: "text" },
   })
   description_93;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 94",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 94" },
+    attributes: { placeholder: "Email 94", type: "email" },
   })
   email_94;
 
@@ -1127,33 +1033,30 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 95",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 95" },
+    attributes: { placeholder: "Name 95", type: "text" },
   })
   name_95;
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 96",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 96" },
+    attributes: { placeholder: "Email 96", type: "email" },
   })
   email_96;
 
   @IsEnum(Status, { message: "Please choose a Status" })
   @field({
     selector: "select",
-    type: "select",
+    data_type: "number",
     label: "Status 97",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Status 97" },
+    attributes: { placeholder: "Status 97", type: "number" },
     ref_key: "statuses",
   })
   status_97;
@@ -1161,11 +1064,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
-    type: "email",
+    data_type: "string",
     label: "Email 98",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Email 98" },
+    attributes: { placeholder: "Email 98", type: "email" },
   })
   email_98;
 
@@ -1173,12 +1075,11 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "textarea",
-    type: "text",
+    data_type: "string",
     label: "Description 99",
     required: false,
     hint: "This is a hint!",
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Description 99" },
+    attributes: { placeholder: "Description 99", type: "text" },
   })
   description_99;
 
@@ -1186,11 +1087,10 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
-    type: "text",
+    data_type: "string",
     label: "Name 100",
     required: true,
-    classes: "col-span-4 sm:col-span-2",
-    attributes: { placeholder: "Name 100" },
+    attributes: { placeholder: "Name 100", type: "text" },
   })
   name_100;
 

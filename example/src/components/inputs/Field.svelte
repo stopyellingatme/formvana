@@ -3,6 +3,8 @@
   // import Dropdown from "./Dropdown.svelte";
   import Textarea from "./Textarea.svelte";
   import Select from "./Select.svelte";
+  import CheckboxGroup from "./Checkbox/CheckboxGroup.svelte";
+  import RadioGroup from "./Radio/RadioGroup.svelte";
 
   export let field;
   export let form;
@@ -10,16 +12,20 @@
   $: hidden = field.hidden;
 </script>
 
+<!-- If the field is not hidden, then display it. -->
 {#if !hidden}
-  <div class={field.classes}>
+  <div class="col-span-4 sm:col-span-2">
+    <!-- Check which input type we're displaying the field as! -->
     {#if field.selector === "input"}
       <Input {field} />
     {:else if field.selector === "select" || field.selector === "dropdown"}
-      <!-- <Dropdown {field} options={field.options} /> -->
-      <Select {field} options={field.options} />
+      <Select {field} />
     {:else if field.selector === "textarea"}
-      <!-- More fields go here! -->
       <Textarea {field} />
+    {:else if field.selector === "checkbox" || field.selector === "checkboxes"}
+      <CheckboxGroup {field} />
+    {:else if field.selector === "radio" || field.selector === "radios"}
+      <RadioGroup {field} />
     {/if}
   </div>
 {/if}

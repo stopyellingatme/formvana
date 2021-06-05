@@ -89,48 +89,11 @@ class FieldConfig {
         if (!this.selector) {
             throw new Error(`Please pass in a valid Element.\nEither a string selector or a SvelteComponent.`);
         }
-        /** Check if the value is still a Writable store */
+        /** Is value Writable store? */
         if (!this.value || !this.value.subscribe) {
             /** If it's not, make it a writable store. */
             this.value = writable(this.value);
         }
-        /**  Set the type attribute if it's not already set */
-        if (this.attributes && !this.attributes["type"]) {
-            this.attributes["type"] = this.type;
-        }
-        else if (!this.attributes) {
-            this.attributes = {};
-            this.attributes["type"] = this.type;
-        }
-        /**
-         * Trying to set some sane defaults when initializing field.
-         * These can be over-written easily by simply adding a value to your
-         * class field.
-         * E.g. class YourClass{ description: string = "This is a descriptor." }
-         * The text "This is a descriptor." will be linked to the FieldConfig.value
-         * when the fields are built from the model (in Form.buildFields();)
-         */
-        // switch (this.type) {
-        //   case "text" || "email" || "password" || "string":
-        //     this.value.set("");
-        //     break;
-        //   case "decimal" || "double":
-        //     this.value.set(0.0);
-        //     break;
-        //   case "number" || "int" || "integer":
-        //     this.value.set(0);
-        //     break;
-        //   case "boolean" || "choice" || "radio" || "checkbox":
-        //     this.value.set(false);
-        //     this.options = [];
-        //     break;
-        //   case "select" || "dropdown":
-        //     this.options = [];
-        //     break;
-        //   default:
-        //     this.value.set(undefined);
-        //     break;
-        // }
         /**
          * I'm doing this because there's not enough thought about accessibility
          * in Forms or for libraries. Better to have SOME kind of default than none
@@ -166,23 +129,42 @@ class FieldConfig {
     selector;
     /** Value is a writable store defaulting to undefined. */
     value = writable(undefined);
-    /** Defaults to text, can be set to anything though. */
-    type = "text";
-    required;
-    label;
-    hint;
+    /**
+     * This is the DATA TYPE of the value!
+     * If set to number (or decimal, or int, etc.) it will be parsed as number.
+     * If the type is not accounted for in this library, we return the original
+     * event.target.value.
+     *
+     * This is not the input.type.
+     *
+     * Defaults to "string"
+     */
+    data_type = "string";
     /**
      * Validation Errors!
-     * We're mainly looking for the "constraints".
-     * One ValidationError object can have multiple errors (constraints)
+     * We're mainly looking in the "errors" field.
+     * One ValidationError object can have multiple errors.
      */
     errors = writable(undefined);
     /**
-     * Use styles and classes to apply styling.
-     * However, using a template/component is recommended.
+     * Attributes uses a fairly exhaustive map of most HTML Field-ish
+     * attributes.
+     *
+     * @example attributes["type"] get's set here.
+     *
+     * You also have the option to use a plain Object, for extra flexibility.
+     *
+     * @example attrubutes["description"] is ok without being a FieldAttribute
      */
-    styles;
-    classes;
+    attributes = {};
+    /** Has the input been altered? */
+    touched = writable(false);
+    /** Is this a required field? */
+    required;
+    /** Label can be sting or array of strings */
+    label;
+    /** Hint can be sting or array of strings */
+    hint;
     /** Linked to form.refs via RefData[ref_key] */
     ref_key;
     /** Used if there is a set of "options" to choose from. */
@@ -191,39 +173,32 @@ class FieldConfig {
     disabled;
     /** Pretty self-explainitory, hide the field. */
     hidden;
-    /**
-     * Attributes uses a fairly exhaustive map of most HTML Field-ish
-     * attributes.
-     * You also have the option to use a plain JSON Object, for
-     * extra flexibility.
-     *
-     * @example attrubutes["description"] is ok without being a FieldAttribute
-     */
-    attributes;
     /** Element.dataset hook, so you can do the really wild things! */
     data_set;
     /** In case you'd like to filter some fields for a specific form */
     for_form;
     /**
      * If you're using a validation library that supports
-     * a validation rules, validation pattern.
+     * a validation rules pattern, this is here for you.
      */
     validation_rules;
     /**
-     * Group is optional.
-     * Use when you'd like to group multiple fields togethter.
+     * You may need to excude some event listeners.
+     *
+     * @example exclude blur and focus events for a checkbox
      */
+    exclude_events;
+    /** Are you grouping multiple fields togethter? */
     group;
     /**
      * Step is used when field is part of a multi-step form.
      */
     step;
+    /** Clear the field's errors */
     clearErrors = () => {
         this.errors.set(undefined);
     };
-    clear = () => {
-        this.clearErrors();
-    };
+    /** Add event listeners to the field in a more typesafe way. */
     addEventListener = (event, callback) => {
         if (this.node) {
             this.node.addEventListener(event, 
@@ -266,6 +241,15 @@ class FieldStepper {
 }
 
 /**
+ * ---------------------------------------------------------------------------
+ *
+ * *** Data Shapes (Types) ***
+ *
+ * Will write later. Files delted and source control didnt catch.
+ *
+ * ---------------------------------------------------------------------------
+ */
+/**
  * All constructor values are optional so we can create a blank Validation
  * Error object, for whatever reason.
  */
@@ -301,6 +285,13 @@ class OnEvents {
         }
         Object.assign(this, init);
     }
+    /**
+     * @TODO Create easy mechanism for using "eager" validation.
+     */
+    aggressive = false;
+    lazy = false;
+    passive = false;
+    eager = false;
     blur = true;
     change = true;
     click = false;
@@ -379,6 +370,15 @@ function setFieldProperty(f, key, value) {
 }
 
 /**
+ * ---------------------------------------------------------------------------
+ *
+ * *** Form Layout ***
+ *
+ * Will write later. Files delted and source control didnt catch.
+ *
+ * ---------------------------------------------------------------------------
+ */
+/**
  * Using this.field_order, rearrange the order of the fields.
  */
 function _setFieldOrder(field_order, fields) {
@@ -402,6 +402,7 @@ function _setFieldOrder(field_order, fields) {
     return fields;
 }
 
+const max_int = Number.MAX_SAFE_INTEGER;
 /**
  * ---------------------------------------------------------------------------
  *
@@ -420,7 +421,7 @@ function _setFieldOrder(field_order, fields) {
  */
 function _linkFieldErrors(errors, field) {
     const error = errors.filter((e) => e["field_key"] === field.name);
-    // Check if there's an error for the field
+    /** Check if there's an error for the field */
     if (error && error.length > 0) {
         field.errors.set(error[0]);
     }
@@ -477,42 +478,73 @@ function _linkAllValues(from_fields_to_model, fields, model) {
  * @Hotpath
  */
 function _linkValueFromEvent(field, model, event) {
-    const value = _getValueFromEvent(event);
+    const value = _getValueFromEvent(event, field);
     /**
      * Well, we have to set both.
-     * This compensates for native select elements and more.
+     * This compensates for native select elements and probably more.
      */
     model[field.name] = value;
     field.value.set(value);
 }
+const int_word_list = ["number", "decimal", "range", "int", "integer", "num"];
+const array_word_list = ["array", "list", "collection", "group"];
 /**
+ * Ok, there's a lot going on here.
+ * But we're really just checking the data_type for special cases.
+ *
+ * Objects and arrays need special treatment.
+ *
  * Check if the target has some special value properties to help us out.
  * If not, just grab the target.value and move on.
  *
  * @Hotpath
  */
-function _getValueFromEvent(event) {
-    /** @ts-ignore */
-    if (event && event.target)
-        return _parseNumberOrValue(event.target.value);
+function _getValueFromEvent(event, field) {
+    if (event && event.target) {
+        if (field) {
+            /** Check if data_type is number-like */
+            if (int_word_list.indexOf(field.data_type) !== -1) {
+                return _parseNumberOrValue(event.target.value);
+            }
+            else if (field.data_type === "boolean") {
+                /** Check if data_type is Boolean */
+                return Boolean(event.target.value);
+            }
+            else if (array_word_list.indexOf(field.data_type) !== -1) {
+                /** Check if data_type is Array-like */
+                let vals = [...get_store_value(field.value)];
+                if (event.target.checked && vals.indexOf(event.target.value) === -1) {
+                    vals.push(event.target.value);
+                }
+                else {
+                    vals.splice(vals.indexOf(event.target.value), 1);
+                }
+                return vals;
+            }
+        }
+        /** If none of the above, just retrun the unaltered value */
+        return event.target.value;
+    }
     else
         return undefined;
 }
-const max_int = Number.MAX_SAFE_INTEGER;
 /**
  * Check if the value is a (safe) intiger.
  * Because the event value will happily pass the number 1 as
  * "1", a string. So we parse it, check it, and if it's safe, return it.
  * Otherwise just return the initial value.
  *
- * We check if the value is not a number and if the value (as a number)
+ * We check if the value is not a number or if the value (as a number)
  * is greater than the max number value.
+ *
  * If either is true, return plain value.
  * Else return value as number.
  *
  * @Hotpath
  */
 function _parseNumberOrValue(value) {
+    if (value === "" || value === undefined || value === null)
+        return value;
     if (isNaN(+value) || +value >= max_int)
         return value;
     else
@@ -596,6 +628,7 @@ function _resetState(form, initial_state) {
     /** Done serializing the initial_state, now link everything. */
     /** Link the values, now */
     _linkAllValues(false, form.fields, form.model);
+    form.fields.forEach((f) => f.touched.set(false));
     /** If there were errors in the inital_state
      *  link them to each field
      */
@@ -625,6 +658,9 @@ function _resetState(form, initial_state) {
 function _executeValidationEvent(form, required_fields, field, callbacks, event) {
     /** The form has been altered (no longer pristine) */
     form.pristine.set(false);
+    /** If field && it hasn't been marked as touched... touch it. */
+    if (field && !get_store_value(field.touched))
+        field.touched.set(true);
     /** Execute pre-validation callbacks */
     _executeCallbacks([
         field &&
@@ -638,17 +674,29 @@ function _executeValidationEvent(form, required_fields, field, callbacks, event)
      * @TODO This section needs a rework.
      * Too many moving parts.
      * Hard to pass in custom validation parameters.
+     *
+     * If there's validation options, use them.
+     * Else, just fire the callbacks and be done.
      */
-    return form.validation_options
-        .validator(form.model, form.validation_options.options)
-        .then((errors) => {
+    if (form.validation_options) {
+        return form.validation_options
+            .validator(form.model, form.validation_options.options)
+            .then((errors) => {
+            _executeCallbacks([
+                _handleValidationSideEffects(form, errors, required_fields, field, event),
+                _hasStateChanged(form.value_changes, form.changed),
+                callbacks && _executeValidationCallbacks("after", callbacks),
+            ]);
+            return errors;
+        });
+    }
+    else {
         _executeCallbacks([
-            _handleValidationSideEffects(form, errors, required_fields, field, event),
             _hasStateChanged(form.value_changes, form.changed),
             callbacks && _executeValidationCallbacks("after", callbacks),
         ]);
-        return errors;
-    });
+        return undefined;
+    }
 }
 /**
  * Execute validation callbacks, depending on when_to_call
@@ -822,14 +870,57 @@ function _buildFormFieldsWithSchema(props, meta) {
  * Parent: form.useField(...)
  */
 function _attachEventListeners(field, on_events, callback) {
+    // console.log(field.node?.type);
     Object.entries(on_events).forEach(([eventName, shouldListen]) => {
-        /** If shouldListen true, then add the event listener */
+        /** If shouldListen === true, then add the event listener */
         if (shouldListen) {
-            if (field.node?.nodeName === "SELECT" && eventName !== "input") {
-                field.addEventListener(eventName, callback);
-            }
-            if (field.node?.nodeName !== "SELECT") {
-                field.addEventListener(eventName, callback);
+            // if (
+            //   (field.node?.nodeName === "SELECT" ||
+            //     field.node?.type.match(/^(radio|checkbox)$/)) &&
+            //   eventName !== "input"
+            // ) {
+            //   field.addEventListener(
+            //     eventName as keyof HTMLElementEventMap,
+            //     callback
+            //   );
+            // } else if (
+            //   field.node?.nodeName !== "SELECT" &&
+            //   !field.node?.type.match(/^(radio|checkbox)$/)
+            // ) {
+            //   field.addEventListener(
+            //     eventName as keyof HTMLElementEventMap,
+            //     callback
+            //   );
+            // }
+            // if (field.node?.nodeName === "SELECT" && eventName !== "input") {
+            //   field.addEventListener(
+            //     eventName as keyof HTMLElementEventMap,
+            //     callback
+            //   );
+            // } else if (
+            //   field.node?.type.match(/^(radio|checkbox)$/) &&
+            //   eventName !== "input" &&
+            //   eventName !== "focus" &&
+            //   eventName !== "blur"
+            // ) {
+            //   console.log(field.node?.type);
+            //   field.addEventListener(
+            //     eventName as keyof HTMLElementEventMap,
+            //     callback
+            //   );
+            // } else {
+            //   field.addEventListener(
+            //     eventName as keyof HTMLElementEventMap,
+            //     callback
+            //   );
+            // }
+            if (!field.exclude_events?.includes(eventName)) {
+                if (field.node?.nodeName === "SELECT" && eventName !== "input") {
+                    field.addEventListener(eventName, callback);
+                }
+                else {
+                    field.addEventListener(eventName, callback);
+                }
             }
         }
     });
@@ -846,21 +937,6 @@ function _addCallbackToField(form, field, event, callback, required_fields) {
     }
 }
 
-// import {
-//   _buildFormFields,
-//   _get,
-//   _attachEventListeners,
-//   _linkAllErrors,
-//   _linkAllValues,
-//   _requiredFieldsValid,
-//   _setFieldOrder,
-//   _setInitialState,
-//   _resetState,
-//   _executeValidationEvent,
-//   _addCallbackToField,
-//   _setFieldAttributes,
-//   _buildFormFieldsWithSchema,
-// } from "./formMethods";
 /**
  * @Recomended_Use
  *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
@@ -882,13 +958,8 @@ function _addCallbackToField(form, field, event, callback, required_fields) {
  * @TODO Do the stepper example and clean up the Form Manager interface
  * @TODO More robust testing with different input types
  * @TODO Add several plain html/css examples (without tailwind)
- * @TODO Clean up form control creation/binding - too complex, currently.
  *
  *
- *
- * @TODO Make a use:Form directive that grabs the fields by name and adds the
- * relevant listeners and hookups. This will remove the need for value:binding
- * and on:event shit.
  */
 /**
  * Formvana Form Class
@@ -912,17 +983,17 @@ class Form {
         /** If there's a model, set the inital state's and build the fields */
         if (model) {
             this.model = model;
+            this.buildFields();
         }
         else {
-            throw new Error("Model is not valid. Please use a valid model.");
+            throw new Error("Model is not valid. Please use a valid (truthy) model.");
         }
         if (validation_options) {
             Object.assign(this.validation_options, validation_options);
         }
         else {
-            throw new Error("Please add a validator with ReturnType<Promise<ValidationError[]>>");
+            throw new Error("Please add a validator that returns Promise<ValidationError[]>");
         }
-        this.buildFields();
         if (this.refs)
             this.attachRefData();
         if (this.disabled_fields)
@@ -938,6 +1009,10 @@ class Form {
         _setInitialState(this, this.initial_state);
     }
     //#region ** Fields **
+    /**
+     * HTML Node of form object.
+     */
+    node;
     /**
      * This is your form Model/Schema.
      * Used to build the form.fields.
@@ -962,14 +1037,14 @@ class Form {
     /**
      * validation_options contains the logic and configuration for
      * validating the form as well as linking errors to fields.
-     * If you're using class-validator, just pass in the validate func
      */
     validation_options = {
         validator: async () => [],
-        on_events: new OnEvents(),
         /** When to link this.field values to this.model values */
         when_link_fields_to_model: "always",
     };
+    /** Which events should the form dispatch side effects? */
+    on_events = new OnEvents();
     /** Is the form valid? */
     valid = writable(false);
     /** Has the form state changed from it's initial value? */
@@ -1079,14 +1154,23 @@ class Form {
      * Also allows for a better single source of truth for data input.
      */
     useForm = (node) => {
+        this.node = node;
         /** Set up form/fields here */
         let key;
         for (key in this.model) {
-            const _el = node.querySelectorAll(`[name="${key}"]`);
-            if (_el && _el[0]) {
-                const el = _el[0];
-                this.useField(el);
+            const elements = node.querySelectorAll(`[name="${key}"]`);
+            if (elements && elements.length === 1) {
+                const element = elements[0];
+                this.#useField(element);
             }
+            else if (elements.length > 1) {
+                elements.forEach((element) => {
+                    this.#useField(element);
+                });
+            }
+        }
+        if (!this.validation_options || !this.validation_options.validator) {
+            this.node.noValidate = true;
         }
     };
     /**
@@ -1101,12 +1185,12 @@ class Form {
      * e.g. <input/> -- <button/> -- <select/> -- etc.
      * Check examples folder for more details.
      */
-    useField = (node) => {
+    #useField = (node) => {
         /** Attach HTML Node to field so we can remove event listeners later */
         const field = _get(node.name, this.fields);
         field.node = node;
-        if (this.validation_options.on_events)
-            _attachEventListeners(field, this.validation_options.on_events, (e) => _executeValidationEvent(this, this.#required_fields, field, undefined, e));
+        if (this.on_events)
+            _attachEventListeners(field, this.on_events, (e) => _executeValidationEvent(this, this.#required_fields, field, undefined, e));
     };
     //#endregion
     // #region - Validation
@@ -1151,7 +1235,7 @@ class Form {
     clearErrors = () => {
         this.errors = [];
         this.fields.forEach((f) => {
-            f.errors.set(undefined);
+            f.clearErrors();
         });
     };
     //#endregion
@@ -1205,7 +1289,9 @@ class Form {
      * Pass in the reference data to add options to fields.
      */
     attachRefData = (refs) => {
+        /** Get all fields with ref_key property */
         const fields_with_ref_keys = this.fields.filter((f) => f.ref_key);
+        /** Check if there are refs being passed in */
         if (refs) {
             this.refs = refs;
             fields_with_ref_keys.forEach((field) => {
@@ -1214,6 +1300,7 @@ class Form {
             });
         }
         else if (this.refs) {
+            /** Else if this.refs are already attached, add the options to fields */
             fields_with_ref_keys.forEach((field) => {
                 if (field.ref_key && this.refs)
                     field.options = this.refs[field.ref_key];
@@ -1229,18 +1316,21 @@ class Form {
             // For each field...
             this.fields.forEach((f) => {
                 // Remove all the event listeners!
-                if (this.validation_options.on_events)
-                    Object.keys(this.validation_options.on_events).forEach((key) => {
+                if (this.on_events)
+                    Object.keys(this.on_events).forEach((key) => {
                         f.node &&
-                            f.node.removeEventListener(key, (ev) => {
-                            });
+                            f.node.removeEventListener(key, (ev) => _executeValidationEvent(this, this.#required_fields, f, undefined, ev));
                     });
             });
         }
     };
     //#endregion
     // #region - Form State
-    /** Resets to the inital state of the form. */
+    /**
+     * Resets to the inital state of the form.
+     *
+     * Only model and errors are saved in initial state.
+     */
     reset = () => {
         _resetState(this, this.initial_state);
     };

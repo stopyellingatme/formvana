@@ -90,21 +90,69 @@ function _attachEventListeners<T extends Object>(
   on_events: OnEvents<HTMLElementEventMap>,
   callback: Callback
 ): void {
-  Object.entries(on_events).forEach(([eventName, shouldListen]) => {
-    /** If shouldListen true, then add the event listener */
-    if (shouldListen) {
-      if (field.node?.nodeName === "SELECT" && eventName !== "input") {
-        field.addEventListener(
-          eventName as keyof HTMLElementEventMap,
-          callback
-        );
-      }
+  // console.log(field.node?.type);
 
-      if (field.node?.nodeName !== "SELECT") {
-        field.addEventListener(
-          eventName as keyof HTMLElementEventMap,
-          callback
-        );
+  Object.entries(on_events).forEach(([eventName, shouldListen]) => {
+    /** If shouldListen === true, then add the event listener */
+    if (shouldListen) {
+      // if (
+      //   (field.node?.nodeName === "SELECT" ||
+      //     field.node?.type.match(/^(radio|checkbox)$/)) &&
+      //   eventName !== "input"
+      // ) {
+      //   field.addEventListener(
+      //     eventName as keyof HTMLElementEventMap,
+      //     callback
+      //   );
+      // } else if (
+      //   field.node?.nodeName !== "SELECT" &&
+      //   !field.node?.type.match(/^(radio|checkbox)$/)
+      // ) {
+      //   field.addEventListener(
+      //     eventName as keyof HTMLElementEventMap,
+      //     callback
+      //   );
+      // }
+
+      // if (field.node?.nodeName === "SELECT" && eventName !== "input") {
+      //   field.addEventListener(
+      //     eventName as keyof HTMLElementEventMap,
+      //     callback
+      //   );
+      // } else if (
+      //   field.node?.type.match(/^(radio|checkbox)$/) &&
+      //   eventName !== "input" &&
+      //   eventName !== "focus" &&
+      //   eventName !== "blur"
+      // ) {
+      //   console.log(field.node?.type);
+      //   field.addEventListener(
+      //     eventName as keyof HTMLElementEventMap,
+      //     callback
+      //   );
+      // } else {
+      //   field.addEventListener(
+      //     eventName as keyof HTMLElementEventMap,
+      //     callback
+      //   );
+      // }
+
+      if (
+        !field.exclude_events?.includes(
+          eventName as keyof OnEvents<HTMLElementEventMap>
+        )
+      ) {
+        if (field.node?.nodeName === "SELECT" && eventName !== "input") {
+          field.addEventListener(
+            eventName as keyof HTMLElementEventMap,
+            callback
+          );
+        } else {
+          field.addEventListener(
+            eventName as keyof HTMLElementEventMap,
+            callback
+          );
+        }
       }
     }
   });

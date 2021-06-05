@@ -1,4 +1,4 @@
-import { Form, FieldConfig, ValidationCallback, ValidationError, Callback } from "../core";
+import { Form, FieldConfig, ValidationCallback, ValidationError, Callback, ElementEvent } from "../core";
 /**
  * ---------------------------------------------------------------------------
  *
@@ -14,7 +14,7 @@ import { Form, FieldConfig, ValidationCallback, ValidationError, Callback } from
  *
  * @Hotpath
  */
-declare function _executeValidationEvent<T extends Object>(form: Form<T>, required_fields: Array<keyof T>, field?: FieldConfig<T>, callbacks?: ValidationCallback[], event?: Event): Promise<ValidationError[]> | undefined;
+declare function _executeValidationEvent<T extends Object>(form: Form<T>, required_fields: Array<keyof T>, field?: FieldConfig<T>, callbacks?: ValidationCallback[], event?: ElementEvent): Promise<ValidationError[]> | undefined;
 /**
  * This is used to add functions and callbacks to the OnEvent
  * handler. Functions can be added in a plugin-style manner now.
@@ -31,5 +31,5 @@ declare function _executeCallbacks(callbacks: Callback | Callback[]): void;
  *
  * @Hotpath
  */
-declare function _handleValidationSideEffects<T extends Object>(form: Form<T>, errors: ValidationError[], required_fields: Array<keyof T>, field?: FieldConfig<T>, event?: Event): Promise<ValidationError[]>;
+declare function _handleValidationSideEffects<T extends Object>(form: Form<T>, errors: ValidationError[], required_fields: Array<keyof T>, field?: FieldConfig<T>, event?: ElementEvent): Promise<ValidationError[]>;
 export { _executeValidationEvent, _executeCallbacks, _handleValidationSideEffects, };

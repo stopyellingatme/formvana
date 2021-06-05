@@ -98,6 +98,8 @@ function _resetState<T extends Object>(
   /** Link the values, now */
   _linkAllValues(false, form.fields, form.model);
 
+  form.fields.forEach((f) => f.touched.set(false));
+
   /** If there were errors in the inital_state
    *  link them to each field
    */

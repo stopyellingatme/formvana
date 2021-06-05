@@ -1,6 +1,6 @@
 import { get, writable, Writable } from "svelte/store";
 import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
-import { FieldConfig } from ".";
+import { FieldConfig } from "./FieldConfig";
 import {
   OnEvents,
   RefData,
@@ -9,6 +9,9 @@ import {
   Callback,
   ValidationOptions,
   InitialFormState,
+  FieldNode,
+  ElementEvent,
+  FormFieldSchema,
 } from "./Types";
 import {
   _setFieldAttributes,
@@ -24,21 +27,6 @@ import {
   _resetState,
   _setFieldOrder,
 } from "../utilities";
-// import {
-//   _buildFormFields,
-//   _get,
-//   _attachEventListeners,
-//   _linkAllErrors,
-//   _linkAllValues,
-//   _requiredFieldsValid,
-//   _setFieldOrder,
-//   _setInitialState,
-//   _resetState,
-//   _executeValidationEvent,
-//   _addCallbackToField,
-//   _setFieldAttributes,
-//   _buildFormFieldsWithSchema,
-// } from "./formMethods";
 
 /**
  * @Recomended_Use
@@ -61,13 +49,8 @@ import {
  * @TODO Do the stepper example and clean up the Form Manager interface
  * @TODO More robust testing with different input types
  * @TODO Add several plain html/css examples (without tailwind)
- * @TODO Clean up form control creation/binding - too complex, currently.
  *
  *
- *
- * @TODO Make a use:Form directive that grabs the fields by name and adds the
- * relevant listeners and hookups. This will remove the need for value:binding
- * and on:event shit.
  */
 
 /**
@@ -88,7 +71,7 @@ import {
 export class Form<ModelType extends Object> {
   constructor(
     model: ModelType,
-    validation_options: Partial<ValidationOptions>,
+    validation_options?: Partial<ValidationOptions>,
     form_properties?: Partial<Form<ModelType>>
   ) {
     if (form_properties) Object.assign(this, form_properties);
@@ -96,19 +79,18 @@ export class Form<ModelType extends Object> {
     /** If there's a model, set the inital state's and build the fields */
     if (model) {
       this.model = model;
+      this.buildFields();
     } else {
-      throw new Error("Model is not valid. Please use a valid model.");
+      throw new Error("Model is not valid. Please use a valid (truthy) model.");
     }
 
     if (validation_options) {
       Object.assign(this.validation_options, validation_options);
     } else {
       throw new Error(
-        "Please add a validator with ReturnType<Promise<ValidationError[]>>"
+        "Please add a validator that returns Promise<ValidationError[]>"
       );
     }
-
-    this.buildFields();
 
     if (this.refs) this.attachRefData();
 
@@ -128,6 +110,11 @@ export class Form<ModelType extends Object> {
   }
 
   //#region ** Fields **
+
+  /**
+   * HTML Node of form object.
+   */
+  node?: HTMLFormElement;
 
   /**
    * This is your form Model/Schema.
@@ -156,14 +143,15 @@ export class Form<ModelType extends Object> {
   /**
    * validation_options contains the logic and configuration for
    * validating the form as well as linking errors to fields.
-   * If you're using class-validator, just pass in the validate func
    */
   validation_options: ValidationOptions = {
     validator: async () => [],
-    on_events: new OnEvents(),
+
     /** When to link this.field values to this.model values */
     when_link_fields_to_model: "always",
   };
+  /** Which events should the form dispatch side effects? */
+  on_events: OnEvents<HTMLElementEventMap> = new OnEvents();
 
   /** Is the form valid? */
   valid: Writable<boolean> = writable(false);
@@ -194,7 +182,7 @@ export class Form<ModelType extends Object> {
    * Optional field layout, if you aren't using a class object.
    * "no-class" method of building the fields.
    */
-  field_schema?: Record<string, Partial<FieldConfig<Object>>>;
+  field_schema?: FormFieldSchema;
 
   /**
    * refs hold any reference data you'll be using in the form
@@ -294,15 +282,25 @@ export class Form<ModelType extends Object> {
    * Also allows for a better single source of truth for data input.
    */
   useForm = (node: HTMLFormElement) => {
-    /** Set up form/fields here */
+    this.node = node;
 
+    /** Set up form/fields here */
     let key: keyof ModelType;
     for (key in this.model) {
-      const _el = node.querySelectorAll(`[name="${key}"]`);
-      if (_el && _el[0]) {
-        const el = _el[0];
-        this.useField(el as HTMLElement & { name: keyof ModelType });
+      const elements = node.querySelectorAll(`[name="${key}"]`);
+
+      if (elements && elements.length === 1) {
+        const element = elements[0];
+        this.#useField(element as FieldNode<ModelType>);
+      } else if (elements.length > 1) {
+        elements.forEach((element) => {
+          this.#useField(element as FieldNode<ModelType>);
+        });
       }
+    }
+
+    if (!this.validation_options || !this.validation_options.validator) {
+      this.node.noValidate = true;
     }
   };
 
@@ -318,23 +316,20 @@ export class Form<ModelType extends Object> {
    * e.g. <input/> -- <button/> -- <select/> -- etc.
    * Check examples folder for more details.
    */
-  useField = (node: HTMLElement & { name: keyof ModelType }): void => {
+  #useField = (node: FieldNode<ModelType>): void => {
     /** Attach HTML Node to field so we can remove event listeners later */
     const field = _get(node.name, this.fields);
     field.node = node;
 
-    if (this.validation_options.on_events)
-      _attachEventListeners(
-        field,
-        this.validation_options.on_events,
-        (e: Event) =>
-          _executeValidationEvent(
-            this,
-            this.#required_fields,
-            field,
-            undefined,
-            e
-          )
+    if (this.on_events)
+      _attachEventListeners(field, this.on_events, (e: ElementEvent) =>
+        _executeValidationEvent(
+          this,
+          this.#required_fields,
+          field,
+          undefined,
+          e
+        )
       );
   };
 
@@ -403,7 +398,7 @@ export class Form<ModelType extends Object> {
   clearErrors = (): void => {
     this.errors = [];
     this.fields.forEach((f) => {
-      f.errors.set(undefined);
+      f.clearErrors();
     });
   };
 
@@ -471,13 +466,16 @@ export class Form<ModelType extends Object> {
    * Pass in the reference data to add options to fields.
    */
   attachRefData = (refs?: RefData): void => {
+    /** Get all fields with ref_key property */
     const fields_with_ref_keys = this.fields.filter((f) => f.ref_key);
+    /** Check if there are refs being passed in */
     if (refs) {
       this.refs = refs;
       fields_with_ref_keys.forEach((field) => {
         if (field.ref_key) field.options = refs[field.ref_key];
       });
     } else if (this.refs) {
+      /** Else if this.refs are already attached, add the options to fields */
       fields_with_ref_keys.forEach((field) => {
         if (field.ref_key && this.refs)
           field.options = this.refs[field.ref_key];
@@ -494,13 +492,18 @@ export class Form<ModelType extends Object> {
       // For each field...
       this.fields.forEach((f) => {
         // Remove all the event listeners!
-        if (this.validation_options.on_events)
-          Object.keys(this.validation_options.on_events).forEach((key) => {
+        if (this.on_events)
+          Object.keys(this.on_events).forEach((key) => {
             f.node &&
-              f.node.removeEventListener(key, (ev) => {
-                (e: Event) =>
-                  _executeValidationEvent(this, this.#required_fields, f);
-              });
+              f.node.removeEventListener(key, (ev: Event) =>
+                _executeValidationEvent(
+                  this,
+                  this.#required_fields,
+                  f,
+                  undefined,
+                  ev as ElementEvent
+                )
+              );
           });
       });
     }
@@ -510,7 +513,11 @@ export class Form<ModelType extends Object> {
 
   // #region - Form State
 
-  /** Resets to the inital state of the form. */
+  /**
+   * Resets to the inital state of the form.
+   *
+   * Only model and errors are saved in initial state.
+   */
   reset = (): void => {
     _resetState(this, this.initial_state);
   };
