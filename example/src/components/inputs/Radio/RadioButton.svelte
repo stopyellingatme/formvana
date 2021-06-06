@@ -25,7 +25,7 @@
     name={field.name}
     bind:value={option.value}
     type="radio"
-    checked={$value === option.value || $value === parseInt(option.value)}
+    checked={$value == option.value}
     {...attributes}
     id={`${field.name}-${index}`}
     class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"

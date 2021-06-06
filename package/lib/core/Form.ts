@@ -40,6 +40,7 @@ import {
  * Performance is blazing with < 500 fields.
  * Can render up to 2000 inputs in per class/fields, not recommended.
  * Just break it up into 100 or so fields per form (max 250) if its a huge form.
+ * Use one of the Form Manager interfaces if applicable.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
  * @TODO Time to redo the readme.md file! Lots have changed since then!
@@ -55,6 +56,7 @@ import {
  */
 
 /**
+ * ---------------------------------------------------------------------------
  * Formvana Form Class
  *
  * Main Concept: fields and model are separate.
@@ -68,6 +70,7 @@ import {
  * Variables and stores are snake_case.
  * Everyone will love it.
  *
+ * ---------------------------------------------------------------------------
  */
 export class Form<ModelType extends Object> {
   constructor(
@@ -187,15 +190,16 @@ export class Form<ModelType extends Object> {
 
   /**
    * refs hold any reference data you'll be using in the form
-   * e.g. seclet dropdowns, radio buttons, etc.
    *
-   * If you did not set the model in constructor:
-   * Call attachRefData() to link the data to the respective field
+   * Call attachRefData() to link reference data to form or pass it
+   * via the constrictor.
+   *
+   * Fields & reference data are linked via field.ref_key
    *
    * * Format:
-   * * Record<ref_key: string, Array<{label: string, value: any, data?: any}>>
+   * * Record<[ref_key]: string, Array<{[label]: string, [value]: any, [data]?: any}>>
    *
-   * * Fields & reference data are linked via field.ref_key
+   * @UseCase seclet dropdowns, radio buttons, etc.
    */
   refs?: RefData;
 

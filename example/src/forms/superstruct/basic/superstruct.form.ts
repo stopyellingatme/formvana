@@ -31,8 +31,10 @@ const refs: RefData = {
   food: [
     { label: "Burger", value: 0 },
     { label: "Hotdog", value: 1 },
-    { label: "Pho", value: 2 },
+    { label: "Beef Pho", value: 2 },
     { label: "Steamed Buns", value: 3 },
+    { label: "Spring Rolls", value: 4 },
+    { label: "Parm Eggs & Bacon", value: 5 },
   ],
 };
 

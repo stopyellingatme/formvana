@@ -575,7 +575,7 @@ function _parseArray(event, field) {
 function _parseNumberOrValue(value) {
     if (value === "" || value === undefined || value === null)
         return value;
-    if (isNaN(+value) || +value >= max_int)
+    if (isNaN(+value) || +value >= max_int || +value <= -max_int)
         return value;
     else
         return +value;

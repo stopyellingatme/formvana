@@ -3,6 +3,9 @@ import { _get } from "./formUtilities";
 import { FieldConfig } from "../core/FieldConfig";
 import { ElementEvent, ValidationError } from "../core/Types";
 const max_int = Number.MAX_SAFE_INTEGER;
+const int_word_list = ["number", "decimal", "range", "int", "integer", "num"];
+const array_word_list = ["array", "list", "collection", "group"];
+const obj_word_list = ["object", "obj", "record", "rec", "dictionary", "dict"];
 
 /**
  * ---------------------------------------------------------------------------
@@ -106,9 +109,6 @@ function _linkValueFromEvent<T extends Object>(
   field.value.set(value);
 }
 
-const int_word_list = ["number", "decimal", "range", "int", "integer", "num"];
-const array_word_list = ["array", "list", "collection", "group"];
-const obj_word_list = ["object", "obj", "record", "rec", "dictionary", "dict"];
 /**
  * Ok, there's a lot going on here.
  * But we're really just checking the data_type for special cases.
@@ -140,7 +140,9 @@ function _getValueFromEvent<T extends Object>(
         /** Check if data_type is Array-like */
         return _parseArray(event, field);
       } else if (obj_word_list.indexOf(field.data_type) !== -1) {
-        /** Handle the Object data type! */
+        /** @TODO Handle the Object data type! */
+        /** @TODO Handle the Object data type! */
+        /** @TODO Handle the Object data type! */
       }
     }
 
@@ -185,29 +187,9 @@ function _parseArray<T extends Object>(
  */
 function _parseNumberOrValue(value: any): Number | any {
   if (value === "" || value === undefined || value === null) return value;
-  if (isNaN(+value) || +value >= max_int) return value;
+  if (isNaN(+value) || +value >= max_int || +value <= -max_int) return value;
   else return +value;
 }
-
-/**
- * If the input type is of type numbe or range, parse the value as a number.
- * Else return the plain string.
- */
-// function _getInputTextOrNumber(
-//   el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | any
-// ): boolean {
-//   if (el.type.match(/^(number|range)$/) || el.nodeName === "SELECT") {
-//     return true;
-//   } else {
-//     return false;
-//   }
-
-// return _getInputTextOrNumber(event.target)
-//   ? /** @ts-ignore */
-//     _parseNumberOrValue(event.target.value)
-//   : /** @ts-ignore */
-//     event.target.value;
-// }
 
 export {
   _linkAllErrors,
