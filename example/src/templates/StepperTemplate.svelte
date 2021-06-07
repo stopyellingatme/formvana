@@ -3,7 +3,6 @@
   import LoadingIndicator from "../components/inputs/LoadingIndicator.svelte";
   import Field from "../components/inputs/Field.svelte";
   import { createEventDispatcher } from "svelte";
-  import ButtonArea from "../components/controls/ButtonArea.svelte";
   const dispatch = createEventDispatcher();
 
   /**
@@ -13,10 +12,16 @@
    * is being used in DynamicForm.
    */
   export let form;
+  export let current_index;
 
   const handleSubmit = (e) => {
-    console.log(e);
-
+    /**
+     * This is the "event" we capture two levels up in the Form Component.
+     * If the DynamicForm has an on:event handler, we can use this to pass any
+     * event back up the chain.
+     * As long as event.type || event.detail.type has a value (submit, click, etc)
+     * we can hanlde the event in the outermost parent.
+     */
     dispatch("event", e);
   };
 
@@ -26,14 +31,12 @@
     $form.destroy();
   });
 
-  $: valid = $form.valid;
-  $: changed = $form.changed;
   $: loading = $form.loading;
 
   let fw, fh;
 </script>
 
-<div class="px-8 py-2 pb-10 mx-auto max-w-7xl">
+<div class="px-8 py-2 mx-auto max-w-7xl">
   <div class="flex items-start justify-center">
     <div class="w-full space-y-6">
       <section>
@@ -43,28 +46,27 @@
           bind:clientHeight={fh}
           bind:clientWidth={fw}
         >
-          <div class="shadow sm:rounded-md">
+          <div class="rounded-md">
             <LoadingIndicator visible={$loading} w={fw} h={fh} />
             <div class="px-4 py-6 bg-white sm:p-6">
               <!-- Header Area -->
               <div>
                 <h2 class="text-lg font-medium leading-6 text-gray-900">
-                  Example Form
+                  Step #{current_index + 1}
                 </h2>
                 <p class="mt-1 text-sm text-gray-500">
-                  This is a test. This is only a test. Bleep bloop.
+                  Description for form step #{current_index + 1}
                 </p>
               </div>
 
-              <!-- This is where the Form Generator "Magic" happens! -->
+              <!-- Form Wrapper Div (col num, col gaps, etc.) -->
               <div class="grid grid-cols-4 gap-6 mt-6">
+                <!-- This is where the Form Generator Magic happens! -->
                 {#each $form.fields as field, i}
                   <Field {field} {form} />
                 {/each}
               </div>
             </div>
-
-            <ButtonArea reset={$form.reset} {valid} {changed} />
           </div>
         </form>
       </section>

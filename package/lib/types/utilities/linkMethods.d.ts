@@ -36,8 +36,4 @@ declare function _linkAllValues<T extends Object>(from_fields_to_model: boolean,
  * @Hotpath
  */
 declare function _linkValueFromEvent<T extends Object>(field: FieldConfig<T>, model: T, event?: ElementEvent): void;
-/**
- * If the input type is of type numbe or range, parse the value as a number.
- * Else return the plain string.
- */
 export { _linkAllErrors, _linkFieldErrors, _linkValueFromEvent, _linkAllValues, };

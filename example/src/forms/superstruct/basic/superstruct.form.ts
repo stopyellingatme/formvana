@@ -58,6 +58,14 @@ const field_configs: FormFieldSchema = {
     required: true,
     value: writable(undefined),
   },
+  description: {
+    selector: "input",
+    data_type: "string",
+    label: "Description",
+    required: true,
+    value: writable(undefined),
+    exclude_events: ["change"],
+  },
   tags: {
     selector: "checkbox",
     data_type: "array",
@@ -100,6 +108,7 @@ const field_configs: FormFieldSchema = {
 const Article = object({
   id: number(),
   title: string(),
+  description: string(),
   tags: array(string()),
   taggers: array(string()),
   foods: array(number()),
@@ -129,7 +138,7 @@ const doValidation = async (model, struct): Promise<ValidationError[]> => {
    * Otherwise if the value is above Number.MAX_SAFE_INTEGER, we return the
    * value as string. Seems sensible to me.
    */
-  model.id = parseInt(model.id);
+  // model.id = parseInt(model.id);
   /** console.log(model.id); */
 
   /** Validate the struct */

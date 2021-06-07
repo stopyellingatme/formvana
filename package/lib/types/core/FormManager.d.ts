@@ -31,9 +31,9 @@ export declare class FormManager {
  */
 export declare class FormStepper extends FormManager {
     constructor(forms: FormDictionary, props?: Partial<FormManager>);
-    active_step: keyof FormDictionary;
-    next: () => void;
-    back: () => void;
+    active_step: Writable<keyof FormDictionary>;
+    nextStep: () => void;
+    backStep: () => void;
 }
 /**
  * Group of Forms which extends the FormManager functionality.

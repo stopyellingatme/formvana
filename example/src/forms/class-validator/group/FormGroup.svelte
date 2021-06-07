@@ -2,7 +2,7 @@
   import { onMount, tick, onDestroy } from "svelte";
   import { onSubmit, init, form_state } from "./group.form";
   import DynamicForm from "../../DynamicForm.svelte";
-  import ButtonArea from "../../../components/ButtonArea.svelte";
+  import ButtonArea from "../../../components/controls/ButtonArea.svelte";
   import { writable } from "svelte/store";
 
   onMount(() => {

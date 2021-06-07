@@ -47,9 +47,9 @@ import {
  *
  * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
- * @TODO Do the stepper example and clean up the Form Manager interface
- * @TODO Add more data type parsers (Object, etc.)
+ * @TODO Add more data type parsers (Object, File, Files, etc.)
  * @TODO Add several plain html/css examples (without tailwind)
+ * @TODO Add different ways to display errors (browser contraint api, svelte, tippy, etc.)
  *
  * @TODO Might want to add a debug mode to inspect event listeners and stuff
  *

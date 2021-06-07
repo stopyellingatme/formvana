@@ -15,22 +15,10 @@ import GroupTemplate from "../../../templates/GroupTemplate.svelte";
 
 const ref_data: RefData = {
   statuses: [
-    {
-      label: "ACTIVE",
-      value: 0,
-    },
-    {
-      label: "PENDING",
-      value: 1,
-    },
-    {
-      label: "SUSPENDED",
-      value: 2,
-    },
-    {
-      label: "ARCHIVED",
-      value: 3,
-    },
+    { label: "ACTIVE", value: 0 },
+    { label: "PENDING", value: 1 },
+    { label: "SUSPENDED", value: 2 },
+    { label: "ARCHIVED", value: 3 },
   ],
 };
 

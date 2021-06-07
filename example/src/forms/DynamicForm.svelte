@@ -22,18 +22,24 @@
 {#if $form.template}
   <!-- 
     Bind the form.template the dynamically rendered svelte:component
+
+    There is a caveat here:
+      The Template component can only emit an "event" event.
+      We dispatch the event.detail.type in order to pass ANY event to the
+      parent form component.
    -->
   <svelte:component
     this={$form.template}
     {form}
     {...$$props}
-    on:event={(e) => dispatch(e.detail.type, e)}
+    on:event={(e) => dispatch(e.type || e.detail.type, e)}
   />
-{:else}
   <!-- 
-    Or pass in a custom form as a child - takes {form} prop,
+    ***************************************************** 
+    The on:event handler NEEDS either type || detail.type 
+    *****************************************************
 
-    But it's easier to just pass in a template, honestly
-   -->
-  <slot {form} {...$$props} />
+    This allows us to pass an event from the child template to the parent
+    form component.
+  -->
 {/if}

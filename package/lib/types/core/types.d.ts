@@ -1,3 +1,4 @@
+import { FieldConfig } from "./FieldConfig";
 /**
  * ---------------------------------------------------------------------------
  *
@@ -7,7 +8,6 @@
  *
  * ---------------------------------------------------------------------------
  */
-import { FieldConfig } from "./FieldConfig";
 /** Using "when" gives us a little more flexibilty. */
 export interface ValidationCallback {
     callback: Callback;

@@ -249,15 +249,6 @@ class FieldStepper {
 }
 
 /**
- * ---------------------------------------------------------------------------
- *
- * *** Data Shapes (Types) ***
- *
- * Will write later. Files delted and source control didnt catch.
- *
- * ---------------------------------------------------------------------------
- */
-/**
  * All constructor values are optional so we can create a blank Validation
  * Error object, for whatever reason.
  */
@@ -418,6 +409,9 @@ function _setFieldOrder(field_order, fields) {
 }
 
 const max_int = Number.MAX_SAFE_INTEGER;
+const int_word_list = ["number", "decimal", "range", "int", "integer", "num"];
+const array_word_list = ["array", "list", "collection", "group"];
+const obj_word_list = ["object", "obj", "record", "rec", "dictionary", "dict"];
 /**
  * ---------------------------------------------------------------------------
  *
@@ -501,9 +495,6 @@ function _linkValueFromEvent(field, model, event) {
     model[field.name] = value;
     field.value.set(value);
 }
-const int_word_list = ["number", "decimal", "range", "int", "integer", "num"];
-const array_word_list = ["array", "list", "collection", "group"];
-const obj_word_list = ["object", "obj", "record", "rec", "dictionary", "dict"];
 /**
  * Ok, there's a lot going on here.
  * But we're really just checking the data_type for special cases.
@@ -979,6 +970,7 @@ function _addCallbackToField(form, field, event, callback, required_fields) {
  * Performance is blazing with < 500 fields.
  * Can render up to 2000 inputs in per class/fields, not recommended.
  * Just break it up into 100 or so fields per form (max 250) if its a huge form.
+ * Use one of the Form Manager interfaces if applicable.
  *  - Tested on late 2014 mbp - 2.5ghz core i7, 16gb ram
  *
  * @TODO Time to redo the readme.md file! Lots have changed since then!
@@ -993,6 +985,7 @@ function _addCallbackToField(form, field, event, callback, required_fields) {
  *
  */
 /**
+ * ---------------------------------------------------------------------------
  * Formvana Form Class
  *
  * Main Concept: fields and model are separate.
@@ -1006,6 +999,7 @@ function _addCallbackToField(form, field, event, callback, required_fields) {
  * Variables and stores are snake_case.
  * Everyone will love it.
  *
+ * ---------------------------------------------------------------------------
  */
 class Form {
     constructor(model, validation_options, form_properties) {
@@ -1102,15 +1096,16 @@ class Form {
     field_schema;
     /**
      * refs hold any reference data you'll be using in the form
-     * e.g. seclet dropdowns, radio buttons, etc.
      *
-     * If you did not set the model in constructor:
-     * Call attachRefData() to link the data to the respective field
+     * Call attachRefData() to link reference data to form or pass it
+     * via the constrictor.
+     *
+     * Fields & reference data are linked via field.ref_key
      *
      * * Format:
-     * * Record<ref_key: string, Array<{label: string, value: any, data?: any}>>
+     * * Record<[ref_key]: string, Array<{[label]: string, [value]: any, [data]?: any}>>
      *
-     * * Fields & reference data are linked via field.ref_key
+     * @UseCase seclet dropdowns, radio buttons, etc.
      */
     refs;
     /**
@@ -2696,14 +2691,14 @@ class FormStepper extends FormManager {
     constructor(forms, props) {
         super(forms, props);
     }
-    active_step = 0;
-    next = () => {
-        if (typeof this.active_step === "number")
-            this.active_step++;
+    active_step = writable(0);
+    nextStep = () => {
+        if (typeof get_store_value(this.active_step) === "number")
+            this.active_step.set(get_store_value(this.active_step) + 1);
     };
-    back = () => {
-        if (typeof this.active_step === "number")
-            this.active_step--;
+    backStep = () => {
+        if (typeof get_store_value(this.active_step) === "number")
+            this.active_step.set(get_store_value(this.active_step) - 1);
     };
 }
 /**

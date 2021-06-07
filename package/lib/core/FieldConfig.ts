@@ -11,11 +11,15 @@ import {
 } from "./Types";
 
 /**
+ * ---------------------------------------------------------------------------
+ *
  * FieldConfig is used to help with the form auto generation functionality.
  *
  * This is not meant to be a complete HTML Input/Select/etc replacement.
  * It is simply a vehicle to help give the form generator
  * an easy-to-use format to work with.
+ *
+ * ---------------------------------------------------------------------------
  */
 export class FieldConfig<T extends Object> {
   constructor(name: keyof T, init?: Partial<FieldConfig<T>>) {
@@ -104,11 +108,12 @@ export class FieldConfig<T extends Object> {
    * Attributes uses a fairly exhaustive map of most HTML Field-ish
    * attributes.
    *
-   * @example attributes["type"] get's set here.
-   *
    * You also have the option to use a plain Object, for extra flexibility.
    *
-   * @example attrubutes["description"] is ok without being a FieldAttribute
+   * @example attributes["type"] get's set here.
+   *
+   * @example attrubutes["description"] passes type-check without being a FieldAttribute
+   * but still gives you type-completion on any known attribute.
    */
   attributes: Partial<FieldAttributes> | Record<string | number | symbol, any> =
     {};

@@ -2,6 +2,20 @@ import { get, writable, Writable } from "svelte/store";
 import { Form } from "./Form";
 import { ValidationCallback } from "./Types";
 
+/**
+ * ---------------------------------------------------------------------------
+ *
+ * Multi-Form Management Helpers
+ *
+ * These interfaces/classes are meant to aid when using multiple Form objects.
+ * Such as when several forms need to be grouped together or made into a
+ * stepper/wizard.
+ * 
+ * Classes are below the FormManager interface.
+ *
+ * ---------------------------------------------------------------------------
+ */
+
 type FormDictionary = Array<Form<any>>;
 
 /**
@@ -165,21 +179,38 @@ export class FormManager {
 
 /**
  * Collection of Forms used as steps.
- * @example a data collection wizard with many fields or whatever
+ * @example a data collection wizard with many fields
  */
 export class FormStepper extends FormManager {
   constructor(forms: FormDictionary, props?: Partial<FormManager>) {
     super(forms, props);
   }
 
-  active_step: keyof FormDictionary = 0;
+  /** What step are we on currently? */
+  active_step: Writable<keyof FormDictionary> = writable(0);
 
-  next = () => {
-    if (typeof this.active_step === "number") this.active_step++;
+  /**
+   * You can attach data to each step of the stepper.
+   *
+   * In the example below step #0 has a title, description and instructions.
+   * @example { 0: {title: string, description: string, instructions: string} }
+   */
+  step_data?: Record<keyof FormDictionary, Object | string>;
+
+  /** Set active step index ++1 */
+  nextStep = () => {
+    const active_step = get(this.active_step);
+    /** If the active step type is number, increment it. */
+    if (typeof active_step === "number")
+      this.active_step.set((active_step as number) + 1);
   };
 
-  back = () => {
-    if (typeof this.active_step === "number") this.active_step--;
+  /** Set active step index --1 */
+  backStep = () => {
+    const active_step = get(this.active_step);
+    /** If the active step type is number, decrement it. */
+    if (typeof active_step === "number")
+      this.active_step.set((active_step as number) - 1);
   };
 }
 
