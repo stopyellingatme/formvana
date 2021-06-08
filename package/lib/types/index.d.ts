@@ -349,11 +349,15 @@ interface AriaAttributes {
     "aria-valuetext"?: string;
 }
 /**
+ * ---------------------------------------------------------------------------
+ *
  * FieldConfig is used to help with the form auto generation functionality.
  *
  * This is not meant to be a complete HTML Input/Select/etc replacement.
  * It is simply a vehicle to help give the form generator
  * an easy-to-use format to work with.
+ *
+ * ---------------------------------------------------------------------------
  */
 declare class FieldConfig<T extends Object> {
     constructor(name: keyof T, init?: Partial<FieldConfig<T>>);
@@ -398,11 +402,12 @@ declare class FieldConfig<T extends Object> {
      * Attributes uses a fairly exhaustive map of most HTML Field-ish
      * attributes.
      *
-     * @example attributes["type"] get's set here.
-     *
      * You also have the option to use a plain Object, for extra flexibility.
      *
-     * @example attrubutes["description"] is ok without being a FieldAttribute
+     * @example attributes["type"] get's set here.
+     *
+     * @example attrubutes["description"] passes type-check without being a FieldAttribute
+     * but still gives you type-completion on any known attribute.
      */
     attributes: Partial<FieldAttributes> | Record<string | number | symbol, any>;
     /** Has the input been altered? */
@@ -481,9 +486,9 @@ declare class FieldStepper {
  *
  * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
- * @TODO Do the stepper example and clean up the Form Manager interface
- * @TODO Add more data type parsers (Object, etc.)
+ * @TODO Add more data type parsers (Object, File, Files, etc.)
  * @TODO Add several plain html/css examples (without tailwind)
+ * @TODO Add different ways to display errors (browser contraint api, svelte, tippy, etc.)
  *
  * @TODO Might want to add a debug mode to inspect event listeners and stuff
  *
@@ -696,6 +701,19 @@ declare class Form<ModelType extends Object> {
     setFieldAttributes: (names: string | Array<keyof ModelType>, attributes: Partial<FieldConfig<ModelType>>) => void;
 }
 declare function field<T extends Object>(config: Partial<FieldConfig<T>>): (target: any, propertyKey: string) => void;
+/**
+ * ---------------------------------------------------------------------------
+ *
+ * Multi-Form Management Helpers
+ *
+ * These interfaces/classes are meant to aid when using multiple Form objects.
+ * Such as when several forms need to be grouped together or made into a
+ * stepper/wizard.
+ *
+ * Classes are below the FormManager interface.
+ *
+ * ---------------------------------------------------------------------------
+ */
 type FormDictionary = Array<Form<any>>;
 /**
  * Base interface for managing multiple instances of Form
@@ -722,12 +740,22 @@ declare class FormManager {
 }
 /**
  * Collection of Forms used as steps.
- * @example a data collection wizard with many fields or whatever
+ * @example a data collection wizard with many fields
  */
 declare class FormStepper extends FormManager {
     constructor(forms: FormDictionary, props?: Partial<FormManager>);
+    /** What step are we on currently? */
     active_step: Writable<keyof FormDictionary>;
+    /**
+     * You can attach data to each step of the stepper.
+     *
+     * In the example below step #0 has a title, description and instructions.
+     * @example { 0: {title: string, description: string, instructions: string} }
+     */
+    step_data?: Record<keyof FormDictionary, Object | string>;
+    /** Set active step index ++1 */
     nextStep: () => void;
+    /** Set active step index --1 */
     backStep: () => void;
 }
 /**

@@ -7,13 +7,12 @@
   import RadioGroup from "./Radio/RadioGroup.svelte";
 
   export let field;
-  export let form;
 
-  $: hidden = field.hidden;
+  $: visible = !field.hidden;
 </script>
 
 <!-- If the field is not hidden, then display it. -->
-{#if !hidden}
+{#if visible}
   <div class="col-span-4 sm:col-span-2">
     <!-- Check which input type we're displaying the field as! -->
     {#if field.selector === "input"}

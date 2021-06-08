@@ -69,11 +69,15 @@ function writable(value, start = noop) {
 }
 
 /**
+ * ---------------------------------------------------------------------------
+ *
  * FieldConfig is used to help with the form auto generation functionality.
  *
  * This is not meant to be a complete HTML Input/Select/etc replacement.
  * It is simply a vehicle to help give the form generator
  * an easy-to-use format to work with.
+ *
+ * ---------------------------------------------------------------------------
  */
 class FieldConfig {
     constructor(name, init) {
@@ -150,11 +154,12 @@ class FieldConfig {
      * Attributes uses a fairly exhaustive map of most HTML Field-ish
      * attributes.
      *
-     * @example attributes["type"] get's set here.
-     *
      * You also have the option to use a plain Object, for extra flexibility.
      *
-     * @example attrubutes["description"] is ok without being a FieldAttribute
+     * @example attributes["type"] get's set here.
+     *
+     * @example attrubutes["description"] passes type-check without being a FieldAttribute
+     * but still gives you type-completion on any known attribute.
      */
     attributes = {};
     /** Has the input been altered? */
@@ -527,6 +532,8 @@ function _getValueFromEvent(event, field) {
             }
             else if (obj_word_list.indexOf(field.data_type) !== -1) ;
         }
+        else
+            return undefined;
         /** If none of the above, just retrun the unaltered value */
         return event.target.value;
     }
@@ -564,8 +571,12 @@ function _parseArray(event, field) {
  * @Hotpath
  */
 function _parseNumberOrValue(value) {
-    if (value === "" || value === undefined || value === null)
-        return value;
+    if (value === "" ||
+        value === undefined ||
+        value === null ||
+        /** Ok, this is going to have to get looked into. */
+        value === "undefined")
+        return undefined;
     if (isNaN(+value) || +value >= max_int || +value <= -max_int)
         return value;
     else
@@ -977,9 +988,9 @@ function _addCallbackToField(form, field, event, callback, required_fields) {
  *
  * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
- * @TODO Do the stepper example and clean up the Form Manager interface
- * @TODO Add more data type parsers (Object, etc.)
+ * @TODO Add more data type parsers (Object, File, Files, etc.)
  * @TODO Add several plain html/css examples (without tailwind)
+ * @TODO Add different ways to display errors (browser contraint api, svelte, tippy, etc.)
  *
  * @TODO Might want to add a debug mode to inspect event listeners and stuff
  *
@@ -2685,20 +2696,34 @@ class FormManager {
 }
 /**
  * Collection of Forms used as steps.
- * @example a data collection wizard with many fields or whatever
+ * @example a data collection wizard with many fields
  */
 class FormStepper extends FormManager {
     constructor(forms, props) {
         super(forms, props);
     }
+    /** What step are we on currently? */
     active_step = writable(0);
+    /**
+     * You can attach data to each step of the stepper.
+     *
+     * In the example below step #0 has a title, description and instructions.
+     * @example { 0: {title: string, description: string, instructions: string} }
+     */
+    step_data;
+    /** Set active step index ++1 */
     nextStep = () => {
-        if (typeof get_store_value(this.active_step) === "number")
-            this.active_step.set(get_store_value(this.active_step) + 1);
+        const active_step = get_store_value(this.active_step);
+        /** If the active step type is number, increment it. */
+        if (typeof active_step === "number")
+            this.active_step.set(active_step + 1);
     };
+    /** Set active step index --1 */
     backStep = () => {
-        if (typeof get_store_value(this.active_step) === "number")
-            this.active_step.set(get_store_value(this.active_step) - 1);
+        const active_step = get_store_value(this.active_step);
+        /** If the active step type is number, decrement it. */
+        if (typeof active_step === "number")
+            this.active_step.set(active_step - 1);
     };
 }
 /**

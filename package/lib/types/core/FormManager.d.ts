@@ -1,6 +1,19 @@
 import { Writable } from "svelte/store";
 import { Form } from "./Form";
 import { ValidationCallback } from "./Types";
+/**
+ * ---------------------------------------------------------------------------
+ *
+ * Multi-Form Management Helpers
+ *
+ * These interfaces/classes are meant to aid when using multiple Form objects.
+ * Such as when several forms need to be grouped together or made into a
+ * stepper/wizard.
+ *
+ * Classes are below the FormManager interface.
+ *
+ * ---------------------------------------------------------------------------
+ */
 declare type FormDictionary = Array<Form<any>>;
 /**
  * Base interface for managing multiple instances of Form
@@ -27,12 +40,22 @@ export declare class FormManager {
 }
 /**
  * Collection of Forms used as steps.
- * @example a data collection wizard with many fields or whatever
+ * @example a data collection wizard with many fields
  */
 export declare class FormStepper extends FormManager {
     constructor(forms: FormDictionary, props?: Partial<FormManager>);
+    /** What step are we on currently? */
     active_step: Writable<keyof FormDictionary>;
+    /**
+     * You can attach data to each step of the stepper.
+     *
+     * In the example below step #0 has a title, description and instructions.
+     * @example { 0: {title: string, description: string, instructions: string} }
+     */
+    step_data?: Record<keyof FormDictionary, Object | string>;
+    /** Set active step index ++1 */
     nextStep: () => void;
+    /** Set active step index --1 */
     backStep: () => void;
 }
 /**

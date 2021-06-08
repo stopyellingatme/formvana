@@ -39,7 +39,7 @@ function initStore() {
       on_events: new OnEvents({ focus: false }),
       template: GroupTemplate,
       refs: ref_data,
-      hidden_fields: ["description_3", "name_10"],
+      // hidden_fields: ["description_3", "name_10"],
       disabled_fields: ["email_2", "email_4"],
     }
   );

@@ -63,7 +63,7 @@
               <div class="grid grid-cols-4 gap-6 mt-6">
                 <!-- This is where the Form Generator Magic happens! -->
                 {#each $form.fields as field, i}
-                  <Field {field} {form} />
+                  <Field {field} />
                 {/each}
               </div>
             </div>

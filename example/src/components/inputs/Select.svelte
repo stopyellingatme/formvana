@@ -22,6 +22,8 @@
       ? "text-red-900 border-red-300 focus:ring-red-500 focus:border-red-300"
       : "border-gray-300 focus:ring-indigo-500 focus:border-indigo-300"
   }`;
+
+  // $: console.log("VALUE: ", $value, typeof $value)
 </script>
 
 <div>
@@ -31,7 +33,7 @@
     </label>
     <div class="relative m-1 rounded-md shadow-sm">
       <select {name} {...attributes} class={classes}>
-        {#if $value === undefined || null}
+        {#if !$value}
           <option selected value={undefined}> -- </option>
         {/if}
         {#each options as option}

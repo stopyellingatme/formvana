@@ -15,7 +15,7 @@ import {
   array,
   StructError,
 } from "superstruct";
-import ExampleTemplate from "../../../templates/ExampleTemplate.svelte";
+import ExampleTemplate from "../../../templates/Example.template.svelte";
 
 const refs: RefData = {
   tags: [

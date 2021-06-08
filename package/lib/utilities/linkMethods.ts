@@ -144,7 +144,7 @@ function _getValueFromEvent<T extends Object>(
         /** @TODO Handle the Object data type! */
         /** @TODO Handle the Object data type! */
       }
-    }
+    } else return undefined;
 
     /** If none of the above, just retrun the unaltered value */
     return event.target.value;
@@ -185,8 +185,15 @@ function _parseArray<T extends Object>(
  *
  * @Hotpath
  */
-function _parseNumberOrValue(value: any): Number | any {
-  if (value === "" || value === undefined || value === null) return value;
+function _parseNumberOrValue(value: any): Number | any | undefined {
+  if (
+    value === "" ||
+    value === undefined ||
+    value === null ||
+    /** Ok, this is going to have to get looked into. */
+    value === "undefined"
+  )
+    return undefined;
   if (isNaN(+value) || +value >= max_int || +value <= -max_int) return value;
   else return +value;
 }

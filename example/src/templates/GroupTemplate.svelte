@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import LoadingIndicator from "../components/inputs/LoadingIndicator.svelte";
-  import Field from "../components/inputs/Field.svelte";
+  import Fields from "../components/inputs/Fields.svelte";
   import { createEventDispatcher } from "svelte";
   const dispatch = createEventDispatcher();
 
@@ -57,9 +57,10 @@
               <!-- Form Wrapper Div (col num, col gaps, etc.) -->
               <div class="grid grid-cols-4 gap-6 mt-6">
                 <!-- This is where the Form Generator Magic happens! -->
-                {#each $form.fields as field, i}
-                  <Field {field} {form} />
-                {/each}
+                <Fields fields={$form.fields} />
+                <!-- {#each $form.fields as field, i}
+                  <Fields {field} />
+                {/each} -->
               </div>
             </div>
           </div>

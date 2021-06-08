@@ -13,7 +13,7 @@ import {
   ValidationError as VError,
   ValidatorOptions,
 } from "class-validator";
-import ExampleTemplate from "../../../templates/ExampleTemplate.svelte";
+import ExampleTemplate from "../../../templates/Example.template.svelte";
 
 const ref_data: RefData = {
   statuses: [
