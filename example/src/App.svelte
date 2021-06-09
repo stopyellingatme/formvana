@@ -9,8 +9,8 @@
   const validators = ["class-validator", "superstruct"];
   const examples = ["basic", "group", "stepper"];
 
-  $: selected_validator = validators[0];
-  $: selected = examples[1];
+  $: selected_validator = validators[1];
+  $: selected = examples[0];
 </script>
 
 <main>

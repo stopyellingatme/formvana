@@ -100,7 +100,6 @@ function _linkValueFromEvent<T extends Object>(
   event?: ElementEvent
 ): void {
   const value = _getValueFromEvent(event, field);
-
   /**
    * Well, we have to set both.
    * This compensates for native select elements and probably more.
@@ -131,24 +130,43 @@ function _getValueFromEvent<T extends Object>(
        * Deep fucking ribbit hole.
        */
       if (int_word_list.indexOf(field.data_type) !== -1) {
-        /** Check if data_type is number-like */
+        /**  Check if data_type is number-like */
         return _parseNumberOrValue(event.target.value);
       } else if (field.data_type === "boolean") {
-        /** Check if data_type is Boolean */
+        /**  Check if data_type is Boolean */
         return Boolean(event.target.value);
       } else if (array_word_list.indexOf(field.data_type) !== -1) {
         /** Check if data_type is Array-like */
         return _parseArray(event, field);
       } else if (obj_word_list.indexOf(field.data_type) !== -1) {
-        /** @TODO Handle the Object data type! */
-        /** @TODO Handle the Object data type! */
-        /** @TODO Handle the Object data type! */
+        return _parseObject(event, field);
       }
     } else return undefined;
 
-    /** If none of the above, just retrun the unaltered value */
+    /**  If none of the above, just retrun the unaltered value */
     return event.target.value;
   } else return undefined;
+}
+
+function _parseObject<T extends Object>(
+  event: ElementEvent,
+  field: FieldConfig<T>
+) {
+  let vals: Record<string, any> = get(field.value);
+  const value: Record<string, any> = JSON.parse(event.target.value)
+    ? JSON.parse(event.target.value)
+    : event.target.value;
+
+  let key: keyof typeof value;
+  for (key in value) {
+    if (vals[key] || vals[key] === 0) {
+      vals[key] = value[key];
+    } else {
+      delete vals[key];
+    }
+  }
+  /** Return the array of values */
+  return vals;
 }
 
 function _parseArray<T extends Object>(
@@ -156,12 +174,11 @@ function _parseArray<T extends Object>(
   field: FieldConfig<T>
 ) {
   let vals = [...get(field.value)];
-
   /**
    * If the target is checked and the target value isn't in the field.value
    * then add the target value to the field value.
    */
-  if (event.target.checked && vals.indexOf(event.target.value) === -1) {
+  if (vals.indexOf(event.target.value) === -1) {
     vals.push(event.target.value);
   } else {
     /** Else remove the target.value from the field.value */
@@ -190,8 +207,13 @@ function _parseNumberOrValue(value: any): Number | any | undefined {
     value === "" ||
     value === undefined ||
     value === null ||
-    /** Ok, this is going to have to get looked into. */
-    value === "undefined"
+    typeof value === "undefined" ||
+    /**
+     * This is needed when a null or undefined value is attached
+     * to a select option value.
+     */
+    value === "undefined" ||
+    value === "null"
   )
     return undefined;
   if (isNaN(+value) || +value >= max_int || +value <= -max_int) return value;

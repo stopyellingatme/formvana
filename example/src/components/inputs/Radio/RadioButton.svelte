@@ -14,6 +14,21 @@
     },
     field.attributes || {}
   );
+
+  $: checked =
+    field.data_type === "object"
+      ? JSON.stringify($value) == JSON.stringify(option.value)
+      : $value == option.value;
+
+  // $: console.log(
+  //   checked,
+  //   JSON.stringify($value) == JSON.stringify(option.value),
+  //   JSON.stringify($value),
+  //   JSON.stringify(option.value)
+  // );
+
+  $: opt_value =
+    field.data_type === "object" ? JSON.stringify(option.value) : option.value;
 </script>
 
 <div class="flex items-center">
@@ -23,9 +38,9 @@
    -->
   <input
     name={field.name}
-    bind:value={option.value}
+    bind:value={opt_value}
     type="radio"
-    checked={$value == option.value}
+    {checked}
     {...attributes}
     id={`${field.name}-${index}`}
     class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"

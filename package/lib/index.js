@@ -525,26 +525,48 @@
                  * Deep fucking ribbit hole.
                  */
                 if (int_word_list.indexOf(field.data_type) !== -1) {
-                    /** Check if data_type is number-like */
+                    /**  Check if data_type is number-like */
                     return _parseNumberOrValue(event.target.value);
                 }
                 else if (field.data_type === "boolean") {
-                    /** Check if data_type is Boolean */
+                    /**  Check if data_type is Boolean */
                     return Boolean(event.target.value);
                 }
                 else if (array_word_list.indexOf(field.data_type) !== -1) {
                     /** Check if data_type is Array-like */
                     return _parseArray(event, field);
                 }
-                else if (obj_word_list.indexOf(field.data_type) !== -1) ;
+                else if (obj_word_list.indexOf(field.data_type) !== -1) {
+                    /** @TODO Handle the Object data type! */
+                    /** @TODO Handle the Object data type! */
+                    /** @TODO Handle the Object data type! */
+                    return _parseObject(event, field);
+                }
             }
             else
                 return undefined;
-            /** If none of the above, just retrun the unaltered value */
+            /**  If none of the above, just retrun the unaltered value */
             return event.target.value;
         }
         else
             return undefined;
+    }
+    function _parseObject(event, field) {
+        let vals = get_store_value(field.value);
+        const value = JSON.parse(event.target.value)
+            ? JSON.parse(event.target.value)
+            : event.target.value;
+        let key;
+        for (key in value) {
+            if (vals[key] || vals[key] === 0) {
+                vals[key] = value[key];
+            }
+            else {
+                delete vals[key];
+            }
+        }
+        /** Return the array of values */
+        return vals;
     }
     function _parseArray(event, field) {
         let vals = [...get_store_value(field.value)];
@@ -552,7 +574,7 @@
          * If the target is checked and the target value isn't in the field.value
          * then add the target value to the field value.
          */
-        if (event.target.checked && vals.indexOf(event.target.value) === -1) {
+        if (vals.indexOf(event.target.value) === -1) {
             vals.push(event.target.value);
         }
         else {
@@ -580,8 +602,13 @@
         if (value === "" ||
             value === undefined ||
             value === null ||
-            /** Ok, this is going to have to get looked into. */
-            value === "undefined")
+            typeof value === "undefined" ||
+            /**
+             * This is needed when a null or undefined value is attached
+             * to a select option value.
+             */
+            value === "undefined" ||
+            value === "null")
             return undefined;
         if (isNaN(+value) || +value >= max_int || +value <= -max_int)
             return value;
@@ -641,6 +668,19 @@
      */
     function _setInitialState(form, initial_state) {
         Object.assign(initial_state.model, form.model);
+        // Object.assign(initial_state.model, JSON.parse(JSON.stringify(form.model)));
+        if (initial_state.model) {
+            Object.keys(initial_state.model).forEach((key) => {
+                if (initial_state.model)
+                    serializeObject(initial_state.model, key);
+            });
+        }
+        // let key: keyof typeof initial_state.model;
+        // for(key in initial_state.model) {
+        //   if (initial_state.model && typeof initial_state.model[key] === "object") {
+        //     initial_state.model[key] = JSON.stringify(JSON.parse(initial_state.model[key]))
+        //   }
+        // }
         if (form.errors && form.errors.length > 0) {
             initial_state.errors = [...form.errors];
         }
@@ -649,12 +689,24 @@
         }
         return initial_state;
     }
+    function serializeObject(incoming_model, key) {
+        if (incoming_model && typeof incoming_model[key] === "object") {
+            incoming_model[key] = JSON.parse(JSON.stringify(incoming_model[key]));
+        }
+    }
     /**
      * Reset form to inital state.
      */
     function _resetState(form, initial_state) {
         /** !CANNOT OVERWRITE MODEL. VALIDATION GETS FUCKED UP! */
         Object.assign(form.model, initial_state.model);
+        // Object.assign(form.model, JSON.parse(JSON.stringify(initial_state.model)));
+        if (form.model) {
+            Object.keys(form.model).forEach((key) => {
+                if (form.model)
+                    serializeObject(form.model, key);
+            });
+        }
         /** Clear the form errors before assigning initial_state.errors */
         form.clearErrors();
         if (initial_state.errors && initial_state.errors.length > 0) {

@@ -36,7 +36,18 @@ const refs: RefData = {
     { label: "Spring Rolls", value: 4 },
     { label: "Parm Eggs & Bacon", value: 5 },
   ],
+  complex: [
+    { label: "First", value: { id: 0 } },
+    { label: "Second", value: { id: 1 } },
+    { label: "Third", value: { id: 2 } },
+  ],
 };
+
+// complex: [
+//   { label: "First", value: { index: 0, description: "First Item" } },
+//   { label: "Second", value: { index: 1, description: "Second Item" } },
+//   { label: "Third", value: { index: 2, description: "Thrid Item" } },
+// ],
 
 /**
  * All of the following is what's needed to configure a formvana instance
@@ -47,7 +58,7 @@ const field_configs: FormFieldSchema = {
     selector: "input",
     data_type: "number",
     label: "ID",
-    required: true,
+    required: false,
     value: writable(0),
     attributes: { type: "number" },
   },
@@ -55,32 +66,32 @@ const field_configs: FormFieldSchema = {
     selector: "input",
     data_type: "string",
     label: "Title",
-    required: true,
+    required: false,
     value: writable(undefined),
   },
   description: {
     selector: "input",
     data_type: "string",
     label: "Description",
-    required: true,
+    required: false,
     value: writable(undefined),
     exclude_events: ["change"],
   },
   tags: {
-    selector: "checkbox",
+    selector: "checkboxes",
     data_type: "array",
     label: "Tags:",
-    required: true,
+    required: false,
     ref_key: "tags",
     hint: "Select one or more tags",
     value: writable([]),
     exclude_events: ["input", "focus", "blur"],
   },
   taggers: {
-    selector: "checkbox",
+    selector: "checkboxes",
     data_type: "array",
     label: "Stuff I want:",
-    required: true,
+    required: false,
     ref_key: "parts",
     hint: "These are hard to aquire in 2021!",
     value: writable([]),
@@ -90,18 +101,21 @@ const field_configs: FormFieldSchema = {
     selector: "radio",
     data_type: "number",
     label: "Fooooood:",
-    required: true,
+    required: false,
     ref_key: "food",
     hint: "Whatcha gonna eat?",
     value: writable(null),
     exclude_events: ["input", "focus", "blur"],
   },
   author: {
-    selector: "list",
+    selector: "radio",
     data_type: "object",
-    label: "author",
+    label: "Ordering",
+    hint: "Pick some orders.",
     required: true,
+    ref_key: "complex",
     value: writable({ id: 1 }),
+    exclude_events: ["input", "focus", "blur"],
   },
 };
 
@@ -234,9 +248,10 @@ export const init = () => {
     //   get(form_state).updateInitialState();
     // }, 3000);
 
-    // get(form_state).value_changes.subscribe((val) => {
-    //   console.log("CHANGE: ", val);
-    // });
+    get(form_state).value_changes.subscribe((val) => {
+      // console.log("CHANGE: ", val);
+      console.log("CHANGE: ", get(form_state).model);
+    });
 
     /**
    * Update form with backend data

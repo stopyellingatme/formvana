@@ -186,7 +186,7 @@ export class FieldConfig<T extends Object> {
       this.node.addEventListener(
         event,
         /** Check if the callback is directly executable */
-        (e: Event) => (callback instanceof Function ? callback(e) : callback),
+        (e: InputEvent | Event) => (callback instanceof Function ? callback(e) : callback),
         /** No extra options being passed in */
         false
       );

@@ -31,6 +31,7 @@ export class ExampleModel {
       type: "number",
       legend: "Personal Data",
     },
+    exclude_events: ["focus","blur", "input"],
     ref_key: "statuses",
   })
   status_1;
@@ -64,8 +65,9 @@ export class ExampleModel {
     selector: "input",
     data_type: "string",
     label: "Email 4",
+    group: "other_stuff",
     required: true,
-    attributes: { placeholder: "Email 4", type: "email" },
+    attributes: { placeholder: "Email 4", type: "email", legend: "Another Group" },
   })
   email_4;
 
@@ -98,7 +100,9 @@ export class ExampleModel {
     data_type: "number",
     label: "Status 7",
     required: true,
+    group: "other_stuff",
     attributes: { placeholder: "Status 7", type: "number" },
+    exclude_events: ["focus","blur", "input"],
     ref_key: "statuses",
   })
   status_7;
@@ -109,6 +113,7 @@ export class ExampleModel {
     data_type: "string",
     label: "Email 8",
     required: true,
+    group: "other_stuff",
     attributes: { placeholder: "Email 8", type: "email" },
   })
   email_8;

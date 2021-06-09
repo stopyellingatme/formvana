@@ -9,19 +9,18 @@
   import FieldSet from "./Fieldset.svelte";
 
   export let fields;
+  let field_groups = {};
+
+  $: sorted_fields = handleFieldGroups(fields);
 
   onMount(() => {
     tick();
-    // sorted_fields = handleFieldGroups(fields);
   });
 
   /**
    * Alright, we got it working.
    * Now we need to clean this mess up.
-   * 
    */
-  $: sorted_fields = handleFieldGroups(fields);
-  let field_groups = {};
   const handleFieldGroups = (__fields) => {
     if (__fields && __fields.length > 0) {
       for (let i = 0; __fields.length > i; ++i) {

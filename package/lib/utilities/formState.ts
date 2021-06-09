@@ -68,12 +68,32 @@ function _setInitialState<T extends Object>(
 ): InitialFormState<T> {
   Object.assign(initial_state.model, form.model);
 
+  /**
+   * Well, we have to check if there are any nested objects and stringify them
+   * to disconnect the values from the initial Object.assign, above.
+   */
+  if (initial_state.model) {
+    Object.keys(initial_state.model).forEach((key) => {
+      if (initial_state.model)
+        serializeObject(
+          initial_state.model,
+          key as keyof typeof initial_state.model
+        );
+    });
+  }
+
   if (form.errors && form.errors.length > 0) {
     initial_state.errors = [...form.errors];
   } else {
     initial_state.errors = [];
   }
   return initial_state;
+}
+
+function serializeObject<T>(incoming_model: T, key: keyof T) {
+  if (incoming_model && typeof incoming_model[key] === "object") {
+    incoming_model[key] = JSON.parse(JSON.stringify(incoming_model[key]));
+  }
 }
 
 /**
@@ -85,6 +105,12 @@ function _resetState<T extends Object>(
 ): void {
   /** !CANNOT OVERWRITE MODEL. VALIDATION GETS FUCKED UP! */
   Object.assign(form.model, initial_state.model);
+
+  if (form.model) {
+    Object.keys(form.model).forEach((key) => {
+      if (form.model) serializeObject(form.model, key as keyof T);
+    });
+  }
 
   /** Clear the form errors before assigning initial_state.errors */
   form.clearErrors();

@@ -16,6 +16,9 @@
     },
     field.attributes || {}
   );
+
+  $: checked =
+    $value.includes(option.value) || $value.includes(parseInt(option.value));
 </script>
 
 <div class="relative flex items-start">
@@ -24,8 +27,7 @@
       name={field.name}
       bind:value={option.value}
       type="checkbox"
-      checked={$value.includes(option.value) ||
-        $value.includes(parseInt(option.value))}
+      {checked}
       {...attributes}
       class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
       id={`${field.name}-${index}`}
