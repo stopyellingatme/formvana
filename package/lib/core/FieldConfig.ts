@@ -1,6 +1,8 @@
 import { SvelteComponent } from "svelte";
 import { get, writable, Writable } from "svelte/store";
+import { field } from "./Decorators";
 import {
+  AcceptedDataType,
   Callback,
   FieldAttributes,
   FieldNode,
@@ -59,6 +61,11 @@ export class FieldConfig<T extends Object> {
       /** If no aria-label then set it to the label or if !label then name */
       this.attributes["aria-label"] = this.label || this.name;
     }
+
+    if (this.required) {
+      this.attributes["required"] = true;
+      this.attributes["aria-required"] = true;
+    }
   }
 
   /**
@@ -95,7 +102,7 @@ export class FieldConfig<T extends Object> {
    *
    * Defaults to "string"
    */
-  data_type: string = "string";
+  data_type: AcceptedDataType = "text";
 
   /**
    * Validation Errors!
@@ -138,7 +145,11 @@ export class FieldConfig<T extends Object> {
   /** Pretty self-explainitory, hide the field. */
   hidden?: boolean;
 
-  /** Element.dataset hook, so you can do the really wild things! */
+  /**
+   * @TODO Add hooks for this when setting up field.
+   *
+   * Element.dataset hook, so you can do the really wild things!
+   */
   data_set?: string[];
 
   /**
@@ -186,7 +197,8 @@ export class FieldConfig<T extends Object> {
       this.node.addEventListener(
         event,
         /** Check if the callback is directly executable */
-        (e: InputEvent | Event) => (callback instanceof Function ? callback(e) : callback),
+        (e: InputEvent | Event) =>
+          callback instanceof Function ? callback(e) : callback,
         /** No extra options being passed in */
         false
       );
@@ -196,6 +208,11 @@ export class FieldConfig<T extends Object> {
       );
     }
   };
+
+  emitEvent(event_name: keyof HTMLElementEventMap): boolean | undefined {
+    const event = new Event(event_name);
+    return this.node?.dispatchEvent(event);
+  }
 }
 
 type FieldDictionary = Array<FieldConfig<Object>>;

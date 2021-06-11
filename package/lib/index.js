@@ -118,6 +118,8 @@
                 /** If no aria-label then set it to the label or if !label then name */
                 this.attributes["aria-label"] = this.label || this.name;
             }
+            if (this.required)
+                this.attributes["required"] = true;
         }
         /**
          * Name of the class property.
@@ -149,7 +151,7 @@
          *
          * Defaults to "string"
          */
-        data_type = "string";
+        data_type = "text";
         /**
          * Validation Errors!
          * We're mainly looking in the "errors" field.
@@ -222,7 +224,7 @@
             if (this.node) {
                 this.node.addEventListener(event, 
                 /** Check if the callback is directly executable */
-                (e) => (callback instanceof Function ? callback(e) : callback), 
+                (e) => callback instanceof Function ? callback(e) : callback, 
                 /** No extra options being passed in */
                 false);
             }
@@ -230,6 +232,10 @@
                 throw new Error("Node is missing! No Html Node to attach event listener too!");
             }
         };
+        emitEvent(event_name) {
+            const event = new Event(event_name);
+            return this.node?.dispatchEvent(event);
+        }
     }
     class FieldStepper {
         constructor(fields, active_index) {
@@ -420,9 +426,6 @@
     }
 
     const max_int = Number.MAX_SAFE_INTEGER;
-    const int_word_list = ["number", "decimal", "range", "int", "integer", "num"];
-    const array_word_list = ["array", "list", "collection", "group"];
-    const obj_word_list = ["object", "obj", "record", "rec", "dictionary", "dict"];
     /**
      * ---------------------------------------------------------------------------
      *
@@ -524,49 +527,27 @@
                  * Yeah, we do a lot of checking in this bitch.
                  * Deep fucking ribbit hole.
                  */
-                if (int_word_list.indexOf(field.data_type) !== -1) {
-                    /**  Check if data_type is number-like */
-                    return _parseNumberOrValue(event.target.value);
-                }
-                else if (field.data_type === "boolean") {
-                    /**  Check if data_type is Boolean */
-                    return Boolean(event.target.value);
-                }
-                else if (array_word_list.indexOf(field.data_type) !== -1) {
-                    /** Check if data_type is Array-like */
-                    return _parseArray(event, field);
-                }
-                else if (obj_word_list.indexOf(field.data_type) !== -1) {
-                    /** @TODO Handle the Object data type! */
-                    /** @TODO Handle the Object data type! */
-                    /** @TODO Handle the Object data type! */
-                    return _parseObject(event, field);
+                switch (field.data_type) {
+                    case "string" :
+                        return event.target.value;
+                    case "number":
+                        return _parseNumberOrValue(event.target.value);
+                    case "boolean":
+                        return Boolean(event.target.value);
+                    case "array":
+                        return _parseArray(event, field);
+                    /**
+                     * @TODO Add handler for file input type
+                     */
                 }
             }
             else
                 return undefined;
-            /**  If none of the above, just retrun the unaltered value */
+            /** If none of the above conditions apply, just retrun the value */
             return event.target.value;
         }
         else
             return undefined;
-    }
-    function _parseObject(event, field) {
-        let vals = get_store_value(field.value);
-        const value = JSON.parse(event.target.value)
-            ? JSON.parse(event.target.value)
-            : event.target.value;
-        let key;
-        for (key in value) {
-            if (vals[key] || vals[key] === 0) {
-                vals[key] = value[key];
-            }
-            else {
-                delete vals[key];
-            }
-        }
-        /** Return the array of values */
-        return vals;
     }
     function _parseArray(event, field) {
         let vals = [...get_store_value(field.value)];
@@ -668,19 +649,16 @@
      */
     function _setInitialState(form, initial_state) {
         Object.assign(initial_state.model, form.model);
-        // Object.assign(initial_state.model, JSON.parse(JSON.stringify(form.model)));
+        /**
+         * Well, we have to check if there are any nested objects and stringify them
+         * to disconnect the values from the initial Object.assign, above.
+         */
         if (initial_state.model) {
             Object.keys(initial_state.model).forEach((key) => {
                 if (initial_state.model)
                     serializeObject(initial_state.model, key);
             });
         }
-        // let key: keyof typeof initial_state.model;
-        // for(key in initial_state.model) {
-        //   if (initial_state.model && typeof initial_state.model[key] === "object") {
-        //     initial_state.model[key] = JSON.stringify(JSON.parse(initial_state.model[key]))
-        //   }
-        // }
         if (form.errors && form.errors.length > 0) {
             initial_state.errors = [...form.errors];
         }
@@ -700,7 +678,6 @@
     function _resetState(form, initial_state) {
         /** !CANNOT OVERWRITE MODEL. VALIDATION GETS FUCKED UP! */
         Object.assign(form.model, initial_state.model);
-        // Object.assign(form.model, JSON.parse(JSON.stringify(initial_state.model)));
         if (form.model) {
             Object.keys(form.model).forEach((key) => {
                 if (form.model)
@@ -1046,9 +1023,11 @@
      *
      * @TODO Create easy component/pattern for field groups and stepper/wizzard
      *
-     * @TODO Add more data type parsers (Object, File, Files, etc.)
+     * @TODO Add more data type parsers (File, Files, etc.)
      * @TODO Add several plain html/css examples (without tailwind)
      * @TODO Add different ways to display errors (browser contraint api, svelte, tippy, etc.)
+     * @TODO Add that aggressive/lazy/passive validation thing.
+     * @TODO Extract field grouping logic into the form.buildFields method?
      *
      * @TODO Might want to add a debug mode to inspect event listeners and stuff
      *
@@ -1059,10 +1038,10 @@
      *
      * Main Concept: fields and model are separate.
      * Fields are built using the model, via the @field() decorator.
-     * We keep the fields and the model in sync via your model property names
+     * We keep the fields and the model in sync via model property names
      * and field[name].
      *
-     * Form is NOT valid, initially.
+     * Form is NOT initially valid.
      *
      * Functions are camelCase.
      * Variables and stores are snake_case.
@@ -2782,6 +2761,14 @@
             /** If the active step type is number, decrement it. */
             if (typeof active_step === "number")
                 this.active_step.set(active_step - 1);
+        };
+        firstStep = () => {
+            if (typeof get_store_value(this.active_step) === "number")
+                this.active_step.set(0);
+        };
+        lastStep = () => {
+            if (typeof get_store_value(this.active_step) === "number" && this.forms.length > 0)
+                this.active_step.set(this.forms.length - 1);
         };
     }
     /**

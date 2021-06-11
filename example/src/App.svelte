@@ -1,16 +1,17 @@
 <script lang="ts">
   import "tailwindcss/dist/tailwind.css";
   import "tailwindcss/dist/components.css";
-  import ExampleForm from "./forms/class-validator/basic/ExampleForm.svelte";
-  import FormGroup from "./forms/class-validator/group/FormGroup.svelte";
-  import SuperstructForm from "./forms/superstruct/basic/SuperstructForm.svelte";
-  import StepperForm from "./forms/class-validator/stepper/StepperForm.svelte";
+  import ExampleForm from "./forms/class-validator/basic/Example.form.svelte";
+  import FormGroup from "./forms/class-validator/group/Group.form.svelte";
+  import SuperstructForm from "./forms/superstruct/basic/Superstruct.form.svelte";
+  import StepperForm from "./forms/class-validator/stepper/Stepper.form.svelte";
+  import NoStyleForm from "./forms/class-validator/nostyle/NoStyle.form.svelte";
 
   const validators = ["class-validator", "superstruct"];
-  const examples = ["basic", "group", "stepper"];
+  const examples = ["basic", "group", "stepper", "no style"];
 
-  $: selected_validator = validators[1];
-  $: selected = examples[0];
+  $: selected_validator = validators[0];
+  $: selected = examples[3];
 </script>
 
 <main>
@@ -56,10 +57,11 @@
     {:else if selected === examples[1]}
       <FormGroup />
     {:else if selected === examples[2]}
-      <div class="flex items-center justify-center w-full">
-        <!-- <p class="m-10 font-mono text-lg capitalize">Stepper Goes Here</p> -->
-        <StepperForm />
-      </div>
+      <!-- <div class="flex items-center justify-center w-full"> -->
+      <StepperForm />
+      <!-- </div> -->
+    {:else if selected === examples[3]}
+      <NoStyleForm />
     {/if}
   {:else if selected_validator === "superstruct"}
     {#if selected === examples[0]}

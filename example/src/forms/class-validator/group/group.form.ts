@@ -10,8 +10,8 @@ import {
 import { ExampleModel } from "../../../models/ExampleClass2";
 import { ExampleModel as ExampleModel3 } from "../../../models/ExampleClass3";
 import { validate, ValidationError as VError } from "class-validator";
-//@ts-ignore
-import GroupTemplate from "../../../templates/GroupTemplate.svelte";
+
+import GroupTemplate from "../../../templates/Group.template.svelte";
 
 const ref_data: RefData = {
   statuses: [

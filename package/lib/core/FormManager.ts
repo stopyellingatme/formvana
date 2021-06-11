@@ -10,7 +10,7 @@ import { ValidationCallback } from "./Types";
  * These interfaces/classes are meant to aid when using multiple Form objects.
  * Such as when several forms need to be grouped together or made into a
  * stepper/wizard.
- * 
+ *
  * Classes are below the FormManager interface.
  *
  * ---------------------------------------------------------------------------
@@ -211,6 +211,15 @@ export class FormStepper extends FormManager {
     /** If the active step type is number, decrement it. */
     if (typeof active_step === "number")
       this.active_step.set((active_step as number) - 1);
+  };
+
+  firstStep = () => {
+    if (typeof get(this.active_step) === "number") this.active_step.set(0);
+  };
+
+  lastStep = () => {
+    if (typeof get(this.active_step) === "number" && this.forms.length > 0)
+      this.active_step.set(this.forms.length - 1);
   };
 }
 

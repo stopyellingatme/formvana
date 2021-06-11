@@ -21,9 +21,11 @@ import { OnEvents, RefData, ValidationError, ValidationCallback, Callback, Valid
  *
  * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
- * @TODO Add more data type parsers (Object, File, Files, etc.)
+ * @TODO Add more data type parsers (File, Files, etc.)
  * @TODO Add several plain html/css examples (without tailwind)
  * @TODO Add different ways to display errors (browser contraint api, svelte, tippy, etc.)
+ * @TODO Add that aggressive/lazy/passive validation thing.
+ * @TODO Extract field grouping logic into the form.buildFields method?
  *
  * @TODO Might want to add a debug mode to inspect event listeners and stuff
  *
@@ -34,10 +36,10 @@ import { OnEvents, RefData, ValidationError, ValidationCallback, Callback, Valid
  *
  * Main Concept: fields and model are separate.
  * Fields are built using the model, via the @field() decorator.
- * We keep the fields and the model in sync via your model property names
+ * We keep the fields and the model in sync via model property names
  * and field[name].
  *
- * Form is NOT valid, initially.
+ * Form is NOT initially valid.
  *
  * Functions are camelCase.
  * Variables and stores are snake_case.

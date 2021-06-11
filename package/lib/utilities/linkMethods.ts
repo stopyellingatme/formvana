@@ -1,12 +1,12 @@
 import { get } from "svelte/store";
 import { _get } from "./formUtilities";
 import { FieldConfig } from "../core/FieldConfig";
-import { ElementEvent, ValidationError } from "../core/Types";
+import {
+  ElementEvent,
+  ValidationError,
+  ValidationOptions,
+} from "../core/Types";
 const max_int = Number.MAX_SAFE_INTEGER;
-const int_word_list = ["number", "decimal", "range", "int", "integer", "num"];
-const array_word_list = ["array", "list", "collection", "group"];
-const obj_word_list = ["object", "obj", "record", "rec", "dictionary", "dict"];
-
 /**
  * ---------------------------------------------------------------------------
  *
@@ -26,15 +26,36 @@ const obj_word_list = ["object", "obj", "record", "rec", "dictionary", "dict"];
  */
 function _linkFieldErrors<T extends Object>(
   errors: ValidationError[],
-  field: FieldConfig<T>
+  field: FieldConfig<T>,
+  error_display: ValidationOptions["error_display"]
 ): void {
   const error = errors.filter((e) => e["field_key"] === field.name);
   /** Check if there's an error for the field */
   if (error && error.length > 0) {
     field.errors.set(error[0]);
+    field.node?.setAttribute("aria-invalid", "true");
   } else {
     /**  Very important! Don't change! */
     field.errors.set(undefined);
+    field.node?.removeAttribute("aria-invalid");
+  }
+}
+
+function _handleErrorDisplay<T extends Object>(
+  field: FieldConfig<T>,
+  error: ValidationError,
+  error_display: ValidationOptions["error_display"]
+): void {
+  switch (error_display) {
+    case "constraint":
+      /** Constraint implementation goes here */
+      break;
+    case "dom":
+      /** DOM implementation goes here */
+      break;
+    case "custom":
+      /** Custom implementation goes here */
+      break;
   }
 }
 
@@ -46,7 +67,8 @@ function _linkFieldErrors<T extends Object>(
  */
 function _linkAllErrors<T extends Object>(
   errors: ValidationError[],
-  fields: FieldConfig<T>[]
+  fields: FieldConfig<T>[],
+  error_display: ValidationOptions["error_display"]
 ): void {
   errors.forEach((err) => {
     if (Array.isArray(err)) {
@@ -129,44 +151,24 @@ function _getValueFromEvent<T extends Object>(
        * Yeah, we do a lot of checking in this bitch.
        * Deep fucking ribbit hole.
        */
-      if (int_word_list.indexOf(field.data_type) !== -1) {
-        /**  Check if data_type is number-like */
-        return _parseNumberOrValue(event.target.value);
-      } else if (field.data_type === "boolean") {
-        /**  Check if data_type is Boolean */
-        return Boolean(event.target.value);
-      } else if (array_word_list.indexOf(field.data_type) !== -1) {
-        /** Check if data_type is Array-like */
-        return _parseArray(event, field);
-      } else if (obj_word_list.indexOf(field.data_type) !== -1) {
-        return _parseObject(event, field);
+      switch (field.data_type) {
+        case "string" || "text":
+          return event.target.value;
+        case "number":
+          return _parseNumberOrValue(event.target.value);
+        case "boolean":
+          return Boolean(event.target.value);
+        case "array":
+          return _parseArray(event, field);
+        /**
+         * @TODO Add handler for file input type
+         */
       }
     } else return undefined;
 
-    /**  If none of the above, just retrun the unaltered value */
+    /** If none of the above conditions apply, just retrun the value */
     return event.target.value;
   } else return undefined;
-}
-
-function _parseObject<T extends Object>(
-  event: ElementEvent,
-  field: FieldConfig<T>
-) {
-  let vals: Record<string, any> = get(field.value);
-  const value: Record<string, any> = JSON.parse(event.target.value)
-    ? JSON.parse(event.target.value)
-    : event.target.value;
-
-  let key: keyof typeof value;
-  for (key in value) {
-    if (vals[key] || vals[key] === 0) {
-      vals[key] = value[key];
-    } else {
-      delete vals[key];
-    }
-  }
-  /** Return the array of values */
-  return vals;
 }
 
 function _parseArray<T extends Object>(
@@ -219,6 +221,39 @@ function _parseNumberOrValue(value: any): Number | any | undefined {
   if (isNaN(+value) || +value >= max_int || +value <= -max_int) return value;
   else return +value;
 }
+
+/**
+ * Tried to implement this in a nice way, but there are too many gotcha's.
+ * Plus, JS likes to return event target values as string.
+ * So even if the dev set the input.value to the object, it would come in
+ * through the event target value as "[object Object]" anyways.
+ */
+// function _parseObject<T extends Object>(
+//   event: ElementEvent,
+//   field: FieldConfig<T>
+// ) {
+//   console.log("PARSE OBJECT: ", event.target.value);
+
+//   if (
+//     typeof event.target.value === "string" &&
+//     event.target.value === "[object Object]"
+//   )
+//     return event.target.value;
+
+//   let vals: Record<string, any> = JSON.parse(get(field.value));
+//   const value: Record<string, any> = JSON.parse(event.target.value);
+
+//   let key: keyof typeof value;
+//   for (key in value) {
+//     if (!vals[key] || vals[key] === 0) {
+//       vals[key] = value[key];
+//     } else {
+//       delete vals[key];
+//     }
+//   }
+//   /** Return the array of values */
+//   return JSON.stringify(vals);
+// }
 
 export {
   _linkAllErrors,

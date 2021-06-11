@@ -15,7 +15,7 @@ import {
   array,
   StructError,
 } from "superstruct";
-import ExampleTemplate from "../../../templates/Example.template.svelte";
+import DefaultTemplate from "../../../templates/Default.template.svelte";
 
 const refs: RefData = {
   tags: [
@@ -36,18 +36,12 @@ const refs: RefData = {
     { label: "Spring Rolls", value: 4 },
     { label: "Parm Eggs & Bacon", value: 5 },
   ],
-  complex: [
-    { label: "First", value: { id: 0 } },
-    { label: "Second", value: { id: 1 } },
-    { label: "Third", value: { id: 2 } },
+  author_ids: [
+    { label: "First", value: 1 },
+    { label: "Second", value: 2 },
+    { label: "Third", value: 3 },
   ],
 };
-
-// complex: [
-//   { label: "First", value: { index: 0, description: "First Item" } },
-//   { label: "Second", value: { index: 1, description: "Second Item" } },
-//   { label: "Third", value: { index: 2, description: "Thrid Item" } },
-// ],
 
 /**
  * All of the following is what's needed to configure a formvana instance
@@ -84,7 +78,7 @@ const field_configs: FormFieldSchema = {
     required: false,
     ref_key: "tags",
     hint: "Select one or more tags",
-    value: writable([]),
+    value: writable(["news"]),
     exclude_events: ["input", "focus", "blur"],
   },
   taggers: {
@@ -109,17 +103,27 @@ const field_configs: FormFieldSchema = {
   },
   author: {
     selector: "radio",
-    data_type: "object",
+    data_type: "number",
+    label: "Author Ids:",
+    hint: "It was part of the superstruct example.",
+    required: true,
+    ref_key: "author_ids",
+    value: writable(1),
+    exclude_events: ["input", "focus", "blur"],
+  },
+  order: {
+    selector: "radio",
+    data_type: "number",
     label: "Ordering",
     hint: "Pick some orders.",
-    required: true,
-    ref_key: "complex",
-    value: writable({ id: 1 }),
+    required: false,
+    ref_key: "author_ids",
+    value: writable(2),
     exclude_events: ["input", "focus", "blur"],
   },
 };
 
-const Article = object({
+const validation_options = object({
   id: number(),
   title: string(),
   description: string(),
@@ -129,9 +133,19 @@ const Article = object({
   author: object({
     id: number(),
   }),
+  order: number(),
 });
 
-const data = Object.assign(
+/**
+ * Use the field_configs to build the data model object.
+ * Object will look like this:
+ *  {
+ *    [field_property]: field_value,
+ *    [field_property]: field_value,
+ *    etc.
+ *   }
+ */
+const data_model = Object.assign(
   {},
   ...Object.keys(field_configs).map((k) => ({
     [k]: get(field_configs[k].value),
@@ -152,8 +166,22 @@ const doValidation = async (model, struct): Promise<ValidationError[]> => {
    * Otherwise if the value is above Number.MAX_SAFE_INTEGER, we return the
    * value as string. Seems sensible to me.
    */
-  // model.id = parseInt(model.id);
-  /** console.log(model.id); */
+  model.id = parseInt(model.id);
+
+  /**
+   * This pattern enables support for validating "object" objects
+   * in superstruct. As formvana (javascript and the dom) does not support
+   * using an input.value = { some_object }.
+   * Event.target.value will return "[object Object]" unless stringified
+   * first.
+   * Which means you are using the string field.data_type, right?
+   */
+  const author_id = JSON.parse(JSON.stringify(model.author));
+  if (typeof model.author === "object") {
+    model.author["id"] = model.author.id;
+  } else {
+    model.author = { id: author_id };
+  }
 
   /** Validate the struct */
   /** Flatten the array so it's not [[ValidationError], [ValidationError]] */
@@ -188,14 +216,14 @@ const doValidation = async (model, struct): Promise<ValidationError[]> => {
 function initStore() {
   // Set up the form(vana) object
   let form = new Form(
-    data,
+    data_model,
     {
       validator: doValidation,
-      options: Article,
+      options: validation_options,
     },
     /** Partial Form Model Properties */
     {
-      template: ExampleTemplate,
+      template: DefaultTemplate,
       field_schema: field_configs,
       on_events: new OnEvents({ focus: false }),
       refs: refs,
@@ -216,7 +244,7 @@ function initStore() {
 /**
  * Export the Form State
  */
-export const form_state: Writable<Form<typeof data>> = initStore();
+export const form_state: Writable<Form<typeof data_model>> = initStore();
 
 let initialized = false;
 /**
@@ -248,10 +276,10 @@ export const init = () => {
     //   get(form_state).updateInitialState();
     // }, 3000);
 
-    get(form_state).value_changes.subscribe((val) => {
+    // get(form_state).value_changes.subscribe((val) => {
       // console.log("CHANGE: ", val);
-      console.log("CHANGE: ", get(form_state).model);
-    });
+    //   console.log("CHANGE: ", get(form_state).model);
+    // });
 
     /**
    * Update form with backend data

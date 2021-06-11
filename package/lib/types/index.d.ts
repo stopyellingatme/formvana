@@ -125,7 +125,7 @@ type LinkValuesOnEvent = "all" | "field";
 // #region Misc
 type FieldNode<T extends Object> = (HTMLInputElement | (HTMLElement & {
     type: string;
-}) | HTMLSelectElement | HTMLTextAreaElement) & {
+}) | HTMLSelectElement | HTMLTextAreaElement | HTMLOutputElement) & {
     name: keyof T;
 };
 type ElementEvent = InputEvent & {
@@ -135,6 +135,7 @@ type ElementEvent = InputEvent & {
     };
 };
 type FormFieldSchema = Record<string, Partial<FieldConfig<Object>>>;
+type AcceptedDataType = "text" | "string" | "number" | "boolean" | "array" | "file" | "any";
 /**
  * Keeping it simple. Just keep up with model and errors.
  */
@@ -155,7 +156,7 @@ interface RefDataItem {
 type RefData = Record<string, RefDataItem[]>;
 /** This gives us a pretty exhaustive typesafe map of element attributes */
 type FieldAttributes = Record<ElementAttributesMap & string, any>;
-type ElementAttributesMap = keyof HTMLElement | keyof HTMLInputElement | keyof HTMLSelectElement | keyof HTMLFieldSetElement | keyof HTMLImageElement | keyof HTMLButtonElement | keyof HTMLCanvasElement | keyof HTMLOptionElement | keyof AriaAttributes;
+type ElementAttributesMap = keyof HTMLElement | keyof HTMLInputElement | keyof HTMLSelectElement | keyof HTMLFieldSetElement | keyof HTMLImageElement | keyof HTMLOutputElement | keyof HTMLButtonElement | keyof HTMLCanvasElement | keyof HTMLOptionElement | keyof AriaAttributes;
 /** Catchall type for giving callbacks a bit more typesafety */
 type Callback = ((...args: any[]) => any) | (() => any) | void | undefined | boolean | string | Promise<any>;
 /**
@@ -391,7 +392,7 @@ declare class FieldConfig<T extends Object> {
      *
      * Defaults to "string"
      */
-    data_type: string;
+    data_type: AcceptedDataType;
     /**
      * Validation Errors!
      * We're mainly looking in the "errors" field.
@@ -459,6 +460,7 @@ declare class FieldConfig<T extends Object> {
     clearErrors: () => void;
     /** Add event listeners to the field in a more typesafe way. */
     addEventListener: (event: keyof HTMLElementEventMap, callback: ValidationCallback | Callback) => void;
+    emitEvent(event_name: keyof HTMLElementEventMap): boolean | undefined;
 }
 type FieldDictionary = Array<FieldConfig<Object>>;
 declare class FieldStepper {
@@ -486,9 +488,11 @@ declare class FieldStepper {
  *
  * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
- * @TODO Add more data type parsers (Object, File, Files, etc.)
+ * @TODO Add more data type parsers (File, Files, etc.)
  * @TODO Add several plain html/css examples (without tailwind)
  * @TODO Add different ways to display errors (browser contraint api, svelte, tippy, etc.)
+ * @TODO Add that aggressive/lazy/passive validation thing.
+ * @TODO Extract field grouping logic into the form.buildFields method?
  *
  * @TODO Might want to add a debug mode to inspect event listeners and stuff
  *
@@ -499,10 +503,10 @@ declare class FieldStepper {
  *
  * Main Concept: fields and model are separate.
  * Fields are built using the model, via the @field() decorator.
- * We keep the fields and the model in sync via your model property names
+ * We keep the fields and the model in sync via model property names
  * and field[name].
  *
- * Form is NOT valid, initially.
+ * Form is NOT initially valid.
  *
  * Functions are camelCase.
  * Variables and stores are snake_case.
@@ -757,6 +761,8 @@ declare class FormStepper extends FormManager {
     nextStep: () => void;
     /** Set active step index --1 */
     backStep: () => void;
+    firstStep: () => void;
+    lastStep: () => void;
 }
 /**
  * Group of Forms which extends the FormManager functionality.
@@ -764,4 +770,4 @@ declare class FormStepper extends FormManager {
 declare class FormGroup extends FormManager {
     constructor(forms: FormDictionary, props?: Partial<FormManager>);
 }
-export { FieldConfig, FieldStepper, Form, field, ValidationCallback, ValidatorFunction, ValidationError, ValidationOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, FieldNode, ElementEvent, FormFieldSchema, InitialFormState, RefDataItem, RefData, FieldAttributes, ElementAttributesMap, Callback, FormManager, FormStepper, FormGroup };
+export { FieldConfig, FieldStepper, Form, field, ValidationCallback, ValidatorFunction, ValidationError, ValidationOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, FieldNode, ElementEvent, FormFieldSchema, AcceptedDataType, InitialFormState, RefDataItem, RefData, FieldAttributes, ElementAttributesMap, Callback, FormManager, FormStepper, FormGroup };

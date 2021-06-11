@@ -2,8 +2,8 @@
   import InputErrors from "./InputErrors.svelte";
 
   export let field;
-
   let name = field.name;
+  let errorsStore, errors;
 
   /**
    * If we want the ability to programatically/automatically update the value then
@@ -11,8 +11,10 @@
    */
   $: value = field.value;
 
-  $: errorsStore = field.errors;
-  $: errors = $errorsStore && $errorsStore.errors;
+  $: {
+    errorsStore = field.errors;
+    errors = $errorsStore && $errorsStore.errors;
+  }
 
   /** This allows us to update attributes dynamically */
   $: attributes = Object.assign(

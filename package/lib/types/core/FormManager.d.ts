@@ -57,6 +57,8 @@ export declare class FormStepper extends FormManager {
     nextStep: () => void;
     /** Set active step index --1 */
     backStep: () => void;
+    firstStep: () => void;
+    lastStep: () => void;
 }
 /**
  * Group of Forms which extends the FormManager functionality.

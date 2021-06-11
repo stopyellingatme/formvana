@@ -18,8 +18,6 @@
   });
 
   /**
-   * @TODO Extract this logic into the form.buildFields method?
-   *
    * Alright, we got it working.
    * Now we need to clean this mess up.
    */
@@ -54,11 +52,25 @@
   };
 </script>
 
-<!-- Loop over the fields here! -->
-{#each sorted_fields as field, i}
-  {#if Array.isArray(field)}
-    <FieldSet fields={field} />
-  {:else}
-    <Field {field} />
-  {/if}
-{/each}
+<div>
+  <!-- Loop over the fields here! -->
+  {#each sorted_fields as field, i}
+    {#if Array.isArray(field)}
+      <FieldSet fields={field} />
+    {:else}
+      <Field {field} />
+    {/if}
+  {/each}
+</div>
+
+<style>
+  div {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.5rem;
+    background-color: rgb(249, 250, 251);
+    padding: 20px;
+    width: 100%;
+  }
+  
+</style>

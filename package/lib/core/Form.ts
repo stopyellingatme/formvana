@@ -47,9 +47,11 @@ import {
  *
  * @TODO Create easy component/pattern for field groups and stepper/wizzard
  *
- * @TODO Add more data type parsers (Object, File, Files, etc.)
+ * @TODO Add more data type parsers (File, Files, etc.)
  * @TODO Add several plain html/css examples (without tailwind)
  * @TODO Add different ways to display errors (browser contraint api, svelte, tippy, etc.)
+ * @TODO Add that aggressive/lazy/passive validation thing.
+ * @TODO Extract field grouping logic into the form.buildFields method?
  *
  * @TODO Might want to add a debug mode to inspect event listeners and stuff
  *
@@ -61,10 +63,10 @@ import {
  *
  * Main Concept: fields and model are separate.
  * Fields are built using the model, via the @field() decorator.
- * We keep the fields and the model in sync via your model property names
+ * We keep the fields and the model in sync via model property names
  * and field[name].
  *
- * Form is NOT valid, initially.
+ * Form is NOT initially valid.
  *
  * Functions are camelCase.
  * Variables and stores are snake_case.
@@ -153,6 +155,8 @@ export class Form<ModelType extends Object> {
 
     /** When to link this.field values to this.model values */
     when_link_fields_to_model: "always",
+    /** How to display errors */
+    error_display: "constraint",
   };
   /** Which events should the form dispatch side effects? */
   on_events: OnEvents<HTMLElementEventMap> = new OnEvents();

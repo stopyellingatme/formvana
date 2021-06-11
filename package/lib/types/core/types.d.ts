@@ -111,7 +111,7 @@ export declare type LinkOnEvent = "always" | "valid";
 export declare type LinkValuesOnEvent = "all" | "field";
 export declare type FieldNode<T extends Object> = (HTMLInputElement | (HTMLElement & {
     type: string;
-}) | HTMLSelectElement | HTMLTextAreaElement) & {
+}) | HTMLSelectElement | HTMLTextAreaElement | HTMLOutputElement) & {
     name: keyof T;
 };
 export declare type ElementEvent = InputEvent & {
@@ -121,6 +121,7 @@ export declare type ElementEvent = InputEvent & {
     };
 };
 export declare type FormFieldSchema = Record<string, Partial<FieldConfig<Object>>>;
+export declare type AcceptedDataType = "text" | "string" | "number" | "boolean" | "array" | "file" | "any";
 /**
  * Keeping it simple. Just keep up with model and errors.
  */
@@ -141,7 +142,7 @@ export interface RefDataItem {
 export declare type RefData = Record<string, RefDataItem[]>;
 /** This gives us a pretty exhaustive typesafe map of element attributes */
 export declare type FieldAttributes = Record<ElementAttributesMap & string, any>;
-export declare type ElementAttributesMap = keyof HTMLElement | keyof HTMLInputElement | keyof HTMLSelectElement | keyof HTMLFieldSetElement | keyof HTMLImageElement | keyof HTMLButtonElement | keyof HTMLCanvasElement | keyof HTMLOptionElement | keyof AriaAttributes;
+export declare type ElementAttributesMap = keyof HTMLElement | keyof HTMLInputElement | keyof HTMLSelectElement | keyof HTMLFieldSetElement | keyof HTMLImageElement | keyof HTMLOutputElement | keyof HTMLButtonElement | keyof HTMLCanvasElement | keyof HTMLOptionElement | keyof AriaAttributes;
 /** Catchall type for giving callbacks a bit more typesafety */
 export declare type Callback = ((...args: any[]) => any) | (() => any) | void | undefined | boolean | string | Promise<any>;
 /**

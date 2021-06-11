@@ -13,7 +13,7 @@ import {
   ValidationError as VError,
   ValidatorOptions,
 } from "class-validator";
-import ExampleTemplate from "../../../templates/Example.template.svelte";
+import DefaultTemplate from "../../../templates/Default.template.svelte";
 
 const ref_data: RefData = {
   statuses: [
@@ -54,7 +54,7 @@ function initStore() {
     /** Partial Form Model Properties */
     {
       on_events: new OnEvents({ focus: false }),
-      template: ExampleTemplate,
+      template: DefaultTemplate,
       refs: ref_data,
       hidden_fields: ["description_3"],
       disabled_fields: ["email_72", "email_8"],

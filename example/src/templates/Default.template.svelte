@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import LoadingIndicator from "../components/inputs/LoadingIndicator.svelte";
-  import Field from "../components/inputs/Field.svelte";
+  import LoadingIndicator from "../components/controls/LoadingIndicator.svelte";
+  import Fields from "../components/inputs/Fields.svelte";
   import { createEventDispatcher } from "svelte";
+  import ButtonArea from "../components/controls/ButtonArea.svelte";
   const dispatch = createEventDispatcher();
 
   /**
@@ -12,7 +13,6 @@
    * is being used in DynamicForm.
    */
   export let form;
-  export let group_num;
 
   const handleSubmit = (e) => {
     console.log(e);
@@ -26,12 +26,14 @@
     $form.destroy();
   });
 
+  $: valid = $form.valid;
+  $: changed = $form.changed;
   $: loading = $form.loading;
 
   let fw, fh;
 </script>
 
-<div class="py-2 mx-auto max-w-7xl lg:px-8">
+<div class="px-8 py-2 pb-10 mx-auto max-w-7xl">
   <div class="flex items-start justify-center">
     <div class="w-full space-y-6">
       <section>
@@ -41,24 +43,26 @@
           bind:clientHeight={fh}
           bind:clientWidth={fw}
         >
-          <div class="rounded-md">
+          <div class="shadow sm:rounded-md">
             <LoadingIndicator visible={$loading} w={fw} h={fh} />
             <div class="px-4 py-6 bg-white sm:p-6">
               <!-- Header Area -->
               <div>
                 <h2 class="text-lg font-medium leading-6 text-gray-900">
-                  Group {group_num + 1}
+                  Example Form
                 </h2>
+                <p class="mt-1 text-sm text-gray-500">
+                  This is a test. This is only a test. Bleep bloop.
+                </p>
               </div>
 
-              <!-- Form Wrapper Div (col num, col gaps, etc.) -->
-              <div class="grid grid-cols-2 gap-6 mt-6">
-                <!-- This is where the Form Generator Magic happens! -->
-                {#each $form.fields as field, i}
-                  <Field {field} />
-                {/each}
+              <!-- This is where the Form Generator "Magic" happens! -->
+              <div class="grid grid-cols-4 gap-6 mt-6">
+                <Fields fields={$form.fields} />
               </div>
             </div>
+
+            <ButtonArea reset={$form.reset} {valid} {changed} />
           </div>
         </form>
       </section>

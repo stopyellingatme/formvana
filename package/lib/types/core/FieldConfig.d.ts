@@ -1,6 +1,6 @@
 import { SvelteComponent } from "svelte";
 import { Writable } from "svelte/store";
-import { Callback, FieldAttributes, FieldNode, OnEvents, RefDataItem, ValidationCallback, ValidationError } from "./Types";
+import { AcceptedDataType, Callback, FieldAttributes, FieldNode, OnEvents, RefDataItem, ValidationCallback, ValidationError } from "./Types";
 /**
  * ---------------------------------------------------------------------------
  *
@@ -44,7 +44,7 @@ export declare class FieldConfig<T extends Object> {
      *
      * Defaults to "string"
      */
-    data_type: string;
+    data_type: AcceptedDataType;
     /**
      * Validation Errors!
      * We're mainly looking in the "errors" field.
@@ -112,6 +112,7 @@ export declare class FieldConfig<T extends Object> {
     clearErrors: () => void;
     /** Add event listeners to the field in a more typesafe way. */
     addEventListener: (event: keyof HTMLElementEventMap, callback: ValidationCallback | Callback) => void;
+    emitEvent(event_name: keyof HTMLElementEventMap): boolean | undefined;
 }
 declare type FieldDictionary = Array<FieldConfig<Object>>;
 export declare class FieldStepper {

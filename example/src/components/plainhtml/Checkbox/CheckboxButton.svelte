@@ -19,24 +19,23 @@
     $value.includes(option.value) || $value.includes(parseInt(option.value));
 </script>
 
-<div class="relative flex items-start">
-  <div class="flex items-center h-5">
+<div>
+  <div>
     <input
       name={field.name}
       bind:value={option.value}
       type="checkbox"
       {checked}
       {...attributes}
-      class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
       id={`${field.name}-${index}`}
     />
   </div>
-  <div class="ml-3 text-sm">
-    <label for={`${field.name}-${index}`} class="font-medium text-gray-700">
+  <div>
+    <label for={`${field.name}-${index}`}>
       {option.label}
     </label>
     {#if option.meta && option.meta.hint}
-      <p class="text-gray-500">
+      <p>
         {option.meta.hint}
       </p>
     {/if}

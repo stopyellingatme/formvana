@@ -36,4 +36,10 @@ declare function _linkAllValues<T extends Object>(from_fields_to_model: boolean,
  * @Hotpath
  */
 declare function _linkValueFromEvent<T extends Object>(field: FieldConfig<T>, model: T, event?: ElementEvent): void;
+/**
+ * Tried to implement this in a nice way, but there are too many gotcha's.
+ * Plus, JS likes to return event target values as string.
+ * So even if the dev set the input.value to the object, it would come in
+ * through the event target value as "[object Object]" anyways.
+ */
 export { _linkAllErrors, _linkFieldErrors, _linkValueFromEvent, _linkAllValues, };

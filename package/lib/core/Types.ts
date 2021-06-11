@@ -71,17 +71,10 @@ export interface ValidationOptions {
    */
   options?: Record<string, any> | Object;
 
-  // /**
-  //  * Optional field layout, if you aren't using a class object.
-  //  * "no-class" method of building the fields.
-  //  */
-  // field_schema?: Record<string, Partial<FieldConfig<Object>>>;
-
   /**
-   * Which events should the form do things on?
-   * @examples validate, link values, hide/disable fields, callbacks
+   * How should the errors be displayed?
    */
-  // on_events: OnEvents<HTMLElementEventMap>;
+  error_display: "constraint" | "dom" | "custom";
 
   /** When to link this.field values to this.model values */
   when_link_fields_to_model?: LinkOnEvent;
@@ -160,6 +153,7 @@ export type FieldNode<T extends Object> = (
   | (HTMLElement & { type: string })
   | HTMLSelectElement
   | HTMLTextAreaElement
+  | HTMLOutputElement
 ) & { name: keyof T };
 
 export type ElementEvent = InputEvent & {
@@ -167,6 +161,15 @@ export type ElementEvent = InputEvent & {
 };
 
 export type FormFieldSchema = Record<string, Partial<FieldConfig<Object>>>;
+
+export type AcceptedDataType =
+  | "text"
+  | "string"
+  | "number"
+  | "boolean"
+  | "array"
+  | "file"
+  | "any";
 
 /**
  * Keeping it simple. Just keep up with model and errors.
@@ -198,6 +201,7 @@ export type ElementAttributesMap =
   | keyof HTMLSelectElement
   | keyof HTMLFieldSetElement
   | keyof HTMLImageElement
+  | keyof HTMLOutputElement
   | keyof HTMLButtonElement
   | keyof HTMLCanvasElement
   | keyof HTMLOptionElement

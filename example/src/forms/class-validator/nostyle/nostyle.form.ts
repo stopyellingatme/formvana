@@ -1,17 +1,17 @@
 import { get, Writable, writable } from "svelte/store";
 import {
   Form,
+  FormGroup,
   OnEvents,
   RefData,
   ValidationCallback,
   ValidationError,
-  FormStepper,
 } from "@formvana";
-import { ExampleModel as ExampleModel2 } from "../../../models/ExampleClass2";
+import { ExampleModel } from "../../../models/ExampleClass2";
 import { ExampleModel as ExampleModel3 } from "../../../models/ExampleClass3";
 import { validate, ValidationError as VError } from "class-validator";
-//@ts-ignore
-import StepperTemplate from "../../../templates/Stepper.template.svelte";
+
+import NoStyleTemplate from "../../../templates/NoStyle.template.svelte";
 
 const ref_data: RefData = {
   statuses: [
@@ -33,13 +33,13 @@ const validator = (model, options) => {
 function initStore() {
   // Set up the form(vana) class
   let form_1 = new Form(
-    new ExampleModel2(),
+    new ExampleModel(),
     { validator: validator },
     {
       on_events: new OnEvents({ focus: false }),
-      template: StepperTemplate,
+      template: NoStyleTemplate,
       refs: ref_data,
-      hidden_fields: ["description_3", "name_10"],
+      // hidden_fields: ["description_3", "name_10"],
       disabled_fields: ["email_2", "email_4"],
     }
   );
@@ -49,14 +49,14 @@ function initStore() {
     { validator: validator },
     {
       on_events: new OnEvents({ focus: false }),
-      template: StepperTemplate,
+      template: NoStyleTemplate,
       refs: ref_data,
       hidden_fields: ["email_4"],
       disabled_fields: ["description_3"],
     }
   );
 
-  let form_group = new FormStepper([form_1, form_2]);
+  let form_group = new FormGroup([form_1, form_2]);
 
   // And add it to the store...
   const { subscribe, update, set } = writable(form_group);
@@ -77,7 +77,7 @@ const updateState = (state, updates) => {
 /**
  * Export the Form State
  */
-export const form_state: Writable<FormStepper> = initStore();
+export const form_state: Writable<FormGroup> = initStore();
 
 let initialized = false;
 /**
