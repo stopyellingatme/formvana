@@ -15,8 +15,9 @@
     field.attributes || {}
   );
 
-  $: checked =
-    $value.includes(option.value) || $value.includes(parseInt(option.value));
+  $: checked = $value
+    ? $value.includes(option.value) || $value.includes(parseInt(option.value))
+    : false;
 </script>
 
 <div class="relative flex items-start">
@@ -40,5 +41,6 @@
         {option.meta.hint}
       </p>
     {/if}
+    <div data-error-for={field.name} />
   </div>
 </div>

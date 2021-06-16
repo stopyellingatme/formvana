@@ -74,7 +74,17 @@ export interface ValidationOptions {
   /**
    * How should the errors be displayed?
    */
-  error_display: "constraint" | "dom" | "custom";
+  error_display:
+    | "constraint"
+    | {
+        dom: {
+          type: "ul" | "ol" | "single";
+          wrapper_class?: string[];
+          attributes?: string[];
+          error_class?: string[];
+        };
+      }
+    | "custom";
 
   /** When to link this.field values to this.model values */
   when_link_fields_to_model?: LinkOnEvent;
@@ -150,11 +160,17 @@ export type LinkValuesOnEvent = "all" | "field";
 
 export type FieldNode<T extends Object> = (
   | HTMLInputElement
-  | (HTMLElement & { type: string })
+  // | (HTMLElement & { type: string })
+  // | HTMLElement
+  | HTMLFieldSetElement
+  // | HTMLImageElement
+  | HTMLButtonElement
+  // | HTMLCanvasElement
+  // | HTMLOptionElement
   | HTMLSelectElement
   | HTMLTextAreaElement
   | HTMLOutputElement
-) & { name: keyof T };
+) & { name: keyof T; type: string };
 
 export type ElementEvent = InputEvent & {
   target: { value: any; checked: boolean };
@@ -169,6 +185,7 @@ export type AcceptedDataType =
   | "boolean"
   | "array"
   | "file"
+  | "files"
   | "any";
 
 /**

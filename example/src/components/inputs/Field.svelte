@@ -3,6 +3,7 @@
   // import Dropdown from "./Dropdown.svelte";
   import Textarea from "./Textarea.svelte";
   import Select from "./Select.svelte";
+  import File from "./File.svelte";
   import CheckboxGroup from "./Checkbox/CheckboxGroup.svelte";
   import RadioGroup from "./Radio/RadioGroup.svelte";
 
@@ -25,6 +26,8 @@
       <CheckboxGroup {field} />
     {:else if field.selector === "radio" || field.selector === "radios"}
       <RadioGroup {field} />
+    {:else if field.selector === "file" || field.selector === "files"}
+      <File {field} />
     {/if}
   </div>
 {/if}

@@ -1,6 +1,4 @@
 <script>
-  import InputErrors from "./InputErrors.svelte";
-
   export let field;
   let name = field.name;
   let errorsStore, errors;
@@ -34,14 +32,13 @@
   }`;
 </script>
 
-<div>
+<div data-error-wrapper>
   <label for={name} class="block text-sm font-medium leading-5 text-gray-700">
     {field.label}
   </label>
   <div class="relative mt-1 rounded-md shadow-sm">
     <input {name} {...attributes} class={classes} bind:value={$value} />
-    {#if errors}
-      <!-- This is the red X in the input box -->
+    <!-- {#if errors}
       <div
         class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"
       >
@@ -60,9 +57,7 @@
           />
         </svg>
       </div>
-    {/if}
+    {/if} -->
   </div>
-  {#if errors}
-    <InputErrors errorsStore={errors} />
-  {/if}
+  <div data-error-for={field.name} />
 </div>

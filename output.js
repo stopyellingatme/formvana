@@ -2,6 +2,7 @@
 const fs = require("fs-extra");
 
 const src1 = "./package/lib";
+const delete1 = "./package/lib/types";
 const src2 = "./package/package.json";
 
 const dest = "./example/node_modules/@formvana";
@@ -12,6 +13,9 @@ const dest3 = "./example/node_modules/@formvana/package.json";
 fs.remove(dest, (err) => {
   handleError(err);
   console.log("Removed: ", dest);
+  // fs.remove(delete1, (remove_error) => {
+  //   console.log("ERROR: ", remove_error);
+  // });
 
   // Ensure the directory is created
   fs.ensureDir(src1, (err) => {

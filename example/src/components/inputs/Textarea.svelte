@@ -1,6 +1,4 @@
 <script lang="ts">
-  import InputErrors from "./InputErrors.svelte";
-
   export let field;
 
   let name = field.name;
@@ -42,7 +40,5 @@
       </p>
     {/if}
   </div>
-  {#if errors}
-    <InputErrors errorsStore={errors} />
-  {/if}
+  <div data-error-for={field.name} />
 </div>

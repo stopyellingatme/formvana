@@ -45,11 +45,7 @@ import {
  *
  * @TODO Time to redo the readme.md file! Lots have changed since then!
  *
- * @TODO Create easy component/pattern for field groups and stepper/wizzard
- *
  * @TODO Add more data type parsers (File, Files, etc.)
- * @TODO Add several plain html/css examples (without tailwind)
- * @TODO Add different ways to display errors (browser contraint api, svelte, tippy, etc.)
  * @TODO Add that aggressive/lazy/passive validation thing.
  * @TODO Extract field grouping logic into the form.buildFields method?
  *
@@ -156,7 +152,7 @@ export class Form<ModelType extends Object> {
     /** When to link this.field values to this.model values */
     when_link_fields_to_model: "always",
     /** How to display errors */
-    error_display: "constraint",
+    error_display: { dom: { type: "ul" } },
   };
   /** Which events should the form dispatch side effects? */
   on_events: OnEvents<HTMLElementEventMap> = new OnEvents();
@@ -378,7 +374,13 @@ export class Form<ModelType extends Object> {
         { value: get(field.value) }
       );
       this.errors.push(err);
-      _linkAllErrors(this.errors, this.fields);
+      if (this.node)
+        _linkAllErrors(
+          this.errors,
+          this.fields,
+          this.validation_options.error_display,
+          this.node
+        );
     }
   };
 

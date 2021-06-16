@@ -56,9 +56,16 @@ export interface ValidationOptions {
      */
     options?: Record<string, any> | Object;
     /**
-     * Which events should the form do things on?
-     * @examples validate, link values, hide/disable fields, callbacks
+     * How should the errors be displayed?
      */
+    error_display: "constraint" | {
+        dom: {
+            type: "ul" | "ol" | "single";
+            wrapper_class?: string[];
+            attributes?: string[];
+            error_class?: string[];
+        };
+    } | "custom";
     /** When to link this.field values to this.model values */
     when_link_fields_to_model?: LinkOnEvent;
 }
@@ -109,10 +116,9 @@ export declare class OnEvents<T extends HTMLElementEventMap> {
  */
 export declare type LinkOnEvent = "always" | "valid";
 export declare type LinkValuesOnEvent = "all" | "field";
-export declare type FieldNode<T extends Object> = (HTMLInputElement | (HTMLElement & {
-    type: string;
-}) | HTMLSelectElement | HTMLTextAreaElement | HTMLOutputElement) & {
+export declare type FieldNode<T extends Object> = (HTMLInputElement | HTMLFieldSetElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement | HTMLOutputElement) & {
     name: keyof T;
+    type: string;
 };
 export declare type ElementEvent = InputEvent & {
     target: {

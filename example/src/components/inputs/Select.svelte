@@ -44,7 +44,5 @@
       </select>
     </div>
   </div>
-  {#if errors}
-    <InputErrors errorsStore={errors} />
-  {/if}
+  <div data-error-for={field.name} />
 </div>

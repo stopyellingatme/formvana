@@ -151,15 +151,21 @@ async function _handleValidationSideEffects<T extends Object>(
     form.errors = errors;
 
     /**  Are we validating the whole form or just the fields? */
-    if (field) {
+    if (field && form.node) {
       /**  Link errors to field (to show validation errors) */
-      _linkFieldErrors(errors, field, form.validation_options.error_display);
-    } else {
+      _linkFieldErrors(
+        errors,
+        field,
+        form.validation_options.error_display,
+        form.node
+      );
+    } else if (form.node) {
       /**  This is validation for the whole form! */
       _linkAllErrors(
         errors,
         form.fields,
-        form.validation_options.error_display
+        form.validation_options.error_display,
+        form.node
       );
     }
 

@@ -50,6 +50,10 @@ function initStore() {
       validator: validator,
       /** (Optional) Tweak for better perf, if needed. */
       options: class_validator_options,
+      error_display: {
+        dom: { type: "ul", error_class: ["text-red-600", "text-sm"] },
+      },
+      // error_display: "constraint"
     },
     /** Partial Form Model Properties */
     {
@@ -89,27 +93,27 @@ export const init = () => {
     // }, 1000);
 
     setTimeout(() => {
-      const callbacks: ValidationCallback[] = [
-        // {
-        //   callback: () => {
-        //     console.log(get(form_state));
-        //   },
-        //   when: "after",
-        // },
-        {
-          callback: () => {
-            get(form_state).setValue("name_100", "some value jfkdsalfjdsk");
-            get(form_state).setValue("status_97", 1);
-          },
-          when: "before",
-        },
-      ];
-      get(form_state).validate(callbacks);
+      // const callbacks: ValidationCallback[] = [
+      //   // {
+      //   //   callback: () => {
+      //   //     console.log(get(form_state));
+      //   //   },
+      //   //   when: "after",
+      //   // },
+      //   {
+      //     callback: () => {
+      //       get(form_state).setValue("name_100", "some value jfkdsalfjdsk");
+      //       get(form_state).setValue("status_97", 1);
+      //     },
+      //     when: "before",
+      //   },
+      // ];
+      get(form_state).validate();
     }, 500);
 
-    setTimeout(() => {
-      get(form_state).updateInitialState();
-    }, 1100);
+    // setTimeout(() => {
+    //   get(form_state).updateInitialState();
+    // }, 1100);
 
     // get(form_state).value_changes.subscribe((val) => {
     //   console.log("CHANGE: ", val);

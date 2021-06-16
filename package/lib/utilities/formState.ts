@@ -124,13 +124,20 @@ function _resetState<T extends Object>(
   /** Link the values, now */
   _linkAllValues(false, form.fields, form.model);
 
+  /** Reset all field touches, too. */
   form.fields.forEach((f) => f.touched.set(false));
 
-  /** If there were errors in the inital_state
-   *  link them to each field
+  /** 
+   * If there were errors in the inital_state
+   * link them to each field
    */
-  if (form.errors && form.errors.length > 0) {
-    _linkAllErrors(form.errors, form.fields);
+  if (form.node) {
+    _linkAllErrors(
+      form.errors,
+      form.fields,
+      form.validation_options.error_display,
+      form.node
+    );
   }
   /** Reset the value changes and the "changed" store */
   form.value_changes.set({});

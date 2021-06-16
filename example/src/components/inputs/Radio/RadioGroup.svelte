@@ -20,6 +20,7 @@
         >
           {field.hint}
         </div>
+        <div data-error-for={field.name} />
       </div>
       <div class="sm:col-span-2">
         <div class="max-w-lg">

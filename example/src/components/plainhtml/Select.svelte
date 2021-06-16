@@ -35,6 +35,7 @@
         {/each}
       </select>
     </div>
+    <div data-error-for={field.name} />
   </div>
 </div>
 

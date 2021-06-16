@@ -59,16 +59,17 @@ interface ValidationOptions {
      * See the examples for more details.
      */
     options?: Record<string, any> | Object;
-    // /**
-    //  * Optional field layout, if you aren't using a class object.
-    //  * "no-class" method of building the fields.
-    //  */
-    // field_schema?: Record<string, Partial<FieldConfig<Object>>>;
     /**
-     * Which events should the form do things on?
-     * @examples validate, link values, hide/disable fields, callbacks
+     * How should the errors be displayed?
      */
-    // on_events: OnEvents<HTMLElementEventMap>;
+    error_display: "constraint" | {
+        dom: {
+            type: "ul" | "ol" | "single";
+            wrapper_class?: string[];
+            attributes?: string[];
+            error_class?: string[];
+        };
+    } | "custom";
     /** When to link this.field values to this.model values */
     when_link_fields_to_model?: LinkOnEvent;
 }
@@ -123,10 +124,9 @@ type LinkOnEvent = "always" | "valid";
 type LinkValuesOnEvent = "all" | "field";
 //#endregion
 // #region Misc
-type FieldNode<T extends Object> = (HTMLInputElement | (HTMLElement & {
-    type: string;
-}) | HTMLSelectElement | HTMLTextAreaElement | HTMLOutputElement) & {
+type FieldNode<T extends Object> = (HTMLInputElement | HTMLFieldSetElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement | HTMLOutputElement) & {
     name: keyof T;
+    type: string;
 };
 type ElementEvent = InputEvent & {
     target: {
@@ -427,7 +427,11 @@ declare class FieldConfig<T extends Object> {
     disabled?: boolean;
     /** Pretty self-explainitory, hide the field. */
     hidden?: boolean;
-    /** Element.dataset hook, so you can do the really wild things! */
+    /**
+     * @TODO Add hooks for this when setting up field.
+     *
+     * Element.dataset hook, so you can do the really wild things!
+     */
     data_set?: string[];
     /**
      * * If you set this, you must set form.meta.name!
@@ -486,11 +490,7 @@ declare class FieldStepper {
  *
  * @TODO Time to redo the readme.md file! Lots have changed since then!
  *
- * @TODO Create easy component/pattern for field groups and stepper/wizzard
- *
  * @TODO Add more data type parsers (File, Files, etc.)
- * @TODO Add several plain html/css examples (without tailwind)
- * @TODO Add different ways to display errors (browser contraint api, svelte, tippy, etc.)
  * @TODO Add that aggressive/lazy/passive validation thing.
  * @TODO Extract field grouping logic into the form.buildFields method?
  *

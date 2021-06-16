@@ -19,11 +19,7 @@ import { OnEvents, RefData, ValidationError, ValidationCallback, Callback, Valid
  *
  * @TODO Time to redo the readme.md file! Lots have changed since then!
  *
- * @TODO Create easy component/pattern for field groups and stepper/wizzard
- *
  * @TODO Add more data type parsers (File, Files, etc.)
- * @TODO Add several plain html/css examples (without tailwind)
- * @TODO Add different ways to display errors (browser contraint api, svelte, tippy, etc.)
  * @TODO Add that aggressive/lazy/passive validation thing.
  * @TODO Extract field grouping logic into the form.buildFields method?
  *

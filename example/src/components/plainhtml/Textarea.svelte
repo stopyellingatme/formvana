@@ -32,6 +32,7 @@
       </p>
     {/if}
   </div>
+  <div data-error-for={field.name} />
 </div>
 
 <style>

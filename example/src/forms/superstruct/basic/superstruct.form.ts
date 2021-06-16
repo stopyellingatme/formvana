@@ -92,8 +92,8 @@ const field_configs: FormFieldSchema = {
     exclude_events: ["input", "focus", "blur"],
   },
   foods: {
-    selector: "radio",
-    data_type: "number",
+    selector: "checkbox",
+    data_type: "array",
     label: "Fooooood:",
     required: false,
     ref_key: "food",
@@ -121,6 +121,15 @@ const field_configs: FormFieldSchema = {
     value: writable(2),
     exclude_events: ["input", "focus", "blur"],
   },
+  profile_image: {
+    selector: "file",
+    data_type: "file",
+    label: "Profile Image",
+    required: false,
+    value: writable(2),
+    attributes: { id: "profile_image" },
+    exclude_events: ["focus", "blur"],
+  },
 };
 
 const validation_options = object({
@@ -134,6 +143,7 @@ const validation_options = object({
     id: number(),
   }),
   order: number(),
+  // image:
 });
 
 /**
@@ -220,6 +230,9 @@ function initStore() {
     {
       validator: doValidation,
       options: validation_options,
+      error_display: {
+        dom: { type: "ul", error_class: ["text-red-600", "text-sm"] },
+      },
     },
     /** Partial Form Model Properties */
     {
@@ -277,7 +290,7 @@ export const init = () => {
     // }, 3000);
 
     // get(form_state).value_changes.subscribe((val) => {
-      // console.log("CHANGE: ", val);
+    // console.log("CHANGE: ", val);
     //   console.log("CHANGE: ", get(form_state).model);
     // });
 

@@ -79,7 +79,11 @@ export declare class FieldConfig<T extends Object> {
     disabled?: boolean;
     /** Pretty self-explainitory, hide the field. */
     hidden?: boolean;
-    /** Element.dataset hook, so you can do the really wild things! */
+    /**
+     * @TODO Add hooks for this when setting up field.
+     *
+     * Element.dataset hook, so you can do the really wild things!
+     */
     data_set?: string[];
     /**
      * * If you set this, you must set form.meta.name!
