@@ -42,7 +42,7 @@ declare class ValidationError {
     };
 }
 /** Form Validation Options  */
-interface ValidationOptions {
+interface ValidationOptions<ModelType extends Object> {
     /**
      * PLEASE PASS IN A VALIDATOR FUNCTION! (if you want validation)
      *
@@ -50,7 +50,7 @@ interface ValidationOptions {
      * You can use any validation library you like, as long as this function
      * returns Promise<ValidationError[]>
      */
-    validator: ValidatorFunction;
+    validator: (model: ModelType, options?: Record<string, any> | Object) => Promise<ValidationError[]>;
     /**
      * THIS IS THE SECOND PARAMETER BEING PASSED TO THE VALIDATOR FUNCTION.
      * The other is form.model.
@@ -361,6 +361,7 @@ interface AriaAttributes {
  * ---------------------------------------------------------------------------
  */
 declare class FieldConfig<T extends Object> {
+    #private;
     constructor(name: keyof T, init?: Partial<FieldConfig<T>>);
     /**
      * Name of the class property.
@@ -382,6 +383,8 @@ declare class FieldConfig<T extends Object> {
     selector?: string | SvelteComponent;
     /** Value is a writable store defaulting to undefined. */
     value: Writable<any>;
+    set type(v: string);
+    get type(): string;
     /**
      * This is the DATA TYPE of the value!
      * If set to number (or decimal, or int, etc.) it will be parsed as number.
@@ -516,7 +519,7 @@ declare class FieldStepper {
  */
 declare class Form<ModelType extends Object> {
     #private;
-    constructor(model: ModelType, validation_options?: Partial<ValidationOptions>, form_properties?: Partial<Form<ModelType>>);
+    constructor(model: ModelType, validation_options?: Partial<ValidationOptions<ModelType>>, form_properties?: Partial<Form<ModelType>>);
     //#region ** Fields **
     /**
      * HTML Node of form object.
@@ -547,7 +550,7 @@ declare class Form<ModelType extends Object> {
      * validation_options contains the logic and configuration for
      * validating the form as well as linking errors to fields.
      */
-    validation_options: ValidationOptions;
+    validation_options: ValidationOptions<ModelType>;
     /** Which events should the form dispatch side effects? */
     on_events: OnEvents<HTMLElementEventMap>;
     /** Is the form valid? */

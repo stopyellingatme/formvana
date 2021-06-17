@@ -45,7 +45,7 @@ import { OnEvents, RefData, ValidationError, ValidationCallback, Callback, Valid
  */
 export declare class Form<ModelType extends Object> {
     #private;
-    constructor(model: ModelType, validation_options?: Partial<ValidationOptions>, form_properties?: Partial<Form<ModelType>>);
+    constructor(model: ModelType, validation_options?: Partial<ValidationOptions<ModelType>>, form_properties?: Partial<Form<ModelType>>);
     /**
      * HTML Node of form object.
      */
@@ -75,7 +75,7 @@ export declare class Form<ModelType extends Object> {
      * validation_options contains the logic and configuration for
      * validating the form as well as linking errors to fields.
      */
-    validation_options: ValidationOptions;
+    validation_options: ValidationOptions<ModelType>;
     /** Which events should the form dispatch side effects? */
     on_events: OnEvents<HTMLElementEventMap>;
     /** Is the form valid? */

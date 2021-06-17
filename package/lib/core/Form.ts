@@ -73,7 +73,7 @@ import {
 export class Form<ModelType extends Object> {
   constructor(
     model: ModelType,
-    validation_options?: Partial<ValidationOptions>,
+    validation_options?: Partial<ValidationOptions<ModelType>>,
     form_properties?: Partial<Form<ModelType>>
   ) {
     if (form_properties) Object.assign(this, form_properties);
@@ -146,7 +146,7 @@ export class Form<ModelType extends Object> {
    * validation_options contains the logic and configuration for
    * validating the form as well as linking errors to fields.
    */
-  validation_options: ValidationOptions = {
+  validation_options: ValidationOptions<ModelType> = {
     validator: async () => [],
 
     /** When to link this.field values to this.model values */

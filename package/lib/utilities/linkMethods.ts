@@ -28,10 +28,11 @@ const max_int = Number.MAX_SAFE_INTEGER;
 function _linkFieldErrors<T extends Object>(
   errors: ValidationError[],
   field: FieldConfig<T>,
-  error_display: ValidationOptions["error_display"],
+  error_display: ValidationOptions<T>["error_display"],
   form_node: HTMLFormElement
 ): void {
   const error = errors.filter((e) => e["field_key"] === field.name);
+
   /** Check if there's an error for the field */
   if (error && error.length > 0) {
     field.errors.set(error[0]);
@@ -48,13 +49,13 @@ function _linkFieldErrors<T extends Object>(
 function _handleErrorDisplay<T extends Object>(
   field: FieldConfig<T>,
   error: ValidationError | undefined,
-  error_display: ValidationOptions["error_display"],
+  error_display: ValidationOptions<T>["error_display"],
   form_node: HTMLFormElement
 ): void {
   if (error_display === "constraint") {
     /** Constraint implementation goes here */
     if (error && error.errors) {
-      console.log(field.name, error.errors);
+      // console.log(field.name, error.errors);
 
       const message: Record<string, string> = error.errors;
       Object.keys(message).forEach((key) => {
@@ -78,11 +79,13 @@ function _handleErrorDisplay<T extends Object>(
  * This one is pretty harry.
  * There is a lot going on in this function but almost everything is commented.
  * I'm sure there's room for improvement down there somewhere.
+ *
+ * @TODO Fix single error display. Still using parent element
  */
 function _handleDomErrorDisplay<T extends Object>(
   field: FieldConfig<T>,
   error: ValidationError | undefined,
-  error_display: ValidationOptions["error_display"],
+  error_display: ValidationOptions<T>["error_display"],
   form_node: HTMLFormElement
 ) {
   if (typeof error_display === "object") {
@@ -183,6 +186,10 @@ function _handleDomErrorDisplay<T extends Object>(
         /** Get the error node from the field */
         const node = _getErrorNode(field, form_node),
           error_node = form_node.querySelector(`#${error_element_id}`);
+
+        console.log("NODE: ", node);
+        console.log("ERROR NODE: ", error_node);
+
         if (node && error_node && node.contains(error_node)) {
           node.removeChild(error_node);
         }
@@ -217,7 +224,7 @@ function _getErrorNode<T extends Object>(
 function _linkAllErrors<T extends Object>(
   errors: ValidationError[],
   fields: FieldConfig<T>[],
-  error_display: ValidationOptions["error_display"],
+  error_display: ValidationOptions<T>["error_display"],
   form_node: HTMLFormElement
 ): void {
   errors.forEach((err) => {

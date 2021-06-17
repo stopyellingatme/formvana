@@ -101,6 +101,8 @@
                 /** If it's not, make it a writable store. */
                 this.value = writable(this.value);
             }
+            if (init && init["type"])
+                this.attributes["type"] = init["type"];
             /**
              * I'm doing this because there's not enough thought about accessibility
              * in Forms or for libraries. Better to have SOME kind of default than none
@@ -140,6 +142,17 @@
         selector;
         /** Value is a writable store defaulting to undefined. */
         value = writable(undefined);
+        /**
+         * Tyoe of the input
+         */
+        #type = "text";
+        set type(v) {
+            this.#type = v;
+            this.attributes["type"] = this.#type;
+        }
+        get type() {
+            return this.#type;
+        }
         /**
          * This is the DATA TYPE of the value!
          * If set to number (or decimal, or int, etc.) it will be parsed as number.
@@ -447,6 +460,7 @@
      */
     function _linkFieldErrors(errors, field, error_display, form_node) {
         const error = errors.filter((e) => e["field_key"] === field.name);
+        console.log("FILTER: ", error);
         /** Check if there's an error for the field */
         if (error && error.length > 0) {
             field.errors.set(error[0]);
@@ -464,7 +478,7 @@
         if (error_display === "constraint") {
             /** Constraint implementation goes here */
             if (error && error.errors) {
-                console.log(field.name, error.errors);
+                // console.log(field.name, error.errors);
                 const message = error.errors;
                 Object.keys(message).forEach((key) => {
                     field.node?.setCustomValidity(`${key}: ${message[key]}`);
@@ -489,6 +503,8 @@
      * This one is pretty harry.
      * There is a lot going on in this function but almost everything is commented.
      * I'm sure there's room for improvement down there somewhere.
+     *
+     * @TODO Fix single error display. Still using parent element
      */
     function _handleDomErrorDisplay(field, error, error_display, form_node) {
         if (typeof error_display === "object") {
@@ -581,6 +597,8 @@
                     /** No field errors! */
                     /** Get the error node from the field */
                     const node = _getErrorNode(field, form_node), error_node = form_node.querySelector(`#${error_element_id}`);
+                    console.log("NODE: ", node);
+                    console.log("ERROR NODE: ", error_node);
                     if (node && error_node && node.contains(error_node)) {
                         node.removeChild(error_node);
                     }
@@ -924,8 +942,10 @@
          * Else, just fire the callbacks and be done.
          */
         if (form.validation_options) {
-            return form.validation_options
+            // const args = form.validation_options.validator;
+            return (form.validation_options
                 .validator(form.model, form.validation_options.options)
+                // .validator(...args)
                 .then((errors) => {
                 _executeCallbacks([
                     _handleValidationSideEffects(form, errors, required_fields, field, event),
@@ -933,7 +953,7 @@
                     callbacks && _executeValidationCallbacks("after", callbacks),
                 ]);
                 return errors;
-            });
+            }));
         }
         else {
             _executeCallbacks([
@@ -1013,6 +1033,15 @@
         }
         else {
             /** We can't get here unless the errors we see are for non-required fields */
+            /**  Are we validating the whole form or just the fields? */
+            if (field && form.node) {
+                /**  Link errors to field (to show validation errors) */
+                _linkFieldErrors(errors, field, form.validation_options.error_display, form.node);
+            }
+            else if (form.node) {
+                /**  This is validation for the whole form! */
+                _linkAllErrors(errors, form.fields, form.validation_options.error_display, form.node);
+            }
             /**
              * If the config tells us to link the values only when the form
              * is valid, then link them here.

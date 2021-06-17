@@ -13,6 +13,7 @@ import { AcceptedDataType, Callback, FieldAttributes, FieldNode, OnEvents, RefDa
  * ---------------------------------------------------------------------------
  */
 export declare class FieldConfig<T extends Object> {
+    #private;
     constructor(name: keyof T, init?: Partial<FieldConfig<T>>);
     /**
      * Name of the class property.
@@ -34,6 +35,8 @@ export declare class FieldConfig<T extends Object> {
     selector?: string | SvelteComponent;
     /** Value is a writable store defaulting to undefined. */
     value: Writable<any>;
+    set type(v: string);
+    get type(): string;
     /**
      * This is the DATA TYPE of the value!
      * If set to number (or decimal, or int, etc.) it will be parsed as number.

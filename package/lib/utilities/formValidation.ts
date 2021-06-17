@@ -60,22 +60,26 @@ function _executeValidationEvent<T extends Object>(
    * Else, just fire the callbacks and be done.
    */
   if (form.validation_options) {
-    return form.validation_options
-      .validator(form.model, form.validation_options.options)
-      .then((errors: ValidationError[]) => {
-        _executeCallbacks([
-          _handleValidationSideEffects(
-            form,
-            errors,
-            required_fields,
-            field,
-            event
-          ),
-          _hasStateChanged(form.value_changes, form.changed),
-          callbacks && _executeValidationCallbacks("after", callbacks),
-        ]);
-        return errors;
-      });
+    // const args = form.validation_options.validator;
+    return (
+      form.validation_options
+        .validator(form.model, form.validation_options.options)
+        // .validator(...args)
+        .then((errors: ValidationError[]) => {
+          _executeCallbacks([
+            _handleValidationSideEffects(
+              form,
+              errors,
+              required_fields,
+              field,
+              event
+            ),
+            _hasStateChanged(form.value_changes, form.changed),
+            callbacks && _executeValidationCallbacks("after", callbacks),
+          ]);
+          return errors;
+        })
+    );
   } else {
     _executeCallbacks([
       _hasStateChanged(form.value_changes, form.changed),
@@ -177,7 +181,24 @@ async function _handleValidationSideEffects<T extends Object>(
     }
   } else {
     /** We can't get here unless the errors we see are for non-required fields */
-
+    /**  Are we validating the whole form or just the fields? */
+    if (field && form.node) {
+      /**  Link errors to field (to show validation errors) */
+      _linkFieldErrors(
+        errors,
+        field,
+        form.validation_options.error_display,
+        form.node
+      );
+    } else if (form.node) {
+      /**  This is validation for the whole form! */
+      _linkAllErrors(
+        errors,
+        form.fields,
+        form.validation_options.error_display,
+        form.node
+      );
+    }
     /**
      * If the config tells us to link the values only when the form
      * is valid, then link them here.

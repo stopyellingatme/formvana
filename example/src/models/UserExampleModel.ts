@@ -37,6 +37,8 @@ export class UserExampleModel {
   })
   avatar: string;
 
+  @Length(10, 90)
+  @IsString()
   @field({
     label: "Display Name",
     required: true,

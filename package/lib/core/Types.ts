@@ -52,7 +52,7 @@ export class ValidationError {
 }
 
 /** Form Validation Options  */
-export interface ValidationOptions {
+export interface ValidationOptions<ModelType extends Object> {
   /**
    * PLEASE PASS IN A VALIDATOR FUNCTION! (if you want validation)
    *
@@ -60,7 +60,7 @@ export interface ValidationOptions {
    * You can use any validation library you like, as long as this function
    * returns Promise<ValidationError[]>
    */
-  validator: ValidatorFunction;
+  validator: (model: ModelType, options?: Record<string, any> | Object) => Promise<ValidationError[]>;
 
   /**
    * THIS IS THE SECOND PARAMETER BEING PASSED TO THE VALIDATOR FUNCTION.

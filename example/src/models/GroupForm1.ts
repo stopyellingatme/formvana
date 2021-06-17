@@ -25,7 +25,6 @@ export class ExampleModel {
     data_type: "number",
     label: "Status 1",
     required: true,
-    group: "personal",
     attributes: { placeholder: "Status 1", type: "number" },
     ref_key: "statuses",
   })
@@ -33,6 +32,8 @@ export class ExampleModel {
 
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
+    selector: "input",
+    data_type: "string",
     label: "Email 2",
     required: true,
     attributes: { placeholder: "Email 2", type: "email" },
@@ -43,6 +44,8 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "textarea",
+    data_type: "string",
+    group: "person-info",
     label: "Description 3",
     required: false,
     hint: "This is a hint!",
@@ -53,9 +56,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
+    data_type: "string",
     label: "Email 4",
     required: true,
-    group: "personal",
+    group: "person-info",
     attributes: { placeholder: "Email 4", type: "email" },
   })
   email_4;
@@ -64,9 +68,9 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
+    data_type: "string",
     label: "Name 5",
     required: true,
-    group: "personal",
     attributes: { placeholder: "Name 5", type: "text" },
   })
   name_5;
@@ -74,8 +78,10 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
+    data_type: "string",
     label: "Email 6",
     required: true,
+    group: "person-info",
     attributes: { placeholder: "Email 6", type: "email" },
   })
   email_6;
@@ -94,6 +100,7 @@ export class ExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
   @field({
     selector: "input",
+    data_type: "string",
     label: "Email 8",
     required: true,
     attributes: { placeholder: "Email 8", type: "email" },
@@ -104,6 +111,7 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "textarea",
+    data_type: "string",
     label: "Description 9",
     required: false,
     hint: "This is a hint!",
@@ -115,6 +123,8 @@ export class ExampleModel {
   @IsString()
   @field({
     selector: "input",
+    data_type: "string",
+    group: "person-info",
     label: "Name 10",
     required: true,
     attributes: { placeholder: "Name 10", type: "text" },
