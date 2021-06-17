@@ -126,7 +126,7 @@ const field_configs: FormFieldSchema = {
     data_type: "file",
     label: "Profile Image",
     required: false,
-    value: writable(2),
+    value: writable(undefined),
     attributes: { id: "profile_image" },
     exclude_events: ["focus", "blur"],
   },
@@ -143,7 +143,7 @@ const validation_options = object({
     id: number(),
   }),
   order: number(),
-  // image:
+  profile_image: object(),
 });
 
 /**
@@ -163,7 +163,7 @@ const data_model = Object.assign(
 );
 
 /**
- * ! TESTING TO SEE IF THIS WORKS! -- IT WORKS! :)
+ * ! TESTING TO SEE IF THIS WORKS! -- IT WORKED! :)
  *
  * This was a test to see if it's possible/easy to coop the ValidationError
  * in order to conform other validator's error types into the proper shape.

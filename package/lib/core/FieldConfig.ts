@@ -36,17 +36,13 @@ export class FieldConfig<T extends Object> {
     /** I know, Object.assign... lots of freedom there. */
     if (init) Object.assign(this, init);
 
-    if (!this.selector) {
-      throw new Error(
-        `Please pass in a valid Element.\nEither a string selector or a SvelteComponent.`
-      );
-    }
-
     /** Is value Writable store? */
     if (!this.value || !(<Writable<any>>this.value).subscribe) {
       /** If it's not, make it a writable store. */
       this.value = writable(this.value);
     }
+
+    if (init && init["type"]) this.attributes["type"] = init["type"];
 
     /**
      * I'm doing this because there's not enough thought about accessibility
@@ -93,6 +89,20 @@ export class FieldConfig<T extends Object> {
   value: Writable<any> = writable(undefined);
 
   /**
+   * Tyoe of the input
+   */
+  #type: string = "text";
+
+  public set type(v: string) {
+    this.#type = v;
+    this.attributes["type"] = this.#type;
+  }
+
+  public get type(): string {
+    return this.#type;
+  }
+
+  /**
    * This is the DATA TYPE of the value!
    * If set to number (or decimal, or int, etc.) it will be parsed as number.
    * If the type is not accounted for in this library, we return the original
@@ -102,7 +112,7 @@ export class FieldConfig<T extends Object> {
    *
    * Defaults to "string"
    */
-  data_type: AcceptedDataType = "text";
+  data_type: AcceptedDataType = "string";
 
   /**
    * Validation Errors!

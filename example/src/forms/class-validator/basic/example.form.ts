@@ -7,13 +7,10 @@ import {
   ValidationError,
   ValidationOptions,
 } from "@formvana";
-import { ExampleModel } from "../../../models/ExampleClass";
-import {
-  validate,
-  ValidationError as VError,
-  ValidatorOptions,
-} from "class-validator";
+import { ExampleModel } from "../../../models/BigForm";
+import { ValidatorOptions } from "class-validator";
 import DefaultTemplate from "../../../templates/Default.template.svelte";
+import { validator } from "../validator";
 
 const ref_data: RefData = {
   statuses: [
@@ -24,13 +21,6 @@ const ref_data: RefData = {
   ],
 };
 
-const validator = async (model, options) => {
-  return validate(model, options).then((errors: VError[]) => {
-    return errors.map((error) => {
-      return new ValidationError(error.property, error.constraints);
-    });
-  });
-};
 const class_validator_options: ValidatorOptions = {
   skipMissingProperties: false,
   dismissDefaultMessages: false,

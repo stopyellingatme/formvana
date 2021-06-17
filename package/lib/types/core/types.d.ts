@@ -127,7 +127,7 @@ export declare type ElementEvent = InputEvent & {
     };
 };
 export declare type FormFieldSchema = Record<string, Partial<FieldConfig<Object>>>;
-export declare type AcceptedDataType = "text" | "string" | "number" | "boolean" | "array" | "file" | "any";
+export declare type AcceptedDataType = "text" | "string" | "number" | "boolean" | "array" | "file" | "files" | "any";
 /**
  * Keeping it simple. Just keep up with model and errors.
  */

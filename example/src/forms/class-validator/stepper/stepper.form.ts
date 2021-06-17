@@ -7,11 +7,12 @@ import {
   ValidationError,
   FormStepper,
 } from "@formvana";
-import { ExampleModel as ExampleModel2 } from "../../../models/ExampleClass2";
-import { ExampleModel as ExampleModel3 } from "../../../models/ExampleClass3";
+import { ExampleModel as StepperForm1 } from "../../../models/StepperForm1";
+import { ExampleModel as StepperForm2 } from "../../../models/StepperForm2";
 import { validate, ValidationError as VError } from "class-validator";
 //@ts-ignore
 import StepperTemplate from "../../../templates/Stepper.template.svelte";
+import { validator } from "../validator";
 
 const ref_data: RefData = {
   statuses: [
@@ -22,18 +23,10 @@ const ref_data: RefData = {
   ],
 };
 
-const validator = (model, options) => {
-  return validate(model, options).then((errors: VError[]) => {
-    return errors.map((error) => {
-      return new ValidationError(error.property, error.constraints);
-    });
-  });
-};
-
 function initStore() {
   // Set up the form(vana) class
   let form_1 = new Form(
-    new ExampleModel2(),
+    new StepperForm1(),
     { validator: validator },
     {
       on_events: new OnEvents({ focus: false }),
@@ -45,7 +38,7 @@ function initStore() {
   );
 
   let form_2 = new Form(
-    new ExampleModel3(),
+    new StepperForm2(),
     { validator: validator },
     {
       on_events: new OnEvents({ focus: false }),

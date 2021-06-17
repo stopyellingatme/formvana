@@ -321,24 +321,28 @@ function _getValueFromEvent<T extends Object>(
         case "array":
           return _parseArray(event, field);
         case "file" || "files":
-          return _parseFileInput(event, field);
-        /**
-         * @TODO Add handler for file input type
-         */
+          return _parseFileInput(event);
       }
-    } else return undefined;
+    } else return event.target.value;
 
     /** If none of the above conditions apply, just retrun the value */
     return event.target.value;
   } else return undefined;
 }
 
-function _parseFileInput<T extends Object>(
-  event: ElementEvent,
-  field: FieldConfig<T>
-) {
-  console.log(event);
-  
+function _parseFileInput(event: ElementEvent) {
+  /** @ts-ignore */
+  if (event.target.files) {
+    /** @ts-ignore */
+    const files: FileList | undefined = event.target.files;
+    if (files && files.length === 1) {
+      return files.item(0);
+    } else if (files && files.length > 1) {
+      return Object.values(files);
+    }
+    return files;
+  }
+  return event.target.value;
 }
 
 function _parseArray<T extends Object>(

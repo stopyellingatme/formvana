@@ -96,9 +96,6 @@
             /** I know, Object.assign... lots of freedom there. */
             if (init)
                 Object.assign(this, init);
-            if (!this.selector) {
-                throw new Error(`Please pass in a valid Element.\nEither a string selector or a SvelteComponent.`);
-            }
             /** Is value Writable store? */
             if (!this.value || !this.value.subscribe) {
                 /** If it's not, make it a writable store. */
@@ -153,7 +150,7 @@
          *
          * Defaults to "string"
          */
-        data_type = "text";
+        data_type = "string";
         /**
          * Validation Errors!
          * We're mainly looking in the "errors" field.
@@ -701,23 +698,32 @@
                         return Boolean(event.target.value);
                     case "array":
                         return _parseArray(event, field);
-                    case "file":
+                    case "file" :
                         return _parseFileInput(event);
-                    /**
-                     * @TODO Add handler for file input type
-                     */
                 }
             }
             else
-                return undefined;
+                return event.target.value;
             /** If none of the above conditions apply, just retrun the value */
             return event.target.value;
         }
         else
             return undefined;
     }
-    function _parseFileInput(event, field) {
-        console.log(event);
+    function _parseFileInput(event) {
+        /** @ts-ignore */
+        if (event.target.files) {
+            /** @ts-ignore */
+            const files = event.target.files;
+            if (files && files.length === 1) {
+                return files.item(0);
+            }
+            else if (files && files.length > 1) {
+                return Object.values(files);
+            }
+            return files;
+        }
+        return event.target.value;
     }
     function _parseArray(event, field) {
         let vals = get_store_value(field.value) ? [...get_store_value(field.value)] : [];

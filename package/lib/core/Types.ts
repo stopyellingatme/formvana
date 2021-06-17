@@ -160,13 +160,8 @@ export type LinkValuesOnEvent = "all" | "field";
 
 export type FieldNode<T extends Object> = (
   | HTMLInputElement
-  // | (HTMLElement & { type: string })
-  // | HTMLElement
   | HTMLFieldSetElement
-  // | HTMLImageElement
   | HTMLButtonElement
-  // | HTMLCanvasElement
-  // | HTMLOptionElement
   | HTMLSelectElement
   | HTMLTextAreaElement
   | HTMLOutputElement

@@ -6,12 +6,13 @@
   import SuperstructForm from "./forms/superstruct/basic/Superstruct.form.svelte";
   import StepperForm from "./forms/class-validator/stepper/Stepper.form.svelte";
   import NoStyleForm from "./forms/class-validator/nostyle/NoStyle.form.svelte";
+  import UserForm from "./forms/class-validator/user/User.form.svelte";
 
   const validators = ["class-validator", "superstruct"];
-  const examples = ["basic", "group", "stepper", "no style"];
+  const examples = ["basic", "group", "stepper", "no style", "user"];
 
-  $: selected_validator = validators[1];
-  $: selected = examples[0];
+  $: selected_validator = validators[0];
+  $: selected = examples[4];
 </script>
 
 <main>
@@ -57,11 +58,11 @@
     {:else if selected === examples[1]}
       <FormGroup />
     {:else if selected === examples[2]}
-      <!-- <div class="flex items-center justify-center w-full"> -->
       <StepperForm />
-      <!-- </div> -->
     {:else if selected === examples[3]}
       <NoStyleForm />
+    {:else if selected === examples[4]}
+      <UserForm />
     {/if}
   {:else if selected_validator === "superstruct"}
     {#if selected === examples[0]}

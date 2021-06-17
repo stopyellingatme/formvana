@@ -1,62 +1,42 @@
 import { get, Writable, writable } from "svelte/store";
-import {
-  Form,
-  FormGroup,
-  OnEvents,
-  RefData,
-  ValidationCallback,
-  ValidationError,
-} from "@formvana";
-import { ExampleModel as GroupForm1 } from "../../../models/GroupForm1";
-import { ExampleModel as GroupForm2 } from "../../../models/GroupForm2";
-import { validate, ValidationError as VError } from "class-validator";
+import { Form, FormGroup, OnEvents, RefData } from "@formvana";
+import { UserExampleModel } from "../../../models/UserExampleModel";
 
-import NoStyleTemplate from "../../../templates/NoStyle.template.svelte";
-
-const ref_data: RefData = {
-  statuses: [
-    { label: "ACTIVE", value: 0 },
-    { label: "PENDING", value: 1 },
-    { label: "SUSPENDED", value: 2 },
-    { label: "ARCHIVED", value: 3 },
-  ],
-};
-
-const validator = (model, options) => {
-  return validate(model, options).then((errors: VError[]) => {
-    return errors.map((error) => {
-      return new ValidationError(error.property, error.constraints);
-    });
-  });
-};
+import GroupTemplate from "../../../templates/Group.template.svelte";
+import { validator } from "../validator";
 
 function initStore() {
   // Set up the form(vana) class
   let form_1 = new Form(
-    new GroupForm1(),
-    { validator: validator },
+    new UserExampleModel(),
+    {
+      validator: validator,
+      error_display: {
+        dom: { type: "ol", error_class: ["text-sm", "text-red-600", "mt-2"] },
+      },
+    },
     {
       on_events: new OnEvents({ focus: false }),
-      template: NoStyleTemplate,
-      refs: ref_data,
+      template: GroupTemplate,
+      // refs: ref_data,
       // hidden_fields: ["description_3", "name_10"],
-      disabled_fields: ["email_2", "email_4"],
+      // disabled_fields: ["email_2", "email_4"],
     }
   );
 
-  let form_2 = new Form(
-    new GroupForm2(),
-    { validator: validator },
-    {
-      on_events: new OnEvents({ focus: false }),
-      template: NoStyleTemplate,
-      refs: ref_data,
-      hidden_fields: ["email_4"],
-      disabled_fields: ["description_3"],
-    }
-  );
+  // let form_2 = new Form(
+  //   new GroupForm2(),
+  //   { validator: validator },
+  //   {
+  //     on_events: new OnEvents({ focus: false }),
+  //     template: GroupTemplate,
+  //     refs: ref_data,
+  //     hidden_fields: ["email_4"],
+  //     disabled_fields: ["description_3"],
+  //   }
+  // );
 
-  let form_group = new FormGroup([form_1, form_2]);
+  let form_group = new FormGroup([form_1]);
 
   // And add it to the store...
   const { subscribe, update, set } = writable(form_group);

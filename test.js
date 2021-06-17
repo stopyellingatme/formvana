@@ -1,10 +1,11 @@
 // Script to generate 100's of inputs for testing.
 const fs = require("fs");
 
-const output_path1 = `./example/src/models/ExampleClass.ts`;
-const output_path2 = `./example/src/models/ExampleClass2.ts`;
-const output_path3 = `./example/src/models/ExampleClass3.ts`;
-const output_path4 = `./example/src/models/ExampleClass4.ts`;
+const output_path1 = `./example/src/models/BigForm.ts`;
+const output_path2 = `./example/src/models/GroupForm1.ts`;
+const output_path3 = `./example/src/models/GroupForm2.ts`;
+const output_path4 = `./example/src/models/StepperForm1.ts`;
+const output_path5 = `./example/src/models/StepperForm2.ts`;
 
 const test_class_string = (fields) => `
 import {
@@ -181,3 +182,4 @@ function fwcb(path, err) {
 (() => generateFields(output_path2, 11))();
 (() => generateFields(output_path3, 11))();
 (() => generateFields(output_path4, 11))();
+(() => generateFields(output_path5, 11))();

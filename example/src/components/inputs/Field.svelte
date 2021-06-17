@@ -28,6 +28,8 @@
       <RadioGroup {field} />
     {:else if field.selector === "file" || field.selector === "files"}
       <File {field} />
+    {:else}
+      <Input {field} />
     {/if}
   </div>
 {/if}

@@ -135,7 +135,7 @@ type ElementEvent = InputEvent & {
     };
 };
 type FormFieldSchema = Record<string, Partial<FieldConfig<Object>>>;
-type AcceptedDataType = "text" | "string" | "number" | "boolean" | "array" | "file" | "any";
+type AcceptedDataType = "text" | "string" | "number" | "boolean" | "array" | "file" | "files" | "any";
 /**
  * Keeping it simple. Just keep up with model and errors.
  */

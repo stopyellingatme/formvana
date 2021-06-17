@@ -7,8 +7,8 @@ import {
   ValidationCallback,
   ValidationError,
 } from "@formvana";
-import { ExampleModel } from "../../../models/ExampleClass2";
-import { ExampleModel as ExampleModel3 } from "../../../models/ExampleClass3";
+import { ExampleModel as GroupForm1 } from "../../../models/GroupForm1";
+import { ExampleModel as GroupForm2 } from "../../../models/GroupForm2";
 import { validate, ValidationError as VError } from "class-validator";
 
 import GroupTemplate from "../../../templates/Group.template.svelte";
@@ -33,7 +33,7 @@ const validator = (model, options) => {
 function initStore() {
   // Set up the form(vana) class
   let form_1 = new Form(
-    new ExampleModel(),
+    new GroupForm1(),
     { validator: validator },
     {
       on_events: new OnEvents({ focus: false }),
@@ -45,7 +45,7 @@ function initStore() {
   );
 
   let form_2 = new Form(
-    new ExampleModel3(),
+    new GroupForm2(),
     { validator: validator },
     {
       on_events: new OnEvents({ focus: false }),
