@@ -65,9 +65,9 @@ interface ValidationOptions<ModelType extends Object> {
     error_display: "constraint" | {
         dom: {
             type: "ul" | "ol" | "single";
-            wrapper_class?: string[];
+            wrapper_classes?: string[];
             attributes?: string[];
-            error_class?: string[];
+            error_classes?: string[];
         };
     } | "custom";
     /** When to link this.field values to this.model values */
@@ -75,13 +75,15 @@ interface ValidationOptions<ModelType extends Object> {
 }
 //#endregion
 // #region Events
+/**
+ * * Enabled By Default: focus, blur, change, input, submit
+ *
+ * Determines which event listeners are added to each field.
+ *
+ * You can insert event listeners just by adding a [string]: boolean
+ * to the constructor's init object.
+ */
 declare class OnEvents<T extends HTMLElementEventMap> {
-    /**
-     * Determines which events to validate on.
-     * You can insert event listeners just by adding a [string]: boolean
-     * to the constructor's init object.
-     * Enabled By Default: blur, change, focus, input, submit
-     */
     constructor(init?: Partial<OnEvents<T>>, disableAll?: boolean);
     /** On each keystroke */
     aggressive: boolean;
@@ -361,7 +363,6 @@ interface AriaAttributes {
  * ---------------------------------------------------------------------------
  */
 declare class FieldConfig<T extends Object> {
-    #private;
     constructor(name: keyof T, init?: Partial<FieldConfig<T>>);
     /**
      * Name of the class property.
@@ -383,8 +384,6 @@ declare class FieldConfig<T extends Object> {
     selector?: string | SvelteComponent;
     /** Value is a writable store defaulting to undefined. */
     value: Writable<any>;
-    set type(v: string);
-    get type(): string;
     /**
      * This is the DATA TYPE of the value!
      * If set to number (or decimal, or int, etc.) it will be parsed as number.
@@ -457,6 +456,12 @@ declare class FieldConfig<T extends Object> {
      * @example exclude blur and focus events for a checkbox
      */
     exclude_events?: Array<keyof OnEvents<HTMLElementEventMap>>;
+    /**
+     * You may need to excude some event listeners.
+     *
+     * @example exclude blur and focus events for a checkbox
+     */
+    include_events?: Array<keyof OnEvents<HTMLElementEventMap>>;
     /** Are you grouping multiple fields togethter? */
     group?: string | string[];
     /**
@@ -493,13 +498,18 @@ declare class FieldStepper {
  *
  * @TODO Time to redo the readme.md file! Lots have changed since then!
  *
- * @TODO Add more data type parsers (File, Files, etc.)
+ * @TODO Add a very very simple example of formvana usage.
+ *    Such that only 1-2 files are needed.
+ *
  * @TODO Add that aggressive/lazy/passive validation thing.
  * @TODO Extract field grouping logic into the form.buildFields method?
+ * @TODO Strip out all svelte (or as much as possible) and use vanilla variables
+ *    instead of writable stores
  *
- * @TODO Might want to add a debug mode to inspect event listeners and stuff
+ * @TODO Add debug mode to inspect event listeners and form state snapshots
  *
  */
+declare function newForm<ModelType extends Object>(model: ModelType, validation_options?: Partial<ValidationOptions<ModelType>>, form_properties?: Partial<Form<ModelType>>): Writable<Form<ModelType>>;
 /**
  * ---------------------------------------------------------------------------
  * Formvana Form Class
@@ -599,7 +609,7 @@ declare class Form<ModelType extends Object> {
      */
     value_changes: Writable<Record<keyof ModelType | any, ModelType[keyof ModelType]>>;
     /**
-     * This is the model's initial state.
+     * This is the form's initial state.
      * It's only initial model and errors.
      * We're keeping this simple.
      */
@@ -675,6 +685,10 @@ declare class Form<ModelType extends Object> {
      */
     attachRefData: (refs?: RefData | undefined) => void;
     /**
+     * Return a writable store of the current form class
+     */
+    storify: () => Writable<Form<ModelType>>;
+    /**
      *! Make sure to call this when the component is unloaded/destroyed
      * Removes all event listeners and clears the form state.
      */
@@ -725,8 +739,6 @@ type FormDictionary = Array<Form<any>>;
 /**
  * Base interface for managing multiple instances of Form
  * classes.
- *
- * @TODO Class for FormGroup and FormStepper
  */
 declare class FormManager {
     #private;
@@ -773,4 +785,4 @@ declare class FormStepper extends FormManager {
 declare class FormGroup extends FormManager {
     constructor(forms: FormDictionary, props?: Partial<FormManager>);
 }
-export { FieldConfig, FieldStepper, Form, field, ValidationCallback, ValidatorFunction, ValidationError, ValidationOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, FieldNode, ElementEvent, FormFieldSchema, AcceptedDataType, InitialFormState, RefDataItem, RefData, FieldAttributes, ElementAttributesMap, Callback, FormManager, FormStepper, FormGroup };
+export { FieldConfig, FieldStepper, newForm, Form, field, ValidationCallback, ValidatorFunction, ValidationError, ValidationOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, FieldNode, ElementEvent, FormFieldSchema, AcceptedDataType, InitialFormState, RefDataItem, RefData, FieldAttributes, ElementAttributesMap, Callback, FormManager, FormStepper, FormGroup };

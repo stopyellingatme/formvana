@@ -7,12 +7,13 @@
   import StepperForm from "./forms/class-validator/stepper/Stepper.form.svelte";
   import NoStyleForm from "./forms/class-validator/nostyle/NoStyle.form.svelte";
   import UserForm from "./forms/class-validator/user/User.form.svelte";
+  import SimpleExample from "./Simple.example.svelte";
 
   const validators = ["class-validator", "superstruct"];
   const examples = ["basic", "group", "stepper", "no style", "user"];
 
   $: selected_validator = validators[0];
-  $: selected = examples[4];
+  $: selected = examples[0];
 </script>
 
 <main>
@@ -54,7 +55,8 @@
 
   {#if selected_validator === "class-validator"}
     {#if selected === examples[0]}
-      <ExampleForm />
+      <!-- <ExampleForm /> -->
+      <SimpleExample />
     {:else if selected === examples[1]}
       <FormGroup />
     {:else if selected === examples[2]}

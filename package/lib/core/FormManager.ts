@@ -21,8 +21,6 @@ type FormDictionary = Array<Form<any>>;
 /**
  * Base interface for managing multiple instances of Form
  * classes.
- *
- * @TODO Class for FormGroup and FormStepper
  */
 export class FormManager {
   constructor(forms: FormDictionary, props?: Partial<FormManager>) {

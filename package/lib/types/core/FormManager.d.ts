@@ -18,8 +18,6 @@ declare type FormDictionary = Array<Form<any>>;
 /**
  * Base interface for managing multiple instances of Form
  * classes.
- *
- * @TODO Class for FormGroup and FormStepper
  */
 export declare class FormManager {
     #private;

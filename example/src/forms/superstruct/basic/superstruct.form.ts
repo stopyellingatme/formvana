@@ -231,7 +231,7 @@ function initStore() {
       validator: doValidation,
       options: validation_options,
       error_display: {
-        dom: { type: "ul", error_class: ["text-red-600", "text-sm"] },
+        dom: { type: "ul", error_classes: ["text-red-600", "text-sm"] },
       },
     },
     /** Partial Form Model Properties */

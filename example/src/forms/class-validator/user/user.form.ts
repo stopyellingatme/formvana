@@ -1,42 +1,31 @@
 import { get, Writable, writable } from "svelte/store";
-import { Form, FormGroup, OnEvents, RefData } from "@formvana";
+import { Form, OnEvents, ValidationOptions, FormStepper } from "@formvana";
 import { UserExampleModel } from "../../../models/UserExampleModel";
 
-import GroupTemplate from "../../../templates/Group.template.svelte";
+import StepperTemplate from "../../../templates/Stepper.template.svelte";
 import { validator } from "../validator";
+const validator_options: Partial<ValidationOptions<UserExampleModel>> = {
+  validator: validator,
+  error_display: {
+    dom: { type: "ol", error_classes: ["text-sm", "text-red-600", "mt-2"] },
+  },
+};
 
 function initStore() {
   // Set up the form(vana) class
-  let form_1 = new Form(
-    new UserExampleModel(),
-    {
-      validator: validator,
-      error_display: {
-        dom: { type: "ol", error_class: ["text-sm", "text-red-600", "mt-2"] },
-      },
-    },
-    {
-      on_events: new OnEvents({ focus: false }),
-      template: GroupTemplate,
-      // refs: ref_data,
-      // hidden_fields: ["description_3", "name_10"],
-      // disabled_fields: ["email_2", "email_4"],
-    }
-  );
+  let login_form = new Form(new UserExampleModel(), validator_options, {
+    on_events: new OnEvents({ focus: false }),
+    template: StepperTemplate,
+    meta: { for_form: "login" },
+  });
 
-  // let form_2 = new Form(
-  //   new GroupForm2(),
-  //   { validator: validator },
-  //   {
-  //     on_events: new OnEvents({ focus: false }),
-  //     template: GroupTemplate,
-  //     refs: ref_data,
-  //     hidden_fields: ["email_4"],
-  //     disabled_fields: ["description_3"],
-  //   }
-  // );
+  let register_form = new Form(new UserExampleModel(), validator_options, {
+    on_events: new OnEvents({ focus: false }),
+    template: StepperTemplate,
+    meta: { for_form: "register" },
+  });
 
-  let form_group = new FormGroup([form_1]);
+  let form_group = new FormStepper([login_form, register_form]);
 
   // And add it to the store...
   const { subscribe, update, set } = writable(form_group);
@@ -57,7 +46,7 @@ const updateState = (state, updates) => {
 /**
  * Export the Form State
  */
-export const form_state: Writable<FormGroup> = initStore();
+export const form_state: Writable<FormStepper> = initStore();
 
 let initialized = false;
 /**

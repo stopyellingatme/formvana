@@ -19,11 +19,13 @@
   {#if stepper_data}
     <div class="float-left space-x-4">
       <Button
+        type="button"
         action={stepper_data.backStep}
         label={"Back"}
         disabled={$active_step === 0}
       />
       <Button
+        type="button"
         action={stepper_data.nextStep}
         label={"Next"}
         disabled={stepper_data.forms.length === $active_step + 1}
@@ -32,6 +34,7 @@
   {/if}
   <div class="float-right">
     <Button
+      type="button"
       action={reset}
       label={$changed ? "Changed" : "Unchanged"}
       disabled={!$changed}
@@ -43,6 +46,7 @@
       disabled={!$valid}
     />
     <Button
+      type="button"
       action={reset}
       label={$valid && $changed
         ? "Valid &amp; Changed"

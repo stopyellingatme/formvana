@@ -29,7 +29,7 @@ function _buildFormFields<T extends Object>(
   props: string[] = Reflect.getMetadata("editableProperties", model)
 ): FieldConfig<T>[] {
   /** Map the @field fields to the form.fields */
-  const fields = props.map((prop: string) => {
+  let fields = props.map((prop: string) => {
     /** Get the @FieldConfig using metadata reflection */
     const field: FieldConfig<T> = new FieldConfig<T>(prop as keyof T, {
       ...Reflect.getMetadata("fieldConfig", model, prop),
@@ -40,9 +40,11 @@ function _buildFormFields<T extends Object>(
     return field;
   });
 
-  if (meta) {
+  if (meta && meta["for_form"]) {
     /** Filter fields used in a specific form */
-    fields.filter((f) => meta["name"] === f.for_form);
+    fields = fields.filter(
+      (f) => f.for_form === undefined || meta["for_form"] === f.for_form
+    );
   }
 
   return fields;
@@ -60,20 +62,10 @@ function _buildFormFieldsWithSchema<T extends Object>(
     });
     fields.push(field);
   }
-  // const fields = props.map((prop: string) => {
-  //   /** Get the @FieldConfig using metadata reflection */
-  //   const field: FieldConfig<T> = new FieldConfig<T>(prop as keyof T, {
-  //     ...Reflect.getMetadata("fieldConfig", model, prop),
-  //     value: model[prop as keyof T],
-  //   });
-
-  /** We made it. Return the field config and let's generate some inputs! */
-  // return field;
-  // });
 
   if (meta) {
     /** Filter fields used in a specific form */
-    fields.filter((f) => meta["name"] === f.for_form);
+    fields = fields.filter((f) => meta["for_form"] === f.for_form);
   }
 
   return fields;
@@ -90,71 +82,36 @@ function _attachEventListeners<T extends Object>(
   on_events: OnEvents<HTMLElementEventMap>,
   callback: Callback
 ): void {
-  // console.log(field.node?.type);
-
-  Object.entries(on_events).forEach(([eventName, shouldListen]) => {
-    /** If shouldListen === true, then add the event listener */
-    if (shouldListen) {
-      // if (
-      //   (field.node?.nodeName === "SELECT" ||
-      //     field.node?.type.match(/^(radio|checkbox)$/)) &&
-      //   eventName !== "input"
-      // ) {
-      //   field.addEventListener(
-      //     eventName as keyof HTMLElementEventMap,
-      //     callback
-      //   );
-      // } else if (
-      //   field.node?.nodeName !== "SELECT" &&
-      //   !field.node?.type.match(/^(radio|checkbox)$/)
-      // ) {
-      //   field.addEventListener(
-      //     eventName as keyof HTMLElementEventMap,
-      //     callback
-      //   );
-      // }
-
-      // if (field.node?.nodeName === "SELECT" && eventName !== "input") {
-      //   field.addEventListener(
-      //     eventName as keyof HTMLElementEventMap,
-      //     callback
-      //   );
-      // } else if (
-      //   field.node?.type.match(/^(radio|checkbox)$/) &&
-      //   eventName !== "input" &&
-      //   eventName !== "focus" &&
-      //   eventName !== "blur"
-      // ) {
-      //   console.log(field.node?.type);
-      //   field.addEventListener(
-      //     eventName as keyof HTMLElementEventMap,
-      //     callback
-      //   );
-      // } else {
-      //   field.addEventListener(
-      //     eventName as keyof HTMLElementEventMap,
-      //     callback
-      //   );
-      // }
-
+  Object.entries(on_events).forEach(([event_name, should_listen]) => {
+    const filterListenerOnSelectElement = () => {
+      if (field.node?.nodeName === "SELECT" && event_name !== "input") {
+        field.addEventListener(
+          event_name as keyof HTMLElementEventMap,
+          callback
+        );
+      } else {
+        field.addEventListener(
+          event_name as keyof HTMLElementEventMap,
+          callback
+        );
+      }
+    };
+    /** If should_listen === true, then add the event listener */
+    if (should_listen) {
       if (
         !field.exclude_events?.includes(
-          eventName as keyof OnEvents<HTMLElementEventMap>
+          event_name as keyof OnEvents<HTMLElementEventMap>
         )
-      ) {
-        if (field.node?.nodeName === "SELECT" && eventName !== "input") {
-          field.addEventListener(
-            eventName as keyof HTMLElementEventMap,
-            callback
-          );
-        } else {
-          field.addEventListener(
-            eventName as keyof HTMLElementEventMap,
-            callback
-          );
-        }
-      }
+      )
+        filterListenerOnSelectElement();
     }
+
+    if (
+      field.include_events?.includes(
+        event_name as keyof OnEvents<HTMLElementEventMap>
+      )
+    )
+      filterListenerOnSelectElement();
   });
 }
 

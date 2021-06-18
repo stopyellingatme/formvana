@@ -61,21 +61,23 @@ export interface ValidationOptions<ModelType extends Object> {
     error_display: "constraint" | {
         dom: {
             type: "ul" | "ol" | "single";
-            wrapper_class?: string[];
+            wrapper_classes?: string[];
             attributes?: string[];
-            error_class?: string[];
+            error_classes?: string[];
         };
     } | "custom";
     /** When to link this.field values to this.model values */
     when_link_fields_to_model?: LinkOnEvent;
 }
+/**
+ * * Enabled By Default: focus, blur, change, input, submit
+ *
+ * Determines which event listeners are added to each field.
+ *
+ * You can insert event listeners just by adding a [string]: boolean
+ * to the constructor's init object.
+ */
 export declare class OnEvents<T extends HTMLElementEventMap> {
-    /**
-     * Determines which events to validate on.
-     * You can insert event listeners just by adding a [string]: boolean
-     * to the constructor's init object.
-     * Enabled By Default: blur, change, focus, input, submit
-     */
     constructor(init?: Partial<OnEvents<T>>, disableAll?: boolean);
     /** On each keystroke */
     aggressive: boolean;

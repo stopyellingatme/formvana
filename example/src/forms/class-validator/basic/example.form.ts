@@ -41,7 +41,7 @@ function initStore() {
       /** (Optional) Tweak for better perf, if needed. */
       options: class_validator_options,
       error_display: {
-        dom: { type: "ul", error_class: ["text-red-600", "text-sm"] },
+        dom: { type: "ul", error_classes: ["text-red-600", "text-sm"] },
       },
       // error_display: "constraint"
     },

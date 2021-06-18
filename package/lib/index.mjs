@@ -95,8 +95,6 @@ class FieldConfig {
             /** If it's not, make it a writable store. */
             this.value = writable(this.value);
         }
-        if (init && init["type"])
-            this.attributes["type"] = init["type"];
         /**
          * I'm doing this because there's not enough thought about accessibility
          * in Forms or for libraries. Better to have SOME kind of default than none
@@ -114,6 +112,15 @@ class FieldConfig {
         if (this.required) {
             this.attributes["required"] = true;
             this.attributes["aria-required"] = true;
+        }
+        /**
+         * This is here becuase i spent about 45min trying to figure out why
+         * the file explorer would not open when I clicked the file input label.
+         * Well, it's because it needs an Id. Duh.
+         */
+        if (this.data_type === "file" || this.data_type === "files") {
+            if (!this.attributes["id"])
+                this.attributes["id"] = this.name;
         }
     }
     /**
@@ -136,17 +143,6 @@ class FieldConfig {
     selector;
     /** Value is a writable store defaulting to undefined. */
     value = writable(undefined);
-    /**
-     * Tyoe of the input
-     */
-    #type = "text";
-    set type(v) {
-        this.#type = v;
-        this.attributes["type"] = this.#type;
-    }
-    get type() {
-        return this.#type;
-    }
     /**
      * This is the DATA TYPE of the value!
      * If set to number (or decimal, or int, etc.) it will be parsed as number.
@@ -219,6 +215,12 @@ class FieldConfig {
      * @example exclude blur and focus events for a checkbox
      */
     exclude_events;
+    /**
+     * You may need to excude some event listeners.
+     *
+     * @example exclude blur and focus events for a checkbox
+     */
+    include_events;
     /** Are you grouping multiple fields togethter? */
     group;
     /**
@@ -294,13 +296,15 @@ class ValidationError {
 }
 //#endregion
 // #region Events
+/**
+ * * Enabled By Default: focus, blur, change, input, submit
+ *
+ * Determines which event listeners are added to each field.
+ *
+ * You can insert event listeners just by adding a [string]: boolean
+ * to the constructor's init object.
+ */
 class OnEvents {
-    /**
-     * Determines which events to validate on.
-     * You can insert event listeners just by adding a [string]: boolean
-     * to the constructor's init object.
-     * Enabled By Default: blur, change, focus, input, submit
-     */
     constructor(init, disableAll = false) {
         // If disableAll is false, turn off all event listeners
         if (disableAll) {
@@ -446,6 +450,7 @@ const max_int = Number.MAX_SAFE_INTEGER;
  *
  * ---------------------------------------------------------------------------
  */
+//#region Error Linking
 /**
  * Link form.errors to it's corresponding field.errors
  * Via error[field_name]
@@ -454,7 +459,6 @@ const max_int = Number.MAX_SAFE_INTEGER;
  */
 function _linkFieldErrors(errors, field, error_display, form_node) {
     const error = errors.filter((e) => e["field_key"] === field.name);
-    console.log("FILTER: ", error);
     /** Check if there's an error for the field */
     if (error && error.length > 0) {
         field.errors.set(error[0]);
@@ -462,17 +466,47 @@ function _linkFieldErrors(errors, field, error_display, form_node) {
         _handleErrorDisplay(field, error[0], error_display, form_node);
     }
     else {
-        /**  Very important! Don't change! */
+        /**  Remove errors from field and hanlde error display.  */
         field.errors.set(undefined);
         field.node?.removeAttribute("aria-invalid");
         _handleErrorDisplay(field, undefined, error_display, form_node);
     }
 }
+/**
+ * Link all Validation Errors on Form.errors to each field via the
+ * field_error_link_name.
+ *
+ * @Hotpath
+ */
+function _linkAllErrors(errors, fields, error_display, form_node) {
+    /** Loop over the errors! */
+    errors.forEach((err) => {
+        /**
+         * If error[field_key] is truthy, attach the error to the
+         * field[field_key (name)]
+         */
+        if (err["field_key"]) {
+            const field = _get(err["field_key"], fields);
+            field.errors.set(err);
+            _handleErrorDisplay(field, err, error_display, form_node);
+        }
+    });
+    /** Get all fields with errors. */
+    const fields_with_errors = errors.map((e) => e.field_key);
+    /** Go through each field and check if the field is in the error map. */
+    fields.forEach((field) => {
+        /** If not, then remove the all errors from the field. */
+        if (!errors || !fields_with_errors.includes(field.name)) {
+            field.errors.set(undefined);
+            field.node?.removeAttribute("aria-invalid");
+            _handleErrorDisplay(field, undefined, error_display, form_node);
+        }
+    });
+}
 function _handleErrorDisplay(field, error, error_display, form_node) {
     if (error_display === "constraint") {
         /** Constraint implementation goes here */
         if (error && error.errors) {
-            // console.log(field.name, error.errors);
             const message = error.errors;
             Object.keys(message).forEach((key) => {
                 field.node?.setCustomValidity(`${key}: ${message[key]}`);
@@ -486,6 +520,10 @@ function _handleErrorDisplay(field, error, error_display, form_node) {
         field.node?.reportValidity();
     }
     else if (error_display === "custom") {
+        /**
+         * If "custom", the library user will have to create their own component
+         * to show validation errors.
+         */
         return;
     }
     else if (typeof error_display === "object") {
@@ -497,111 +535,133 @@ function _handleErrorDisplay(field, error, error_display, form_node) {
  * This one is pretty harry.
  * There is a lot going on in this function but almost everything is commented.
  * I'm sure there's room for improvement down there somewhere.
- *
- * @TODO Fix single error display. Still using parent element
  */
 function _handleDomErrorDisplay(field, error, error_display, form_node) {
-    if (typeof error_display === "object") {
+    if (typeof error_display === "object")
         if (error_display.dom.type === "single") {
-            if (error && error.errors) {
-                const _message = error.errors, message = Object.keys(error.errors)
-                    .map((key) => _message[key])
-                    .join("");
-                const node = field.node?.parentElement?.querySelector("span");
-                if (node && field.node?.parentElement?.contains(node)) {
-                    node.textContent = message;
-                }
-                else {
-                    /** Create the span element to append text */
-                    const span = document.createElement("span");
-                    span.setAttribute("aria-live", "polite");
-                    /** Add a text node and append the message. */
-                    const text_node = document.createTextNode(message);
-                    span.appendChild(text_node);
-                    /** Add any extra classes for styling */
-                    error_display.dom.wrapper_class &&
-                        field.node?.classList.add(...error_display.dom.wrapper_class);
-                    /** Add the span to the field's node - which the field.name is attached */
-                    field.node?.parentElement?.appendChild(span);
-                }
-            }
-            else {
-                const node = field.node?.parentElement?.querySelector("span");
-                if (node && field.node?.parentElement?.contains(node)) {
-                    field.node?.parentElement?.removeChild(node);
-                }
-            }
+            _handleDomSingleErrorDisplay(field, error, error_display, form_node);
         }
         else if (error_display.dom.type === "ol" ||
             error_display.dom.type === "ul") {
-            const error_element_id = `___error-list-item-for-${field.name}`;
-            if (error && error.errors) {
-                const _message = error.errors, messages = Object.keys(_message).map((key) => _message[key]);
-                /** Have we already created an error node element for the given field? */
-                const error_node = form_node.querySelector(`#${error_element_id}`);
-                /** If so, we only update the list items */
-                if (error_node) {
-                    /**
-                     * @TODO clean up this implementation to only update the elments
-                     * that are already created.
-                     */
-                    /** Remove all list item elements from list parent */
-                    const children = error_node.querySelectorAll("li");
-                    children.forEach((child) => {
-                        error_node?.removeChild(child);
-                    });
-                    /** Loop over error messages */
-                    for (let i = 0; messages.length > i; ++i) {
-                        const message = messages[i], message_element = document.createElement("li"), text_node = document.createTextNode(message);
-                        message_element.appendChild(text_node);
-                        error_display.dom.error_class &&
-                            message_element.classList.add(...error_display.dom?.error_class);
-                        error_node.appendChild(message_element);
-                    }
-                }
-                else {
-                    /** Set up blank variable to hold the error node element */
-                    const node = _getErrorNode(field, form_node);
-                    /** Add new error element and add errors to list */
-                    const list_element = document.createElement(error_display.dom.type);
-                    /** If there are classes for the error list wrapper, apply them */
-                    error_display.dom.wrapper_class &&
-                        list_element.classList.add(...error_display.dom.wrapper_class);
-                    /** Add an id to the element so we can grab it later */
-                    list_element.id = error_element_id;
-                    /** Loop over error messages. */
-                    for (const message of messages) {
-                        /** Create a list item to add the error message into */
-                        const message_element = document.createElement("li"), 
-                        /** Create a text node with the error message */
-                        text_node = document.createTextNode(message);
-                        /** Append text node to the new list item element */
-                        message_element.appendChild(text_node);
-                        /** Apply any classes being passed in through config */
-                        error_display.dom.error_class &&
-                            message_element.classList.add(...error_display.dom?.error_class);
-                        /** Add the new list item to the parent list element */
-                        list_element.appendChild(message_element);
-                    }
-                    /** Append the list element to the error_node element */
-                    node?.appendChild(list_element);
+            _handleDomListErrorDisplay(field, error, error_display, form_node);
+        }
+}
+/**
+ * It works. It's fast. And it works.
+ * But it's not the easiest thing to read.
+ *
+ * What's going on here?
+ * Well we want to make error display as easy as possible while still offering
+ * a level of customization.
+ * This function handles the display of errors in a list attached to an element
+ * with data-error-for={field.name}.
+ * The error.field_key attaches to the field with field_key === field.name.
+ *
+ * @TODO Clean this up. But maintain verbosity, if possible. No crazy one liners.
+ */
+function _handleDomListErrorDisplay(field, error, error_display, form_node) {
+    if (typeof error_display === "object") {
+        const error_element_id = `___error-list-item-for-${field.name}`;
+        if (error && error.errors) {
+            const messages = Object.keys(error.errors).map((key) => error.errors && error.errors[key]);
+            /** Have we already created an error node element for the given field? */
+            const error_node = form_node.querySelector(`#${error_element_id}`);
+            /** If so, we only update the list items */
+            if (error_node) {
+                /** Remove all list item elements from list parent */
+                const children = error_node.querySelectorAll("li");
+                children.forEach((child) => {
+                    error_node?.removeChild(child);
+                });
+                /** Loop over error messages */
+                for (let i = 0; messages.length > i; ++i) {
+                    const message = messages[i], message_element = document.createElement("li"), text_node = document.createTextNode(message || "");
+                    message_element.appendChild(text_node);
+                    error_display.dom.error_classes &&
+                        message_element.classList.add(...error_display.dom?.error_classes);
+                    error_node.appendChild(message_element);
                 }
             }
             else {
-                /** No field errors! */
-                /** Get the error node from the field */
-                const node = _getErrorNode(field, form_node), error_node = form_node.querySelector(`#${error_element_id}`);
-                console.log("NODE: ", node);
-                console.log("ERROR NODE: ", error_node);
-                if (node && error_node && node.contains(error_node)) {
-                    node.removeChild(error_node);
+                /** Add new error element and add errors to list */
+                const list_element = document.createElement(error_display.dom.type);
+                /** If there are classes for the error list wrapper, apply them */
+                error_display.dom.wrapper_classes &&
+                    list_element.classList.add(...error_display.dom.wrapper_classes);
+                /** Add an id to the element so we can grab it later */
+                list_element.id = error_element_id;
+                /** Loop over error messages. */
+                for (const message of messages) {
+                    /** Create a list item to add the error message into */
+                    const message_element = document.createElement("li"), 
+                    /** Create a text node with the error message */
+                    text_node = document.createTextNode(message || "");
+                    /** Append text node to the new list item element */
+                    message_element.appendChild(text_node);
+                    /** Apply any classes being passed in through config */
+                    error_display.dom.error_classes &&
+                        message_element.classList.add(...error_display.dom?.error_classes);
+                    /** Add the new list item to the parent list element */
+                    list_element.appendChild(message_element);
                 }
+                /** Append the list element to the error_node element */
+                _getErrorNode(field, form_node)?.appendChild(list_element);
             }
         }
         else {
-            return;
+            /** No field errors! */
+            /** Get the error node from the field */
+            const node = _getErrorNode(field, form_node);
+            // error_node = form_node.querySelector(`#${error_element_id}`);
+            if (node) {
+                node.childNodes.forEach((n) => {
+                    node.removeChild(n);
+                });
+            }
+            // if (node && error_node && node.contains(error_node)) {
+            //   node.removeChild(error_node);
+            // } else if (node) {
+            // }
         }
     }
+}
+function _handleDomSingleErrorDisplay(field, error, error_display, form_node) {
+    if (typeof error_display === "object")
+        if (error && error.errors) {
+            const message = Object.keys(error.errors)
+                .map((key) => error.errors && error.errors[key])
+                .join("");
+            /** Get the error node and check if we already have a span element added */
+            const error_node = _getErrorNode(field, form_node), node = error_node?.querySelector("span");
+            /** If se, we just update the textContent with the error message */
+            if (node) {
+                node.textContent = message;
+            }
+            else {
+                /** Create the span element to append text */
+                const span = document.createElement("span");
+                span.setAttribute("aria-live", "polite");
+                /** Add a text node and append the message. */
+                const text_node = document.createTextNode(message);
+                span.appendChild(text_node);
+                /** Add any extra classes for styling */
+                error_display.dom.error_classes &&
+                    error_node?.classList.add(...error_display.dom.error_classes);
+                /** Add the span to the field's node - which the field.name is attached */
+                error_node?.appendChild(span);
+            }
+        }
+        else {
+            const error_node = _getErrorNode(field, form_node);
+            if (error_node) {
+                error_node.childNodes.forEach((n) => {
+                    error_node.removeChild(n);
+                });
+            }
+            // if (error_node && form_node.contains(error_node)) {
+            //   form_node.removeChild(error_node);
+            // }
+        }
 }
 function _getErrorNode(field, form_node) {
     let node;
@@ -617,39 +677,8 @@ function _getErrorNode(field, form_node) {
         node = field.node?.parentElement;
     return node;
 }
-/**
- * Link all Validation Errors on Form.errors to each field via the
- * field_error_link_name.
- *
- * @Hotpath
- */
-function _linkAllErrors(errors, fields, error_display, form_node) {
-    errors.forEach((err) => {
-        if (Array.isArray(err)) {
-            err = err[0];
-            if (err["field_key"]) {
-                const field = _get(err["field_key"], fields);
-                field.errors.set(err);
-                _handleErrorDisplay(field, err, error_display, form_node);
-            }
-        }
-        else {
-            if (err["field_key"]) {
-                const field = _get(err["field_key"], fields);
-                field.errors.set(err);
-                _handleErrorDisplay(field, err, error_display, form_node);
-            }
-        }
-    });
-    const fields_with_errors = errors.map((e) => e.field_key);
-    fields.forEach((field) => {
-        if (!errors || !fields_with_errors.includes(field.name)) {
-            field.errors.set(undefined);
-            field.node?.removeAttribute("aria-invalid");
-            _handleErrorDisplay(field, undefined, error_display, form_node);
-        }
-    });
-}
+//#endregion
+//#region Value Linking
 /**
  * Link values from FIELDS to MODEL or MODEL to FIELDS
  *
@@ -666,6 +695,17 @@ function _linkAllValues(from_fields_to_model, fields, model) {
         else {
             /**  Link form.model[values] to the form.fields[values] */
             val.set(model[name]);
+            /** @ts-ignore */
+            if (field.node && (field.node.value || field.node.value === 0)) {
+                if (model[name]) {
+                    /** @ts-ignore */
+                    field.node.value = model[name];
+                }
+                else {
+                    /** @ts-ignore */
+                    field.node.value = "";
+                }
+            }
         }
     });
 }
@@ -733,22 +773,25 @@ function _parseFileInput(event) {
         else if (files && files.length > 1) {
             return Object.values(files);
         }
+        else if (files && files.length == 0) {
+            return event.target.value;
+        }
         return files;
     }
     return event.target.value;
 }
 function _parseArray(event, field) {
-    let vals = get_store_value(field.value) ? [...get_store_value(field.value)] : [];
+    let vals = get_store_value(field.value) ? [...get_store_value(field.value)] : [], target_value = event.target.value;
     /**
      * If the target is checked and the target value isn't in the field.value
      * then add the target value to the field value.
      */
-    if (vals.indexOf(event.target.value) === -1) {
-        vals.push(event.target.value);
+    if (vals.indexOf(target_value) === -1) {
+        vals.push(target_value);
     }
     else {
         /** Else remove the target.value from the field.value */
-        vals.splice(vals.indexOf(event.target.value), 1);
+        vals.splice(vals.indexOf(target_value), 1);
     }
     /** Return the array of values */
     return vals;
@@ -1094,7 +1137,7 @@ function _requiredFieldsValid(errors, required_fields) {
  */
 function _buildFormFields(model, meta, props = Reflect.getMetadata("editableProperties", model)) {
     /** Map the @field fields to the form.fields */
-    const fields = props.map((prop) => {
+    let fields = props.map((prop) => {
         /** Get the @FieldConfig using metadata reflection */
         const field = new FieldConfig(prop, {
             ...Reflect.getMetadata("fieldConfig", model, prop),
@@ -1103,9 +1146,9 @@ function _buildFormFields(model, meta, props = Reflect.getMetadata("editableProp
         /** We made it. Return the field config and let's generate some inputs! */
         return field;
     });
-    if (meta) {
+    if (meta && meta["for_form"]) {
         /** Filter fields used in a specific form */
-        fields.filter((f) => meta["name"] === f.for_form);
+        fields = fields.filter((f) => f.for_form === undefined || meta["for_form"] === f.for_form);
     }
     return fields;
 }
@@ -1117,18 +1160,9 @@ function _buildFormFieldsWithSchema(props, meta) {
         });
         fields.push(field);
     }
-    // const fields = props.map((prop: string) => {
-    //   /** Get the @FieldConfig using metadata reflection */
-    //   const field: FieldConfig<T> = new FieldConfig<T>(prop as keyof T, {
-    //     ...Reflect.getMetadata("fieldConfig", model, prop),
-    //     value: model[prop as keyof T],
-    //   });
-    /** We made it. Return the field config and let's generate some inputs! */
-    // return field;
-    // });
     if (meta) {
         /** Filter fields used in a specific form */
-        fields.filter((f) => meta["name"] === f.for_form);
+        fields = fields.filter((f) => meta["for_form"] === f.for_form);
     }
     return fields;
 }
@@ -1138,59 +1172,22 @@ function _buildFormFieldsWithSchema(props, meta) {
  * Parent: form.useField(...)
  */
 function _attachEventListeners(field, on_events, callback) {
-    // console.log(field.node?.type);
-    Object.entries(on_events).forEach(([eventName, shouldListen]) => {
-        /** If shouldListen === true, then add the event listener */
-        if (shouldListen) {
-            // if (
-            //   (field.node?.nodeName === "SELECT" ||
-            //     field.node?.type.match(/^(radio|checkbox)$/)) &&
-            //   eventName !== "input"
-            // ) {
-            //   field.addEventListener(
-            //     eventName as keyof HTMLElementEventMap,
-            //     callback
-            //   );
-            // } else if (
-            //   field.node?.nodeName !== "SELECT" &&
-            //   !field.node?.type.match(/^(radio|checkbox)$/)
-            // ) {
-            //   field.addEventListener(
-            //     eventName as keyof HTMLElementEventMap,
-            //     callback
-            //   );
-            // }
-            // if (field.node?.nodeName === "SELECT" && eventName !== "input") {
-            //   field.addEventListener(
-            //     eventName as keyof HTMLElementEventMap,
-            //     callback
-            //   );
-            // } else if (
-            //   field.node?.type.match(/^(radio|checkbox)$/) &&
-            //   eventName !== "input" &&
-            //   eventName !== "focus" &&
-            //   eventName !== "blur"
-            // ) {
-            //   console.log(field.node?.type);
-            //   field.addEventListener(
-            //     eventName as keyof HTMLElementEventMap,
-            //     callback
-            //   );
-            // } else {
-            //   field.addEventListener(
-            //     eventName as keyof HTMLElementEventMap,
-            //     callback
-            //   );
-            // }
-            if (!field.exclude_events?.includes(eventName)) {
-                if (field.node?.nodeName === "SELECT" && eventName !== "input") {
-                    field.addEventListener(eventName, callback);
-                }
-                else {
-                    field.addEventListener(eventName, callback);
-                }
+    Object.entries(on_events).forEach(([event_name, should_listen]) => {
+        const filterListenerOnSelectElement = () => {
+            if (field.node?.nodeName === "SELECT" && event_name !== "input") {
+                field.addEventListener(event_name, callback);
             }
+            else {
+                field.addEventListener(event_name, callback);
+            }
+        };
+        /** If should_listen === true, then add the event listener */
+        if (should_listen) {
+            if (!field.exclude_events?.includes(event_name))
+                filterListenerOnSelectElement();
         }
+        if (field.include_events?.includes(event_name))
+            filterListenerOnSelectElement();
     });
 }
 function _addCallbackToField(form, field, event, callback, required_fields) {
@@ -1222,13 +1219,21 @@ function _addCallbackToField(form, field, event, callback, required_fields) {
  *
  * @TODO Time to redo the readme.md file! Lots have changed since then!
  *
- * @TODO Add more data type parsers (File, Files, etc.)
+ * @TODO Add a very very simple example of formvana usage.
+ *    Such that only 1-2 files are needed.
+ *
  * @TODO Add that aggressive/lazy/passive validation thing.
  * @TODO Extract field grouping logic into the form.buildFields method?
+ * @TODO Strip out all svelte (or as much as possible) and use vanilla variables
+ *    instead of writable stores
  *
- * @TODO Might want to add a debug mode to inspect event listeners and stuff
+ * @TODO Add debug mode to inspect event listeners and form state snapshots
  *
  */
+function newForm(model, validation_options, form_properties) {
+    const form = new Form(model, validation_options, form_properties);
+    return writable(form);
+}
 /**
  * ---------------------------------------------------------------------------
  * Formvana Form Class
@@ -1363,7 +1368,7 @@ class Form {
      */
     value_changes = writable({});
     /**
-     * This is the model's initial state.
+     * This is the form's initial state.
      * It's only initial model and errors.
      * We're keeping this simple.
      */
@@ -1580,6 +1585,12 @@ class Form {
                     field.options = this.refs[field.ref_key];
             });
         }
+    };
+    /**
+     * Return a writable store of the current form class
+     */
+    storify = () => {
+        return writable(this);
     };
     /**
      *! Make sure to call this when the component is unloaded/destroyed
@@ -2803,8 +2814,6 @@ function field(config) {
 /**
  * Base interface for managing multiple instances of Form
  * classes.
- *
- * @TODO Class for FormGroup and FormStepper
  */
 class FormManager {
     constructor(forms, props) {
@@ -2980,5 +2989,5 @@ class FormGroup extends FormManager {
     }
 }
 
-export { FieldConfig, FieldStepper, Form, FormGroup, FormManager, FormStepper, OnEvents, ValidationError, field };
+export { FieldConfig, FieldStepper, Form, FormGroup, FormManager, FormStepper, OnEvents, ValidationError, field, newForm };
 //# sourceMappingURL=index.mjs.map

@@ -15,18 +15,50 @@
   });
 
   const handleSubmit = (e) => {
-    console.log("MADE IT HERE -- ", e);
+    console.log("MADE IT TO THE handleSubmit FUNCTION -- ", e);
   };
 
   $: valid = $form_state.all_valid;
   $: changed = $form_state.any_changed;
+  $: active_step = $form_state.active_step;
 </script>
 
-{#each $form_state.forms as form, i}
-  <DynamicForm form={writable(form)} group_num={i} on:submit={handleSubmit} />
-{/each}
+<div class="w-screen max-w-7xl">
+  {#each $form_state.forms as form, current_index}
+    {#if current_index === $active_step}
+      <svelte:component
+        this={form.template}
+        form={writable(form)}
+        {current_index}
+        {...$$props}
+        on:event={(e) => handleSubmit(e)}
+      />
 
-<!-- Button Area -->
-<div class="px-8 py-2 pb-12 mx-auto max-w-7xl">
-  <ButtonArea reset={$form_state.resetAll} {valid} {changed} />
+      <!-- 
+        /\ /\ /\ 
+        || || ||
+
+        Either of these will work!  
+
+        || || ||
+        \/ \/ \/
+      -->
+
+      <!-- <DynamicForm
+        {current_index}
+        form={writable(form)}
+        on:submit={handleSubmit}
+      /> -->
+    {/if}
+  {/each}
+
+  <!-- Button Area -->
+  <div class="px-8 py-2 pb-12 mx-auto max-w-7xl">
+    <ButtonArea
+      reset={$form_state.resetAll}
+      {valid}
+      {changed}
+      stepper_data={$form_state}
+    />
+  </div>
 </div>

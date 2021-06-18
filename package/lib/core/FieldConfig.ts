@@ -42,8 +42,6 @@ export class FieldConfig<T extends Object> {
       this.value = writable(this.value);
     }
 
-    if (init && init["type"]) this.attributes["type"] = init["type"];
-
     /**
      * I'm doing this because there's not enough thought about accessibility
      * in Forms or for libraries. Better to have SOME kind of default than none
@@ -61,6 +59,15 @@ export class FieldConfig<T extends Object> {
     if (this.required) {
       this.attributes["required"] = true;
       this.attributes["aria-required"] = true;
+    }
+
+    /**
+     * This is here becuase i spent about 45min trying to figure out why
+     * the file explorer would not open when I clicked the file input label.
+     * Well, it's because it needs an Id. Duh.
+     */
+    if (this.data_type === "file" || this.data_type === "files") {
+      if (!this.attributes["id"]) this.attributes["id"] = this.name;
     }
   }
 
@@ -87,20 +94,6 @@ export class FieldConfig<T extends Object> {
 
   /** Value is a writable store defaulting to undefined. */
   value: Writable<any> = writable(undefined);
-
-  /**
-   * Tyoe of the input
-   */
-  #type: string = "text";
-
-  public set type(v: string) {
-    this.#type = v;
-    this.attributes["type"] = this.#type;
-  }
-
-  public get type(): string {
-    return this.#type;
-  }
 
   /**
    * This is the DATA TYPE of the value!
@@ -185,6 +178,13 @@ export class FieldConfig<T extends Object> {
    * @example exclude blur and focus events for a checkbox
    */
   exclude_events?: Array<keyof OnEvents<HTMLElementEventMap>>;
+
+  /**
+   * You may need to excude some event listeners.
+   *
+   * @example exclude blur and focus events for a checkbox
+   */
+  include_events?: Array<keyof OnEvents<HTMLElementEventMap>>;
 
   /** Are you grouping multiple fields togethter? */
   group?: string | string[];

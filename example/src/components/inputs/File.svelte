@@ -9,7 +9,7 @@
 </script>
 
 <div class="sm:col-span-6">
-  <label for={name} class="block text-sm font-medium text-gray-700">
+  <label for={`header_${name}`} class="block text-sm font-medium text-gray-700">
     {field.label}
   </label>
   <div
@@ -36,7 +36,7 @@
             for={name}
             class="relative font-medium text-indigo-600 bg-white rounded-md cursor-pointer hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
           >
-            <span>Upload a file</span>
+            Upload a file
             <input
               {name}
               bind:value={$value}

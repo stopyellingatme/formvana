@@ -60,7 +60,10 @@ export interface ValidationOptions<ModelType extends Object> {
    * You can use any validation library you like, as long as this function
    * returns Promise<ValidationError[]>
    */
-  validator: (model: ModelType, options?: Record<string, any> | Object) => Promise<ValidationError[]>;
+  validator: (
+    model: ModelType,
+    options?: Record<string, any> | Object
+  ) => Promise<ValidationError[]>;
 
   /**
    * THIS IS THE SECOND PARAMETER BEING PASSED TO THE VALIDATOR FUNCTION.
@@ -79,9 +82,9 @@ export interface ValidationOptions<ModelType extends Object> {
     | {
         dom: {
           type: "ul" | "ol" | "single";
-          wrapper_class?: string[];
+          wrapper_classes?: string[];
           attributes?: string[];
-          error_class?: string[];
+          error_classes?: string[];
         };
       }
     | "custom";
@@ -92,14 +95,15 @@ export interface ValidationOptions<ModelType extends Object> {
 //#endregion
 
 // #region Events
-
+/**
+ * * Enabled By Default: focus, blur, change, input, submit
+ *
+ * Determines which event listeners are added to each field.
+ *
+ * You can insert event listeners just by adding a [string]: boolean
+ * to the constructor's init object.
+ */
 export class OnEvents<T extends HTMLElementEventMap> {
-  /**
-   * Determines which events to validate on.
-   * You can insert event listeners just by adding a [string]: boolean
-   * to the constructor's init object.
-   * Enabled By Default: blur, change, focus, input, submit
-   */
   constructor(init?: Partial<OnEvents<T>>, disableAll: boolean = false) {
     // If disableAll is false, turn off all event listeners
     if (disableAll) {
