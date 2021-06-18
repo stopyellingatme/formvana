@@ -45,13 +45,26 @@ import {
  *
  * @TODO Time to redo the readme.md file! Lots have changed since then!
  *
- * @TODO Add more data type parsers (File, Files, etc.)
+ * @TODO Add a very very simple example of formvana usage.
+ *    Such that only 1-2 files are needed.
+ *
  * @TODO Add that aggressive/lazy/passive validation thing.
  * @TODO Extract field grouping logic into the form.buildFields method?
+ * @TODO Strip out all svelte (or as much as possible) and use vanilla variables
+ *    instead of writable stores
  *
- * @TODO Might want to add a debug mode to inspect event listeners and stuff
+ * @TODO Add debug mode to inspect event listeners and form state snapshots
  *
  */
+
+export function newForm<ModelType extends Object>(
+  model: ModelType,
+  validation_options?: Partial<ValidationOptions<ModelType>>,
+  form_properties?: Partial<Form<ModelType>>
+): Writable<Form<ModelType>> {
+  const form = new Form(model, validation_options, form_properties);
+  return writable(form);
+}
 
 /**
  * ---------------------------------------------------------------------------
@@ -214,7 +227,7 @@ export class Form<ModelType extends Object> {
   > = writable({});
 
   /**
-   * This is the model's initial state.
+   * This is the form's initial state.
    * It's only initial model and errors.
    * We're keeping this simple.
    */
