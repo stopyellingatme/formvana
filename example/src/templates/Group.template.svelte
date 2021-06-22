@@ -57,7 +57,7 @@
               <!-- Form Wrapper Div (col num, col gaps, etc.) -->
               <div class="grid grid-cols-4 gap-6 mt-6">
                 <!-- This is where the Form Generator Magic happens! -->
-                <Fields fields={$form.fields} />
+                <Fields form={$form} />
                 <!-- {#each $form.fields as field, i}
                   <Fields {field} />
                 {/each} -->

@@ -8,12 +8,33 @@
   import NoStyleForm from "./forms/class-validator/nostyle/NoStyle.form.svelte";
   import UserForm from "./forms/class-validator/user/User.form.svelte";
   import SimpleExample from "./Simple.example.svelte";
+  import GroupSSFrom from "./forms/superstruct/group/Group.ss.form.svelte";
 
   const validators = ["class-validator", "superstruct"];
-  const examples = ["basic", "group", "stepper", "no style", "user"];
+  let examples = ["basic", "group", "stepper", "no style", "user"];
 
   $: selected_validator = validators[0];
   $: selected = examples[0];
+
+  const filterExamples = () => {
+    switch (selected_validator) {
+      case "class-validator":
+        examples = [
+          "simple",
+          "group",
+          "stepper",
+          "no style",
+          "user",
+          "huge form",
+        ];
+        return;
+      case "superstruct":
+        examples = ["basic", "group", "stepper", "huge form"];
+        return;
+      default:
+        return;
+    }
+  };
 </script>
 
 <main>
@@ -28,6 +49,7 @@
         class:underline={selected_validator === ex}
         on:click={() => {
           selected_validator = ex;
+          filterExamples();
         }}>{ex}</span
       >
     {/each}
@@ -70,9 +92,10 @@
     {#if selected === examples[0]}
       <SuperstructForm />
     {:else if selected === examples[1]}
-      <div class="flex items-center justify-center w-full">
+      <!-- <div class="flex items-center justify-center w-full">
         <p class="m-10 font-mono text-lg capitalize">Stepper Goes Here</p>
-      </div>
+      </div> -->
+      <GroupSSFrom />
     {:else if selected === examples[2]}
       <div class="flex items-center justify-center w-full">
         <p class="m-10 font-mono text-lg capitalize">Stepper Goes Here</p>

@@ -201,8 +201,7 @@
          */
         data_set;
         /**
-         * * If you set this, you must set form.meta.name!
-         * * If you set this, you must set form.meta.name!
+         * * If you set this, you must set form.for_form!
          *
          * In case you'd like to filter some fields for a specific form
          *
@@ -213,6 +212,8 @@
         /**
          * If you're using a validation library that supports
          * a validation rules pattern, this is here for you.
+         *
+         * @TODO No example for this yet.
          */
         validation_rules;
         /**
@@ -285,12 +286,13 @@
 
     /**
      * All constructor values are optional so we can create a blank Validation
-     * Error object, for whatever reason.
+     * Error object, for whatever reason we need.
+     * The error.field_key links to it's corresponding field.name
      */
     class ValidationError {
-        constructor(field_property_key, errors, extra_data) {
-            if (field_property_key)
-                this.field_key = field_property_key;
+        constructor(field_name, errors, extra_data) {
+            if (field_name)
+                this.field_key = field_name;
             if (errors)
                 this.errors = errors;
             if (extra_data)
@@ -303,7 +305,7 @@
     //#endregion
     // #region Events
     /**
-     * * Enabled By Default: focus, blur, change, input, submit
+     * * Enabled By Default: blur, input, change, submit
      *
      * Determines which event listeners are added to each field.
      *
@@ -335,12 +337,13 @@
          * When valid, use passive again.
          */
         eager = false;
-        blur = true;
+        input = true;
         change = true;
+        submit = true;
+        blur = true;
+        focus = false;
         click = false;
         dblclick = false;
-        focus = true;
-        input = true;
         keydown = false;
         keypress = false;
         keyup = false;
@@ -352,7 +355,6 @@
         mouseout = false;
         mouseover = false;
         mouseup = false;
-        submit = true;
     }
     //#endregion
 
@@ -452,7 +454,7 @@
      * *** Linking Methods ***
      *
      * This section handles linking values and errors.
-     * Nearly all of these functions are part of hot paths.
+     * Nearly all of functions are hot paths or part of hot paths.
      *
      * ---------------------------------------------------------------------------
      */
@@ -469,13 +471,15 @@
         if (error && error.length > 0) {
             field.errors.set(error[0]);
             field.node?.setAttribute("aria-invalid", "true");
-            _handleErrorDisplay(field, error[0], error_display, form_node);
+            if (error_display && form_node)
+                _handleErrorDisplay(field, error[0], error_display, form_node);
         }
         else {
             /**  Remove errors from field and hanlde error display.  */
             field.errors.set(undefined);
             field.node?.removeAttribute("aria-invalid");
-            _handleErrorDisplay(field, undefined, error_display, form_node);
+            if (error_display && form_node)
+                _handleErrorDisplay(field, undefined, error_display, form_node);
         }
     }
     /**
@@ -494,7 +498,8 @@
             if (err["field_key"]) {
                 const field = _get(err["field_key"], fields);
                 field.errors.set(err);
-                _handleErrorDisplay(field, err, error_display, form_node);
+                if (error_display && form_node)
+                    _handleErrorDisplay(field, err, error_display, form_node);
             }
         });
         /** Get all fields with errors. */
@@ -505,7 +510,8 @@
             if (!errors || !fields_with_errors.includes(field.name)) {
                 field.errors.set(undefined);
                 field.node?.removeAttribute("aria-invalid");
-                _handleErrorDisplay(field, undefined, error_display, form_node);
+                if (error_display && form_node)
+                    _handleErrorDisplay(field, undefined, error_display, form_node);
             }
         });
     }
@@ -516,9 +522,7 @@
                 const message = error.errors;
                 Object.keys(message).forEach((key) => {
                     field.node?.setCustomValidity(`${key}: ${message[key]}`);
-                    // field.node?.reportValidity();
                 });
-                // form_node.reportValidity();
             }
             else {
                 field.node?.setCustomValidity("");
@@ -544,7 +548,7 @@
      */
     function _handleDomErrorDisplay(field, error, error_display, form_node) {
         if (typeof error_display === "object")
-            if (error_display.dom.type === "single") {
+            if (error_display.dom.type === "span") {
                 _handleDomSingleErrorDisplay(field, error, error_display, form_node);
             }
             else if (error_display.dom.type === "ol" ||
@@ -618,16 +622,11 @@
                 /** No field errors! */
                 /** Get the error node from the field */
                 const node = _getErrorNode(field, form_node);
-                // error_node = form_node.querySelector(`#${error_element_id}`);
                 if (node) {
                     node.childNodes.forEach((n) => {
                         node.removeChild(n);
                     });
                 }
-                // if (node && error_node && node.contains(error_node)) {
-                //   node.removeChild(error_node);
-                // } else if (node) {
-                // }
             }
         }
     }
@@ -664,9 +663,6 @@
                         error_node.removeChild(n);
                     });
                 }
-                // if (error_node && form_node.contains(error_node)) {
-                //   form_node.removeChild(error_node);
-                // }
             }
     }
     function _getErrorNode(field, form_node) {
@@ -939,7 +935,7 @@
          * link them to each field
          */
         if (form.node) {
-            _linkAllErrors(form.errors, form.fields, form.validation_options.error_display, form.node);
+            _linkAllErrors(form.errors, form.fields, form.validation_options?.error_display, form.node);
         }
         /** Reset the value changes and the "changed" store */
         form.value_changes.set({});
@@ -970,7 +966,7 @@
         /** Execute pre-validation callbacks */
         _executeCallbacks([
             field &&
-                form.validation_options.when_link_fields_to_model === "always" &&
+                form.validation_options?.when_link_fields_to_model === "always" &&
                 _linkValueFromEvent(field, form.model, event),
             /** Execution step may need work */
             field && _setValueChanges(form.value_changes, field),
@@ -981,14 +977,12 @@
          * Too many moving parts.
          * Hard to pass in custom validation parameters.
          *
-         * If there's validation options, use them.
+         * If validation options are present, use them.
          * Else, just fire the callbacks and be done.
          */
-        if (form.validation_options) {
-            // const args = form.validation_options.validator;
-            return (form.validation_options
+        if (form.validation_options && form.validation_options.options) {
+            return form.validation_options
                 .validator(form.model, form.validation_options.options)
-                // .validator(...args)
                 .then((errors) => {
                 _executeCallbacks([
                     _handleValidationSideEffects(form, errors, required_fields, field, event),
@@ -996,7 +990,19 @@
                     callbacks && _executeValidationCallbacks("after", callbacks),
                 ]);
                 return errors;
-            }));
+            });
+        }
+        else if (form.validation_options && !form.validation_options.options) {
+            return form.validation_options
+                .validator(form.model)
+                .then((errors) => {
+                _executeCallbacks([
+                    _handleValidationSideEffects(form, errors, required_fields, field, event),
+                    _hasStateChanged(form.value_changes, form.changed),
+                    callbacks && _executeValidationCallbacks("after", callbacks),
+                ]);
+                return errors;
+            });
         }
         else {
             _executeCallbacks([
@@ -1060,11 +1066,11 @@
             /**  Are we validating the whole form or just the fields? */
             if (field && form.node) {
                 /**  Link errors to field (to show validation errors) */
-                _linkFieldErrors(errors, field, form.validation_options.error_display, form.node);
+                _linkFieldErrors(errors, field, form.validation_options?.error_display, form.node);
             }
             else if (form.node) {
                 /**  This is validation for the whole form! */
-                _linkAllErrors(errors, form.fields, form.validation_options.error_display, form.node);
+                _linkAllErrors(errors, form.fields, form.validation_options?.error_display, form.node);
             }
             /**  All required fields are valid? */
             if (_requiredFieldsValid(errors, required_fields)) {
@@ -1079,18 +1085,18 @@
             /**  Are we validating the whole form or just the fields? */
             if (field && form.node) {
                 /**  Link errors to field (to show validation errors) */
-                _linkFieldErrors(errors, field, form.validation_options.error_display, form.node);
+                _linkFieldErrors(errors, field, form.validation_options?.error_display, form.node);
             }
             else if (form.node) {
                 /**  This is validation for the whole form! */
-                _linkAllErrors(errors, form.fields, form.validation_options.error_display, form.node);
+                _linkAllErrors(errors, form.fields, form.validation_options?.error_display, form.node);
             }
             /**
              * If the config tells us to link the values only when the form
              * is valid, then link them here.
              */
             field &&
-                form.validation_options.when_link_fields_to_model === "valid" &&
+                form.validation_options?.when_link_fields_to_model === "valid" &&
                 _linkValueFromEvent(field, form.model, event);
             form.clearErrors(); /** Clear form errors */
             form.valid.set(true); /** Form is valid! */
@@ -1131,17 +1137,15 @@
      *
      * *** Form Setup ***
      *
-     * Will write later. Files delted and source control didnt catch.
+     * Will write later. Files deleted and source control didnt catch.
      *
      * ---------------------------------------------------------------------------
      */
     /**
      * Build the field configs from this.model using metadata-reflection.
      * Grab the editableProperties from the @field decorator.
-     *
-     * @TODO Create method to use plain JSON as model, fields and validation schema
      */
-    function _buildFormFields(model, meta, props = Reflect.getMetadata("editableProperties", model)) {
+    function _buildFormFields(model, for_form, props = Reflect.getMetadata("editableProperties", model)) {
         /** Map the @field fields to the form.fields */
         let fields = props.map((prop) => {
             /** Get the @FieldConfig using metadata reflection */
@@ -1152,13 +1156,13 @@
             /** We made it. Return the field config and let's generate some inputs! */
             return field;
         });
-        if (meta && meta["for_form"]) {
+        if (for_form) {
             /** Filter fields used in a specific form */
-            fields = fields.filter((f) => f.for_form === undefined || meta["for_form"] === f.for_form);
+            fields = fields.filter((f) => f.for_form === undefined || for_form === f.for_form);
         }
         return fields;
     }
-    function _buildFormFieldsWithSchema(props, meta) {
+    function _buildFormFieldsWithSchema(props, for_form) {
         let k, fields = [];
         for (k in props) {
             const field = new FieldConfig(k, {
@@ -1166,11 +1170,100 @@
             });
             fields.push(field);
         }
-        if (meta) {
+        if (for_form) {
             /** Filter fields used in a specific form */
-            fields = fields.filter((f) => meta["for_form"] === f.for_form);
+            fields = fields.filter((f) => f.for_form === undefined || for_form === f.for_form);
         }
         return fields;
+    }
+    /**
+     * I wanted a way to handle field groups in an effective but lightweight
+     * manner. I believe this achieves that goal.
+     *
+     *
+     */
+    function _hanldeFieldGroups(fields) {
+        if (fields && fields.length > 0) {
+            /**
+             * Use a blank object to store/map field groups.
+             */
+            let field_groups = {};
+            /** This sets up the return type to be easily itterable. */
+            const getSortedFields = () => {
+                /** Array for storing the field config or array of field configs */
+                const new_fields = [];
+                Object.keys(field_groups).forEach((key) => {
+                    new_fields.push(field_groups[key]);
+                });
+                /** Return our crazy array structure. */
+                return new_fields;
+            };
+            /** is the field.group in the field_groups map already? */
+            const isGroupInFieldGroups = (group_name) => {
+                if (Array.isArray(field_groups[group_name]))
+                    return true;
+                /** If we made it here, there was no match */
+                return false;
+            };
+            for (let i = 0; fields.length > i; ++i) {
+                const field = fields[i];
+                /** Is the field part of a group? */
+                if (field.group) {
+                    if (Array.isArray(field.group)) {
+                        field.group.forEach((name) => {
+                            /**
+                             * Have we already created a group (in our object above)
+                             * for the field.group?
+                             */
+                            const isInGroupResult = isGroupInFieldGroups(name);
+                            if (isInGroupResult) {
+                                field_groups[name].push(field);
+                            }
+                            else {
+                                /**
+                                 * If not, we add key for the field.gorup and initialize
+                                 * it with an array of the field.
+                                 * We use the array so we can add more fields later when we
+                                 * find more fields with the same group name.
+                                 */
+                                field_groups[name] = [field];
+                            }
+                        });
+                    }
+                    else if (typeof field.group === "string") {
+                        /**
+                         * Have we already created a group (in our object above)
+                         * for the field.group?
+                         */
+                        const isInGroupResult = isGroupInFieldGroups(field.group);
+                        if (isInGroupResult) {
+                            field_groups[field.group].push(field);
+                        }
+                        else {
+                            /**
+                             * If not, we add key for the field.gorup and initialize
+                             * it with an array of the field.
+                             * We use the array so we can add more fields later when we
+                             * find more fields with the same group name.
+                             */
+                            field_groups[field.group] = [field];
+                        }
+                    }
+                }
+                else {
+                    /**
+                     * If the field does not have a group then we use this identifier
+                     * to ensure all fields stay in order after this manipulation.
+                     */
+                    field_groups[`field_${i}`] = field;
+                }
+            }
+            const _fields = getSortedFields();
+            return _fields;
+        }
+        else {
+            return fields;
+        }
     }
     // #region HTML Event Helpers
     /**
@@ -1189,9 +1282,19 @@
             };
             /** If should_listen === true, then add the event listener */
             if (should_listen) {
+                /**
+                 * If should_listen === true... and...
+                 * If field.exclude_events DOES NOT contain the event name
+                 * THEN add the event listener to the field.
+                 */
                 if (!field.exclude_events?.includes(event_name))
                     filterListenerOnSelectElement();
             }
+            /**
+             * If the field.include_events includes the event_name
+             * then add that event listener to the field.
+             * Does NOT matter if should_listen is true || false.
+             */
             if (field.include_events?.includes(event_name))
                 filterListenerOnSelectElement();
         });
@@ -1225,11 +1328,8 @@
      *
      * @TODO Time to redo the readme.md file! Lots have changed since then!
      *
-     * @TODO Add a very very simple example of formvana usage.
-     *    Such that only 1-2 files are needed.
-     *
+     * @TODO Add more superstruct examples for each form type (this should show how easy the template pattern really is)
      * @TODO Add that aggressive/lazy/passive validation thing.
-     * @TODO Extract field grouping logic into the form.buildFields method?
      * @TODO Strip out all svelte (or as much as possible) and use vanilla variables
      *    instead of writable stores
      *
@@ -1306,18 +1406,21 @@
         fields = [];
         /**
          * Errors are attached to their corresponding fields.
-         * This pattern adds flexibility at the cost of a little complexity and object size.
+         * This pattern adds flexibility at the cost of a little complexity and
+         * object size.
          *
          * When a single field is validated, the whole model is validated (if
          * using class-validator).
-         * We just don't show all the errors to the user.
+         * We don't show all the errors to the user, only the field emmiting the
+         * event.
          * This way, we know if the form is still invalid, even if we aren't
          * showing the user any errors (like, pre-submit-button press).
          */
         errors = [];
         /**
          * validation_options contains the logic and configuration for
-         * validating the form as well as linking errors to fields.
+         * validating the form as well as linking errors to fields
+         * and displaying the errors
          */
         validation_options = {
             validator: async () => [],
@@ -1337,6 +1440,20 @@
         /** Is the form loading? */
         loading = writable(false);
         /**
+         * refs hold any reference data you'll be using in the form
+         *
+         * Call attachRefData() to link reference data to form or pass it
+         * via the constrictor.
+         *
+         * Fields & reference data are linked via field.ref_key
+         *
+         * * Format:
+         * * {[ref_key]: string, Array<{[label]: string, [value]: any, [data]?: any}>}
+         *
+         * @UseCase seclet dropdowns, radio buttons, etc.
+         */
+        refs;
+        /**
          * Form Template Layout
          *
          * Render the form into a custom svelte template!
@@ -1348,32 +1465,6 @@
          */
         template;
         /**
-         * Optional field layout, if you aren't using a class object.
-         * "no-class" method of building the fields.
-         */
-        field_schema;
-        /**
-         * refs hold any reference data you'll be using in the form
-         *
-         * Call attachRefData() to link reference data to form or pass it
-         * via the constrictor.
-         *
-         * Fields & reference data are linked via field.ref_key
-         *
-         * * Format:
-         * * Record<[ref_key]: string, Array<{[label]: string, [value]: any, [data]?: any}>>
-         *
-         * @UseCase seclet dropdowns, radio buttons, etc.
-         */
-        refs;
-        /**
-         * Emits value changes as a plain JS object.
-         * Format: { [field.name]: value }
-         *
-         * Similar to Angular form.valueChanges
-         */
-        value_changes = writable({});
-        /**
          * This is the form's initial state.
          * It's only initial model and errors.
          * We're keeping this simple.
@@ -1382,22 +1473,38 @@
             model: {},
             errors: undefined,
         };
+        /**
+         * Emits value changes as a plain JS object.
+         * Format: { [field.name]: value }
+         *
+         * Very similar to Angular form.valueChanges
+         */
+        value_changes = writable({});
+        /**
+         * Optional field layout, if you aren't using a class object.
+         * "no-class" method of building the fields.
+         */
+        field_schema;
+        /**
+         * This allows you to filter fields based on a given form name.
+         *
+         * @example user model can be used for login and signup
+         * @example for_form="login" && for_form="signup"
+         */
+        for_form;
+        /**
+         * Any extra data you may want to pass around.
+         * @examples description, name, type, header, label, classes, etc.
+         */
+        meta;
         /** Use the NAME of the field (field.name) to disable/hide the field. */
         hidden_fields;
         /** Use the NAME of the field (field.name) to disable/hide the field. */
         disabled_fields;
         /**
-         * Any extra data you may want to pass around.
-         * @examples description, name, type, header, label, classes, etc.
-         *
-         * * If you're using the field.for_form propery, set form name here.
-         */
-        meta;
-        /**
          * Determines the ordering of this.fields.
          * Simply an array of field names (or group names or stepper names)
          * in the order to be displayed
-         *
          */
         #field_order;
         /**
@@ -1414,28 +1521,33 @@
         /**
          * Builds the fields from the model.
          * Builds the field configs via this.model using metadata-reflection.
-         * Or via validation_options.field_shcema
+         * Or via form.field_shcema
          */
         buildFields = (model = this.model) => {
             if (this.field_schema) {
-                this.fields = _buildFormFieldsWithSchema(this.field_schema, this.meta);
+                this.fields = _buildFormFieldsWithSchema(this.field_schema, this.for_form);
             }
             else {
-                this.fields = _buildFormFields(model, this.meta);
+                this.fields = _buildFormFields(model, this.for_form);
             }
             this.#required_fields = this.fields
                 .filter((f) => f.required)
                 .map((f) => f.name);
         };
         /**
-         * * useForm
+         * * Required for form setup.
          *
-         * Create a function that takes a form node and sets up all the fields
-         * with names attached.
-         * This will also allow for easy mechanism to attach errors in a
-         * plug-and-play manner.
+         * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!
+         * This hooks up the event listeners!
          *
-         * Also allows for a better single source of truth for data input.
+         * Used to grab fields and attach event listeners to each field.
+         * Simply loop over the model, checking the form's node
+         * for each model[name]. If a field element is found, then
+         * attach on_event listeners to the given field.
+         *
+         * This is for Svelte's "use:FUNCTION" feature.
+         * The "use" directive passes the HTML Node as a parameter
+         * to the given function (e.g. use:useField(node: HTMLElement)).
          */
         useForm = (node) => {
             this.node = node;
@@ -1458,16 +1570,7 @@
             }
         };
         /**
-         * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!
-         * This hooks up the event listeners!
-         *
-         * This is for Svelte's "use:FUNCTION" feature.
-         * The "use" directive passes the HTML Node as a parameter
-         * to the given function (e.g. use:useField(node: HTMLElement)).
-         *
-         * Use on the element that will be interacted with.
-         * e.g. <input/> -- <button/> -- <select/> -- etc.
-         * Check examples folder for more details.
+         * This is used to hook up event listeners to the given fields.
          */
         #useField = (node) => {
             /** Attach HTML Node to field so we can remove event listeners later */
@@ -1496,7 +1599,7 @@
                 const err = new ValidationError(field_name, { error: with_message }, { value: get_store_value(field.value) });
                 this.errors.push(err);
                 if (this.node)
-                    _linkAllErrors(this.errors, this.fields, this.validation_options.error_display, this.node);
+                    _linkAllErrors(this.errors, this.fields, this.validation_options?.error_display, this.node);
             }
         };
         /**
@@ -1505,6 +1608,7 @@
          * to the validation handler
          */
         attachCallbacks = (event, callback, field_names) => {
+            /** If there are multiple fields passed in then loop over to add callbacks */
             if (Array.isArray(field_names)) {
                 const fields = field_names.map((f) => _get(f, this.fields));
                 fields.forEach((f) => {
@@ -1512,6 +1616,7 @@
                 });
             }
             else {
+                /** If there is one field, add callback to field */
                 const field = _get(field_names, this.fields);
                 _addCallbackToField(this, field, event, callback, this.#required_fields);
             }
@@ -1593,14 +1698,8 @@
             }
         };
         /**
-         * Return a writable store of the current form class
-         */
-        storify = () => {
-            return writable(this);
-        };
-        /**
          *! Make sure to call this when the component is unloaded/destroyed
-         * Removes all event listeners and clears the form state.
+         * Removes all event listeners.
          */
         destroy = () => {
             if (this.fields && this.fields.length > 0) {
@@ -1632,6 +1731,9 @@
         };
         //#endregion
         // #region - Layout
+        getFieldGroups = () => {
+            return _hanldeFieldGroups(this.fields);
+        };
         /**
          * Set the field order.
          * Layout param is simply an array of field (or group)

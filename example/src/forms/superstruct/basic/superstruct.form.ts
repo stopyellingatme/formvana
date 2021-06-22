@@ -6,6 +6,7 @@ import {
   ValidationError,
   FieldConfig,
   FormFieldSchema,
+  ValidationOptions,
 } from "@formvana";
 import {
   validate,
@@ -223,24 +224,26 @@ const doValidation = async (model, struct): Promise<ValidationError[]> => {
   );
 };
 
+const options: Partial<ValidationOptions<Object>> = {
+  validator: doValidation,
+  options: validation_options,
+  error_display: {
+    dom: { type: "ul", error_classes: ["text-red-600", "text-sm"] },
+  },
+};
 function initStore() {
-  // Set up the form(vana) object
+  /**
+   * * Set up the form(vana) object using plain object
+   */
   let form = new Form(
     data_model,
-    {
-      validator: doValidation,
-      options: validation_options,
-      error_display: {
-        dom: { type: "ul", error_classes: ["text-red-600", "text-sm"] },
-      },
-    },
+    options,
     /** Partial Form Model Properties */
     {
       template: DefaultTemplate,
       field_schema: field_configs,
       on_events: new OnEvents({ focus: false }),
       refs: refs,
-      // disabled_fields: ["title"],
     }
   );
 
@@ -315,12 +318,4 @@ export const init = () => {
 export const onSubmit = (ev) => {
   console.log("SUBMIT: ", ev);
   console.log(get(form_state));
-
-  // form_state.setLoading(true);
-
-  // updateDBO(get(form_state).model).then((model) => {
-  //     get(form_state).loadData(model, false);
-  //     form_state.updateState({model: new ExampleModel(model)})
-  //     form_state.setLoading(false);
-  // });
 };

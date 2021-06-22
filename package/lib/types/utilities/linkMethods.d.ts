@@ -6,7 +6,7 @@ import { ElementEvent, ValidationError, ValidationOptions } from "../core/Types"
  * *** Linking Methods ***
  *
  * This section handles linking values and errors.
- * Nearly all of these functions are part of hot paths.
+ * Nearly all of functions are hot paths or part of hot paths.
  *
  * ---------------------------------------------------------------------------
  */
@@ -16,14 +16,14 @@ import { ElementEvent, ValidationError, ValidationOptions } from "../core/Types"
  *
  * @Hotpath
  */
-declare function _linkFieldErrors<T extends Object>(errors: ValidationError[], field: FieldConfig<T>, error_display: ValidationOptions<T>["error_display"], form_node: HTMLFormElement): void;
+declare function _linkFieldErrors<T extends Object>(errors: ValidationError[], field: FieldConfig<T>, error_display?: ValidationOptions<T>["error_display"], form_node?: HTMLFormElement): void;
 /**
  * Link all Validation Errors on Form.errors to each field via the
  * field_error_link_name.
  *
  * @Hotpath
  */
-declare function _linkAllErrors<T extends Object>(errors: ValidationError[], fields: FieldConfig<T>[], error_display: ValidationOptions<T>["error_display"], form_node: HTMLFormElement): void;
+declare function _linkAllErrors<T extends Object>(errors: ValidationError[], fields: FieldConfig<T>[], error_display?: ValidationOptions<T>["error_display"], form_node?: HTMLFormElement): void;
 /**
  * Link values from FIELDS to MODEL or MODEL to FIELDS
  *

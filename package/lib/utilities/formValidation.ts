@@ -44,7 +44,7 @@ function _executeValidationEvent<T extends Object>(
   /** Execute pre-validation callbacks */
   _executeCallbacks([
     field &&
-      form.validation_options.when_link_fields_to_model === "always" &&
+      form.validation_options?.when_link_fields_to_model === "always" &&
       _linkValueFromEvent(field, form.model, event),
     /** Execution step may need work */
     field && _setValueChanges(form.value_changes, field),
@@ -56,30 +56,43 @@ function _executeValidationEvent<T extends Object>(
    * Too many moving parts.
    * Hard to pass in custom validation parameters.
    *
-   * If there's validation options, use them.
+   * If validation options are present, use them.
    * Else, just fire the callbacks and be done.
    */
-  if (form.validation_options) {
-    // const args = form.validation_options.validator;
-    return (
-      form.validation_options
-        .validator(form.model, form.validation_options.options)
-        // .validator(...args)
-        .then((errors: ValidationError[]) => {
-          _executeCallbacks([
-            _handleValidationSideEffects(
-              form,
-              errors,
-              required_fields,
-              field,
-              event
-            ),
-            _hasStateChanged(form.value_changes, form.changed),
-            callbacks && _executeValidationCallbacks("after", callbacks),
-          ]);
-          return errors;
-        })
-    );
+  if (form.validation_options && form.validation_options.options) {
+    return form.validation_options
+      .validator(form.model, form.validation_options.options)
+      .then((errors: ValidationError[]) => {
+        _executeCallbacks([
+          _handleValidationSideEffects(
+            form,
+            errors,
+            required_fields,
+            field,
+            event
+          ),
+          _hasStateChanged(form.value_changes, form.changed),
+          callbacks && _executeValidationCallbacks("after", callbacks),
+        ]);
+        return errors;
+      });
+  } else if (form.validation_options && !form.validation_options.options) {
+    return form.validation_options
+      .validator(form.model)
+      .then((errors: ValidationError[]) => {
+        _executeCallbacks([
+          _handleValidationSideEffects(
+            form,
+            errors,
+            required_fields,
+            field,
+            event
+          ),
+          _hasStateChanged(form.value_changes, form.changed),
+          callbacks && _executeValidationCallbacks("after", callbacks),
+        ]);
+        return errors;
+      });
   } else {
     _executeCallbacks([
       _hasStateChanged(form.value_changes, form.changed),
@@ -160,7 +173,7 @@ async function _handleValidationSideEffects<T extends Object>(
       _linkFieldErrors(
         errors,
         field,
-        form.validation_options.error_display,
+        form.validation_options?.error_display,
         form.node
       );
     } else if (form.node) {
@@ -168,7 +181,7 @@ async function _handleValidationSideEffects<T extends Object>(
       _linkAllErrors(
         errors,
         form.fields,
-        form.validation_options.error_display,
+        form.validation_options?.error_display,
         form.node
       );
     }
@@ -187,7 +200,7 @@ async function _handleValidationSideEffects<T extends Object>(
       _linkFieldErrors(
         errors,
         field,
-        form.validation_options.error_display,
+        form.validation_options?.error_display,
         form.node
       );
     } else if (form.node) {
@@ -195,7 +208,7 @@ async function _handleValidationSideEffects<T extends Object>(
       _linkAllErrors(
         errors,
         form.fields,
-        form.validation_options.error_display,
+        form.validation_options?.error_display,
         form.node
       );
     }
@@ -204,7 +217,7 @@ async function _handleValidationSideEffects<T extends Object>(
      * is valid, then link them here.
      */
     field &&
-      form.validation_options.when_link_fields_to_model === "valid" &&
+      form.validation_options?.when_link_fields_to_model === "valid" &&
       _linkValueFromEvent(field, form.model, event);
     form.clearErrors(); /** Clear form errors */
     form.valid.set(true); /** Form is valid! */

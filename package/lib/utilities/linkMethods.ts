@@ -14,7 +14,7 @@ const max_int = Number.MAX_SAFE_INTEGER;
  * *** Linking Methods ***
  *
  * This section handles linking values and errors.
- * Nearly all of these functions are part of hot paths.
+ * Nearly all of functions are hot paths or part of hot paths.
  *
  * ---------------------------------------------------------------------------
  */
@@ -30,8 +30,8 @@ const max_int = Number.MAX_SAFE_INTEGER;
 function _linkFieldErrors<T extends Object>(
   errors: ValidationError[],
   field: FieldConfig<T>,
-  error_display: ValidationOptions<T>["error_display"],
-  form_node: HTMLFormElement
+  error_display?: ValidationOptions<T>["error_display"],
+  form_node?: HTMLFormElement
 ): void {
   const error = errors.filter((e) => e["field_key"] === field.name);
 
@@ -39,12 +39,14 @@ function _linkFieldErrors<T extends Object>(
   if (error && error.length > 0) {
     field.errors.set(error[0]);
     field.node?.setAttribute("aria-invalid", "true");
-    _handleErrorDisplay(field, error[0], error_display, form_node);
+    if (error_display && form_node)
+      _handleErrorDisplay(field, error[0], error_display, form_node);
   } else {
     /**  Remove errors from field and hanlde error display.  */
     field.errors.set(undefined);
     field.node?.removeAttribute("aria-invalid");
-    _handleErrorDisplay(field, undefined, error_display, form_node);
+    if (error_display && form_node)
+      _handleErrorDisplay(field, undefined, error_display, form_node);
   }
 }
 
@@ -57,8 +59,8 @@ function _linkFieldErrors<T extends Object>(
 function _linkAllErrors<T extends Object>(
   errors: ValidationError[],
   fields: FieldConfig<T>[],
-  error_display: ValidationOptions<T>["error_display"],
-  form_node: HTMLFormElement
+  error_display?: ValidationOptions<T>["error_display"],
+  form_node?: HTMLFormElement
 ): void {
   /** Loop over the errors! */
   errors.forEach((err) => {
@@ -69,7 +71,8 @@ function _linkAllErrors<T extends Object>(
     if (err["field_key"]) {
       const field = _get(err["field_key" as keyof ValidationError], fields);
       field.errors.set(err);
-      _handleErrorDisplay(field, err, error_display, form_node);
+      if (error_display && form_node)
+        _handleErrorDisplay(field, err, error_display, form_node);
     }
   });
   /** Get all fields with errors. */
@@ -80,7 +83,8 @@ function _linkAllErrors<T extends Object>(
     if (!errors || !fields_with_errors.includes(field.name as string)) {
       field.errors.set(undefined);
       field.node?.removeAttribute("aria-invalid");
-      _handleErrorDisplay(field, undefined, error_display, form_node);
+      if (error_display && form_node)
+        _handleErrorDisplay(field, undefined, error_display, form_node);
     }
   });
 }
@@ -97,9 +101,7 @@ function _handleErrorDisplay<T extends Object>(
       const message: Record<string, string> = error.errors;
       Object.keys(message).forEach((key) => {
         field.node?.setCustomValidity(`${key}: ${message[key]}`);
-        // field.node?.reportValidity();
       });
-      // form_node.reportValidity();
     } else {
       field.node?.setCustomValidity("");
     }
@@ -128,7 +130,7 @@ function _handleDomErrorDisplay<T extends Object>(
   form_node: HTMLFormElement
 ) {
   if (typeof error_display === "object")
-    if (error_display.dom.type === "single") {
+    if (error_display.dom.type === "span") {
       _handleDomSingleErrorDisplay(field, error, error_display, form_node);
     } else if (
       error_display.dom.type === "ol" ||
@@ -215,19 +217,11 @@ function _handleDomListErrorDisplay<T extends Object>(
       /** No field errors! */
       /** Get the error node from the field */
       const node = _getErrorNode(field, form_node);
-      // error_node = form_node.querySelector(`#${error_element_id}`);
-
       if (node) {
         node.childNodes.forEach((n) => {
           node.removeChild(n);
         });
       }
-
-      // if (node && error_node && node.contains(error_node)) {
-      //   node.removeChild(error_node);
-      // } else if (node) {
-
-      // }
     }
   }
 }
@@ -272,9 +266,6 @@ function _handleDomSingleErrorDisplay<T extends Object>(
           error_node.removeChild(n);
         });
       }
-      // if (error_node && form_node.contains(error_node)) {
-      //   form_node.removeChild(error_node);
-      // }
     }
 }
 

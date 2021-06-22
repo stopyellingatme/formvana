@@ -55,7 +55,7 @@
               <!-- This is where the Form Generator "Magic" happens! -->
 
               <div>
-                <Fields fields={$form.fields} />
+                <Fields form={$form} />
               </div>
             </div>
           </div>

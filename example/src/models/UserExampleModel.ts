@@ -42,6 +42,16 @@ export class UserExampleModel {
   })
   confirm_password: string;
 
+	@Length(10, 90)
+  @IsString()
+  @field({
+    label: "Display Name",
+    required: true,
+    for_form: "register",
+    attributes: { placeholder: "Your Name. People See" },
+  })
+  display_name: string;
+
   @field({
     selector: "file",
     data_type: "file",
@@ -52,13 +62,5 @@ export class UserExampleModel {
   })
   avatar: string;
 
-  @Length(10, 90)
-  @IsString()
-  @field({
-    label: "Display Name",
-    required: true,
-    for_form: "register",
-    attributes: { placeholder: "Your Name. People See" },
-  })
-  display_name: string;
+  
 }

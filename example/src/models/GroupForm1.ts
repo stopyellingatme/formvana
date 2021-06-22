@@ -24,6 +24,7 @@ export class ExampleModel {
     selector: "select",
     data_type: "number",
     label: "Status 1",
+    group: "person-info",
     required: true,
     attributes: { placeholder: "Status 1", type: "number" },
     ref_key: "statuses",
@@ -34,6 +35,7 @@ export class ExampleModel {
   @field({
     selector: "input",
     data_type: "string",
+    group: "person-info",
     label: "Email 2",
     required: true,
     attributes: { placeholder: "Email 2", type: "email" },

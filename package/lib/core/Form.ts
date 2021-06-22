@@ -12,6 +12,7 @@ import {
   FieldNode,
   ElementEvent,
   FormFieldSchema,
+  FormMetaDataKeys,
 } from "./Types";
 import {
   _setFieldAttributes,
@@ -26,6 +27,7 @@ import {
   _linkAllValues,
   _resetState,
   _setFieldOrder,
+  _hanldeFieldGroups,
 } from "../utilities";
 
 /**
@@ -45,11 +47,8 @@ import {
  *
  * @TODO Time to redo the readme.md file! Lots have changed since then!
  *
- * @TODO Add a very very simple example of formvana usage.
- *    Such that only 1-2 files are needed.
- *
+ * @TODO Add more superstruct examples for each form type (this should show how easy the template pattern really is)
  * @TODO Add that aggressive/lazy/passive validation thing.
- * @TODO Extract field grouping logic into the form.buildFields method?
  * @TODO Strip out all svelte (or as much as possible) and use vanilla variables
  *    instead of writable stores
  *
@@ -145,11 +144,13 @@ export class Form<ModelType extends Object> {
 
   /**
    * Errors are attached to their corresponding fields.
-   * This pattern adds flexibility at the cost of a little complexity and object size.
+   * This pattern adds flexibility at the cost of a little complexity and
+   * object size.
    *
    * When a single field is validated, the whole model is validated (if
    * using class-validator).
-   * We just don't show all the errors to the user.
+   * We don't show all the errors to the user, only the field emmiting the
+   * event.
    * This way, we know if the form is still invalid, even if we aren't
    * showing the user any errors (like, pre-submit-button press).
    */
@@ -157,9 +158,10 @@ export class Form<ModelType extends Object> {
 
   /**
    * validation_options contains the logic and configuration for
-   * validating the form as well as linking errors to fields.
+   * validating the form as well as linking errors to fields
+   * and displaying the errors
    */
-  validation_options: ValidationOptions<ModelType> = {
+  validation_options?: ValidationOptions<ModelType> = {
     validator: async () => [],
 
     /** When to link this.field values to this.model values */
@@ -180,6 +182,21 @@ export class Form<ModelType extends Object> {
   loading: Writable<boolean> = writable(false);
 
   /**
+   * refs hold any reference data you'll be using in the form
+   *
+   * Call attachRefData() to link reference data to form or pass it
+   * via the constrictor.
+   *
+   * Fields & reference data are linked via field.ref_key
+   *
+   * * Format:
+   * * {[ref_key]: string, Array<{[label]: string, [value]: any, [data]?: any}>}
+   *
+   * @UseCase seclet dropdowns, radio buttons, etc.
+   */
+  refs?: RefData;
+
+  /**
    * Form Template Layout
    *
    * Render the form into a custom svelte template!
@@ -196,37 +213,6 @@ export class Form<ModelType extends Object> {
     | typeof SvelteComponent;
 
   /**
-   * Optional field layout, if you aren't using a class object.
-   * "no-class" method of building the fields.
-   */
-  field_schema?: FormFieldSchema;
-
-  /**
-   * refs hold any reference data you'll be using in the form
-   *
-   * Call attachRefData() to link reference data to form or pass it
-   * via the constrictor.
-   *
-   * Fields & reference data are linked via field.ref_key
-   *
-   * * Format:
-   * * Record<[ref_key]: string, Array<{[label]: string, [value]: any, [data]?: any}>>
-   *
-   * @UseCase seclet dropdowns, radio buttons, etc.
-   */
-  refs?: RefData;
-
-  /**
-   * Emits value changes as a plain JS object.
-   * Format: { [field.name]: value }
-   *
-   * Similar to Angular form.valueChanges
-   */
-  value_changes: Writable<
-    Record<keyof ModelType | any, ModelType[keyof ModelType]>
-  > = writable({});
-
-  /**
    * This is the form's initial state.
    * It's only initial model and errors.
    * We're keeping this simple.
@@ -236,24 +222,45 @@ export class Form<ModelType extends Object> {
     errors: undefined,
   };
 
+  /**
+   * Emits value changes as a plain JS object.
+   * Format: { [field.name]: value }
+   *
+   * Very similar to Angular form.valueChanges
+   */
+  value_changes: Writable<
+    Record<keyof ModelType | any, ModelType[keyof ModelType]>
+  > = writable({});
+
+  /**
+   * Optional field layout, if you aren't using a class object.
+   * "no-class" method of building the fields.
+   */
+  field_schema?: FormFieldSchema;
+
+  /**
+   * This allows you to filter fields based on a given form name.
+   *
+   * @example user model can be used for login and signup
+   * @example for_form="login" && for_form="signup"
+   */
+  for_form?: string;
+
+  /**
+   * Any extra data you may want to pass around.
+   * @examples description, name, type, header, label, classes, etc.
+   */
+  meta?: Record<string, any>;
+
   /** Use the NAME of the field (field.name) to disable/hide the field. */
   hidden_fields?: Array<keyof ModelType>;
   /** Use the NAME of the field (field.name) to disable/hide the field. */
   disabled_fields?: Array<keyof ModelType>;
 
   /**
-   * Any extra data you may want to pass around.
-   * @examples description, name, type, header, label, classes, etc.
-   *
-   * * If you're using the field.for_form propery, set form name here.
-   */
-  meta?: Record<string, string | number | boolean | Object>;
-
-  /**
    * Determines the ordering of this.fields.
    * Simply an array of field names (or group names or stepper names)
    * in the order to be displayed
-   *
    */
   #field_order?: Array<keyof ModelType>;
 
@@ -275,13 +282,16 @@ export class Form<ModelType extends Object> {
   /**
    * Builds the fields from the model.
    * Builds the field configs via this.model using metadata-reflection.
-   * Or via validation_options.field_shcema
+   * Or via form.field_shcema
    */
   buildFields = (model: ModelType = this.model): void => {
     if (this.field_schema) {
-      this.fields = _buildFormFieldsWithSchema(this.field_schema, this.meta);
+      this.fields = _buildFormFieldsWithSchema(
+        this.field_schema,
+        this.for_form
+      );
     } else {
-      this.fields = _buildFormFields(model, this.meta);
+      this.fields = _buildFormFields(model, this.for_form);
     }
 
     this.#required_fields = this.fields
@@ -290,14 +300,19 @@ export class Form<ModelType extends Object> {
   };
 
   /**
-   * * useForm
+   * * Required for form setup.
    *
-   * Create a function that takes a form node and sets up all the fields
-   * with names attached.
-   * This will also allow for easy mechanism to attach errors in a
-   * plug-and-play manner.
+   * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!
+   * This hooks up the event listeners!
    *
-   * Also allows for a better single source of truth for data input.
+   * Used to grab fields and attach event listeners to each field.
+   * Simply loop over the model, checking the form's node
+   * for each model[name]. If a field element is found, then
+   * attach on_event listeners to the given field.
+   *
+   * This is for Svelte's "use:FUNCTION" feature.
+   * The "use" directive passes the HTML Node as a parameter
+   * to the given function (e.g. use:useField(node: HTMLElement)).
    */
   useForm = (node: HTMLFormElement) => {
     this.node = node;
@@ -323,16 +338,7 @@ export class Form<ModelType extends Object> {
   };
 
   /**
-   * ATTACH TO SAME ELEMENT AS FIELD.NAME {name}!
-   * This hooks up the event listeners!
-   *
-   * This is for Svelte's "use:FUNCTION" feature.
-   * The "use" directive passes the HTML Node as a parameter
-   * to the given function (e.g. use:useField(node: HTMLElement)).
-   *
-   * Use on the element that will be interacted with.
-   * e.g. <input/> -- <button/> -- <select/> -- etc.
-   * Check examples folder for more details.
+   * This is used to hook up event listeners to the given fields.
    */
   #useField = (node: FieldNode<ModelType>): void => {
     /** Attach HTML Node to field so we can remove event listeners later */
@@ -391,7 +397,7 @@ export class Form<ModelType extends Object> {
         _linkAllErrors(
           this.errors,
           this.fields,
-          this.validation_options.error_display,
+          this.validation_options?.error_display,
           this.node
         );
     }
@@ -407,12 +413,14 @@ export class Form<ModelType extends Object> {
     callback: Callback | ValidationCallback,
     field_names: keyof ModelType | Array<keyof ModelType>
   ): void => {
+    /** If there are multiple fields passed in then loop over to add callbacks */
     if (Array.isArray(field_names)) {
       const fields = field_names.map((f) => _get(f, this.fields));
       fields.forEach((f) => {
         _addCallbackToField(this, f, event, callback, this.#required_fields);
       });
     } else {
+      /** If there is one field, add callback to field */
       const field = _get(field_names, this.fields);
       _addCallbackToField(this, field, event, callback, this.#required_fields);
     }
@@ -475,13 +483,11 @@ export class Form<ModelType extends Object> {
       field_names.forEach((f) => {
         const field = _get(f, this.fields);
         field.value.set(value);
-
         this.model[f] = value;
       });
     } else {
       const field = _get(field_names, this.fields);
       field.value.set(value);
-
       this.model[field_names] = value;
     }
   };
@@ -509,7 +515,7 @@ export class Form<ModelType extends Object> {
 
   /**
    *! Make sure to call this when the component is unloaded/destroyed
-   * Removes all event listeners and clears the form state.
+   * Removes all event listeners.
    */
   destroy = (): void => {
     if (this.fields && this.fields.length > 0) {
@@ -555,6 +561,12 @@ export class Form<ModelType extends Object> {
   //#endregion
 
   // #region - Layout
+
+  getFieldGroups = (): Array<
+    FieldConfig<ModelType> | Array<FieldConfig<ModelType>>
+  > => {
+    return _hanldeFieldGroups(this.fields);
+  };
 
   /**
    * Set the field order.

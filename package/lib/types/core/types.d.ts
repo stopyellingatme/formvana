@@ -25,10 +25,11 @@ export interface ValidationCallback {
 export declare type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
 /**
  * All constructor values are optional so we can create a blank Validation
- * Error object, for whatever reason.
+ * Error object, for whatever reason we need.
+ * The error.field_key links to it's corresponding field.name
  */
 export declare class ValidationError {
-    constructor(field_property_key?: string, errors?: {
+    constructor(field_name?: string, errors?: {
         [type: string]: string;
     }, extra_data?: Record<string, any>);
     field_key?: string;
@@ -40,11 +41,9 @@ export declare class ValidationError {
 /** Form Validation Options  */
 export interface ValidationOptions<ModelType extends Object> {
     /**
-     * PLEASE PASS IN A VALIDATOR FUNCTION! (if you want validation)
-     *
      * This is the (validation) function that will be called when validating.
      * You can use any validation library you like, as long as this function
-     * returns Promise<ValidationError[]>
+     * takes the model and returns Promise<ValidationError[]>
      */
     validator: (model: ModelType, options?: Record<string, any> | Object) => Promise<ValidationError[]>;
     /**
@@ -60,17 +59,19 @@ export interface ValidationOptions<ModelType extends Object> {
      */
     error_display: "constraint" | {
         dom: {
-            type: "ul" | "ol" | "single";
+            type: "ul" | "ol" | "span";
             wrapper_classes?: string[];
+            wrapper_styles?: string[];
             attributes?: string[];
             error_classes?: string[];
+            error_styles?: string[];
         };
     } | "custom";
     /** When to link this.field values to this.model values */
     when_link_fields_to_model?: LinkOnEvent;
 }
 /**
- * * Enabled By Default: focus, blur, change, input, submit
+ * * Enabled By Default: blur, input, change, submit
  *
  * Determines which event listeners are added to each field.
  *
@@ -93,12 +94,13 @@ export declare class OnEvents<T extends HTMLElementEventMap> {
      * When valid, use passive again.
      */
     eager: boolean;
-    blur: boolean;
+    input: boolean;
     change: boolean;
+    submit: boolean;
+    blur: boolean;
+    focus: boolean;
     click: boolean;
     dblclick: boolean;
-    focus: boolean;
-    input: boolean;
     keydown: boolean;
     keypress: boolean;
     keyup: boolean;
@@ -110,7 +112,6 @@ export declare class OnEvents<T extends HTMLElementEventMap> {
     mouseout: boolean;
     mouseover: boolean;
     mouseup: boolean;
-    submit: boolean;
 }
 /**
  * Should we link the values always?
@@ -118,6 +119,11 @@ export declare class OnEvents<T extends HTMLElementEventMap> {
  */
 export declare type LinkOnEvent = "always" | "valid";
 export declare type LinkValuesOnEvent = "all" | "field";
+/**
+ * If the user is passing in a plain json model, we use this data shape for
+ * field configuration setup and layout.
+ */
+export declare type FormFieldSchema = Record<string, Partial<FieldConfig<Object>>>;
 export declare type FieldNode<T extends Object> = (HTMLInputElement | HTMLFieldSetElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement | HTMLOutputElement) & {
     name: keyof T;
     type: string;
@@ -128,7 +134,10 @@ export declare type ElementEvent = InputEvent & {
         checked: boolean;
     };
 };
-export declare type FormFieldSchema = Record<string, Partial<FieldConfig<Object>>>;
+/**
+ * These are the accepted data types used when processing
+ * event.target.value output.
+ */
 export declare type AcceptedDataType = "text" | "string" | "number" | "boolean" | "array" | "file" | "files" | "any";
 /**
  * Keeping it simple. Just keep up with model and errors.
@@ -150,7 +159,18 @@ export interface RefDataItem {
 export declare type RefData = Record<string, RefDataItem[]>;
 /** This gives us a pretty exhaustive typesafe map of element attributes */
 export declare type FieldAttributes = Record<ElementAttributesMap & string, any>;
+/** This provides solid type completion for field attributes */
 export declare type ElementAttributesMap = keyof HTMLElement | keyof HTMLInputElement | keyof HTMLSelectElement | keyof HTMLFieldSetElement | keyof HTMLImageElement | keyof HTMLOutputElement | keyof HTMLButtonElement | keyof HTMLCanvasElement | keyof HTMLOptionElement | keyof AriaAttributes;
+/**
+ * These are the types of form meta-data allowed.
+ * If you would like something further, push it into the "object" field
+ */
+export declare type FormMetaDataKeys = "for_form" | "description" | "header" | "label" | "classes" | "styles"
+/**
+ * Added "object" so a user can pass anything they want, while still getting
+ * some type completion on the rest of the meta-data
+ */
+ | "object";
 /** Catchall type for giving callbacks a bit more typesafety */
 export declare type Callback = ((...args: any[]) => any) | (() => any) | void | undefined | boolean | string | Promise<any>;
 /**

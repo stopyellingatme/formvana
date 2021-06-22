@@ -31,15 +31,16 @@ export type ValidatorFunction = (...args: any[]) => Promise<ValidationError[]>;
 
 /**
  * All constructor values are optional so we can create a blank Validation
- * Error object, for whatever reason.
+ * Error object, for whatever reason we need.
+ * The error.field_key links to it's corresponding field.name
  */
 export class ValidationError {
   constructor(
-    field_property_key?: string,
+    field_name?: string,
     errors?: { [type: string]: string },
     extra_data?: Record<string, any>
   ) {
-    if (field_property_key) this.field_key = field_property_key;
+    if (field_name) this.field_key = field_name;
     if (errors) this.errors = errors;
     if (extra_data) Object.assign(this, extra_data);
   }
@@ -54,11 +55,9 @@ export class ValidationError {
 /** Form Validation Options  */
 export interface ValidationOptions<ModelType extends Object> {
   /**
-   * PLEASE PASS IN A VALIDATOR FUNCTION! (if you want validation)
-   *
    * This is the (validation) function that will be called when validating.
    * You can use any validation library you like, as long as this function
-   * returns Promise<ValidationError[]>
+   * takes the model and returns Promise<ValidationError[]>
    */
   validator: (
     model: ModelType,
@@ -81,10 +80,12 @@ export interface ValidationOptions<ModelType extends Object> {
     | "constraint"
     | {
         dom: {
-          type: "ul" | "ol" | "single";
+          type: "ul" | "ol" | "span";
           wrapper_classes?: string[];
+          wrapper_styles?: string[];
           attributes?: string[];
           error_classes?: string[];
+          error_styles?: string[];
         };
       }
     | "custom";
@@ -96,7 +97,7 @@ export interface ValidationOptions<ModelType extends Object> {
 
 // #region Events
 /**
- * * Enabled By Default: focus, blur, change, input, submit
+ * * Enabled By Default: blur, input, change, submit
  *
  * Determines which event listeners are added to each field.
  *
@@ -130,12 +131,14 @@ export class OnEvents<T extends HTMLElementEventMap> {
    */
   eager: boolean = false;
 
-  blur: boolean = true;
+  input: boolean = true;
   change: boolean = true;
+  submit: boolean = true;
+  blur: boolean = true;
+  focus: boolean = false;
+
   click: boolean = false;
   dblclick: boolean = false;
-  focus: boolean = true;
-  input: boolean = true;
   keydown: boolean = false;
   keypress: boolean = false;
   keyup: boolean = false;
@@ -147,7 +150,6 @@ export class OnEvents<T extends HTMLElementEventMap> {
   mouseout: boolean = false;
   mouseover: boolean = false;
   mouseup: boolean = false;
-  submit: boolean = true;
 }
 
 /**
@@ -162,6 +164,12 @@ export type LinkValuesOnEvent = "all" | "field";
 
 // #region Misc
 
+/**
+ * If the user is passing in a plain json model, we use this data shape for
+ * field configuration setup and layout.
+ */
+export type FormFieldSchema = Record<string, Partial<FieldConfig<Object>>>;
+
 export type FieldNode<T extends Object> = (
   | HTMLInputElement
   | HTMLFieldSetElement
@@ -175,8 +183,10 @@ export type ElementEvent = InputEvent & {
   target: { value: any; checked: boolean };
 };
 
-export type FormFieldSchema = Record<string, Partial<FieldConfig<Object>>>;
-
+/**
+ * These are the accepted data types used when processing
+ * event.target.value output.
+ */
 export type AcceptedDataType =
   | "text"
   | "string"
@@ -211,6 +221,7 @@ export type RefData = Record<string, RefDataItem[]>;
 /** This gives us a pretty exhaustive typesafe map of element attributes */
 export type FieldAttributes = Record<ElementAttributesMap & string, any>;
 
+/** This provides solid type completion for field attributes */
 export type ElementAttributesMap =
   | keyof HTMLElement
   | keyof HTMLInputElement
@@ -222,6 +233,23 @@ export type ElementAttributesMap =
   | keyof HTMLCanvasElement
   | keyof HTMLOptionElement
   | keyof AriaAttributes;
+
+/**
+ * These are the types of form meta-data allowed.
+ * If you would like something further, push it into the "object" field
+ */
+export type FormMetaDataKeys =
+  | "for_form"
+  | "description"
+  | "header"
+  | "label"
+  | "classes"
+  | "styles"
+  /**
+   * Added "object" so a user can pass anything they want, while still getting
+   * some type completion on the rest of the meta-data
+   */
+  | "object";
 
 /** Catchall type for giving callbacks a bit more typesafety */
 export type Callback =

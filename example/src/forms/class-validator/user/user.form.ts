@@ -16,13 +16,13 @@ function initStore() {
   let login_form = new Form(new UserExampleModel(), validator_options, {
     on_events: new OnEvents({ focus: false }),
     template: StepperTemplate,
-    meta: { for_form: "login" },
+    for_form: "login",
   });
 
   let register_form = new Form(new UserExampleModel(), validator_options, {
     on_events: new OnEvents({ focus: false }),
     template: StepperTemplate,
-    meta: { for_form: "register" },
+    for_form: "register",
   });
 
   let form_group = new FormStepper([login_form, register_form]);

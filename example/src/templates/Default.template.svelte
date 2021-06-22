@@ -58,7 +58,7 @@
 
               <!-- This is where the Form Generator "Magic" happens! -->
               <div class="grid grid-cols-4 gap-6 mt-6">
-                <Fields fields={$form.fields} />
+                <Fields form={$form} />
               </div>
             </div>
 

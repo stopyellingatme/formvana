@@ -86,8 +86,7 @@ export declare class FieldConfig<T extends Object> {
      */
     data_set?: string[];
     /**
-     * * If you set this, you must set form.meta.name!
-     * * If you set this, you must set form.meta.name!
+     * * If you set this, you must set form.for_form!
      *
      * In case you'd like to filter some fields for a specific form
      *
@@ -98,8 +97,10 @@ export declare class FieldConfig<T extends Object> {
     /**
      * If you're using a validation library that supports
      * a validation rules pattern, this is here for you.
+     *
+     * @TODO No example for this yet.
      */
-    validation_rules?: Object;
+    validation_rules?: Object | any;
     /**
      * You may need to excude some event listeners.
      *

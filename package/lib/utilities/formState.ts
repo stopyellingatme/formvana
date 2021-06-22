@@ -135,7 +135,7 @@ function _resetState<T extends Object>(
     _linkAllErrors(
       form.errors,
       form.fields,
-      form.validation_options.error_display,
+      form.validation_options?.error_display,
       form.node
     );
   }
