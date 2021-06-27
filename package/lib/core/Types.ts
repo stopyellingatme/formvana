@@ -89,9 +89,6 @@ export interface ValidationOptions<ModelType extends Object> {
         };
       }
     | "custom";
-
-  /** When to link this.field values to this.model values */
-  when_link_fields_to_model?: LinkOnEvent;
 }
 //#endregion
 

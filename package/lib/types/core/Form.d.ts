@@ -1,7 +1,7 @@
-import { Writable } from "svelte/store";
 import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
+import { Writable } from "svelte/store";
 import { FieldConfig } from "./FieldConfig";
-import { OnEvents, RefData, ValidationError, ValidationCallback, Callback, ValidationOptions, InitialFormState, FormFieldSchema } from "./Types";
+import { Callback, FormFieldSchema, InitialFormState, OnEvents, RefData, ValidationCallback, ValidationError, ValidationOptions } from "./Types";
 /**
  * @Recomended_Use
  *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
@@ -80,7 +80,7 @@ export declare class Form<ModelType extends Object> {
      * validating the form as well as linking errors to fields
      * and displaying the errors
      */
-    validation_options: ValidationOptions<ModelType>;
+    validation_options?: ValidationOptions<ModelType>;
     /** Which events should the form dispatch side effects? */
     on_events: OnEvents<HTMLElementEventMap>;
     /** Is the form valid? */

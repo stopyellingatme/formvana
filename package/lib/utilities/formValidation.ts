@@ -1,17 +1,12 @@
 import { get } from "svelte/store";
 import {
-  Form,
-  FieldConfig,
-  ValidationCallback,
-  ValidationError,
   Callback,
-  ElementEvent,
+  ElementEvent, FieldConfig, Form, ValidationCallback,
+  ValidationError
 } from "../core";
-import { _setValueChanges, _hasStateChanged } from "./formState";
+import { _hasStateChanged, _setValueChanges } from "./formState";
 import {
-  _linkFieldErrors,
-  _linkAllErrors,
-  _linkValueFromEvent,
+  _linkAllErrors, _linkFieldErrors, _linkValueFromEvent
 } from "./linkMethods";
 /**
  * ---------------------------------------------------------------------------
@@ -43,9 +38,8 @@ function _executeValidationEvent<T extends Object>(
 
   /** Execute pre-validation callbacks */
   _executeCallbacks([
-    field &&
-      form.validation_options?.when_link_fields_to_model === "always" &&
-      _linkValueFromEvent(field, form.model, event),
+    field && _linkValueFromEvent(field, form.model, event),
+
     /** Execution step may need work */
     field && _setValueChanges(form.value_changes, field),
     callbacks && _executeValidationCallbacks("before", callbacks),
@@ -212,13 +206,6 @@ async function _handleValidationSideEffects<T extends Object>(
         form.node
       );
     }
-    /**
-     * If the config tells us to link the values only when the form
-     * is valid, then link them here.
-     */
-    field &&
-      form.validation_options?.when_link_fields_to_model === "valid" &&
-      _linkValueFromEvent(field, form.model, event);
     form.clearErrors(); /** Clear form errors */
     form.valid.set(true); /** Form is valid! */
   }
@@ -261,3 +248,4 @@ export {
   _executeCallbacks,
   _handleValidationSideEffects,
 };
+

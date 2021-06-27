@@ -1,4 +1,4 @@
-import { Form, FieldConfig, ValidationCallback, ValidationError, Callback, ElementEvent } from "../core";
+import { Callback, ElementEvent, FieldConfig, Form, ValidationCallback, ValidationError } from "../core";
 /**
  * ---------------------------------------------------------------------------
  *

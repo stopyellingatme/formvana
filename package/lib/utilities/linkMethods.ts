@@ -1,12 +1,12 @@
 import { get } from "svelte/store";
-import { _get } from "./formUtilities";
 import { FieldConfig } from "../core/FieldConfig";
 import {
   ElementEvent,
   FieldNode,
   ValidationError,
-  ValidationOptions,
+  ValidationOptions
 } from "../core/Types";
+import { _get } from "./formUtilities";
 const max_int = Number.MAX_SAFE_INTEGER;
 /**
  * ---------------------------------------------------------------------------
@@ -280,8 +280,11 @@ function _getErrorNode<T extends Object>(
     /** @ts-ignore */
     if (el.dataset && el.dataset["errorFor"] === field.name) node = el;
   });
-  /** If no node is found, just pin to the field's parent element. */
-  if (!node) node = field.node?.parentElement;
+  if (field.node?.parentElement?.nodeName !== "LABEL") {
+    /** If no node is found, just pin to the field's parent element. */
+    if (!node) node = field.node?.parentElement;
+  }
+
   return node;
 }
 
@@ -493,3 +496,4 @@ export {
   _linkValueFromEvent,
   _linkAllValues,
 };
+

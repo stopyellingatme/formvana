@@ -1,34 +1,34 @@
-import { get, writable, Writable } from "svelte/store";
 import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
-import { FieldConfig } from "./FieldConfig";
+import { get, writable, Writable } from "svelte/store";
 import {
-  OnEvents,
-  RefData,
-  ValidationError,
-  ValidationCallback,
-  Callback,
-  ValidationOptions,
-  InitialFormState,
-  FieldNode,
-  ElementEvent,
-  FormFieldSchema,
-  FormMetaDataKeys,
-} from "./Types";
-import {
-  _setFieldAttributes,
-  _setInitialState,
-  _buildFormFieldsWithSchema,
-  _buildFormFields,
-  _get,
-  _attachEventListeners,
-  _executeValidationEvent,
-  _linkAllErrors,
   _addCallbackToField,
+  _attachEventListeners,
+  _buildFormFields,
+  _buildFormFieldsWithSchema,
+  _executeValidationEvent,
+  _get,
+  _hanldeFieldGroups,
+  _linkAllErrors,
   _linkAllValues,
   _resetState,
+  _setFieldAttributes,
   _setFieldOrder,
-  _hanldeFieldGroups,
+  _setInitialState
 } from "../utilities";
+import { FieldConfig } from "./FieldConfig";
+import {
+  Callback,
+  ElementEvent,
+  FieldNode,
+  FormFieldSchema,
+  FormMetaDataKeys,
+  InitialFormState,
+  OnEvents,
+  RefData,
+  ValidationCallback,
+  ValidationError,
+  ValidationOptions
+} from "./Types";
 
 /**
  * @Recomended_Use
@@ -163,12 +163,10 @@ export class Form<ModelType extends Object> {
    */
   validation_options?: ValidationOptions<ModelType> = {
     validator: async () => [],
-
-    /** When to link this.field values to this.model values */
-    when_link_fields_to_model: "always",
     /** How to display errors */
     error_display: { dom: { type: "ul" } },
   };
+
   /** Which events should the form dispatch side effects? */
   on_events: OnEvents<HTMLElementEventMap> = new OnEvents();
 

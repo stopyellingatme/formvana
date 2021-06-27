@@ -71,8 +71,6 @@ interface ValidationOptions<ModelType extends Object> {
             error_styles?: string[];
         };
     } | "custom";
-    /** When to link this.field values to this.model values */
-    when_link_fields_to_model?: LinkOnEvent;
 }
 //#endregion
 // #region Events
@@ -576,7 +574,7 @@ declare class Form<ModelType extends Object> {
      * validating the form as well as linking errors to fields
      * and displaying the errors
      */
-    validation_options: ValidationOptions<ModelType>;
+    validation_options?: ValidationOptions<ModelType>;
     /** Which events should the form dispatch side effects? */
     on_events: OnEvents<HTMLElementEventMap>;
     /** Is the form valid? */

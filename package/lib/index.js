@@ -285,80 +285,6 @@
     }
 
     /**
-     * All constructor values are optional so we can create a blank Validation
-     * Error object, for whatever reason we need.
-     * The error.field_key links to it's corresponding field.name
-     */
-    class ValidationError {
-        constructor(field_name, errors, extra_data) {
-            if (field_name)
-                this.field_key = field_name;
-            if (errors)
-                this.errors = errors;
-            if (extra_data)
-                Object.assign(this, extra_data);
-        }
-        field_key;
-        field_value;
-        errors;
-    }
-    //#endregion
-    // #region Events
-    /**
-     * * Enabled By Default: blur, input, change, submit
-     *
-     * Determines which event listeners are added to each field.
-     *
-     * You can insert event listeners just by adding a [string]: boolean
-     * to the constructor's init object.
-     */
-    class OnEvents {
-        constructor(init, disableAll = false) {
-            // If disableAll is false, turn off all event listeners
-            if (disableAll) {
-                let k;
-                for (k in this) {
-                    this[k] = false;
-                }
-            }
-            Object.assign(this, init);
-        }
-        /** On each keystroke */
-        aggressive = false;
-        /** Essentially on blur */
-        lazy = false;
-        /** On form submission */
-        passive = false;
-        /**
-         * @TODO Create easy mechanism for using "eager" validation.
-         *
-         * First, use passive.
-         * If invalid, use aggressive validation.
-         * When valid, use passive again.
-         */
-        eager = false;
-        input = true;
-        change = true;
-        submit = true;
-        blur = true;
-        focus = false;
-        click = false;
-        dblclick = false;
-        keydown = false;
-        keypress = false;
-        keyup = false;
-        mount = false;
-        mousedown = false;
-        mouseenter = false;
-        mouseleave = false;
-        mousemove = false;
-        mouseout = false;
-        mouseover = false;
-        mouseup = false;
-    }
-    //#endregion
-
-    /**
      * ---------------------------------------------------------------------------
      *
      * *** General Form Utilities ***
@@ -674,9 +600,11 @@
             if (el.dataset && el.dataset["errorFor"] === field.name)
                 node = el;
         });
-        /** If no node is found, just pin to the field's parent element. */
-        if (!node)
-            node = field.node?.parentElement;
+        if (field.node?.parentElement?.nodeName !== "LABEL") {
+            /** If no node is found, just pin to the field's parent element. */
+            if (!node)
+                node = field.node?.parentElement;
+        }
         return node;
     }
     //#endregion
@@ -965,9 +893,7 @@
             field.touched.set(true);
         /** Execute pre-validation callbacks */
         _executeCallbacks([
-            field &&
-                form.validation_options?.when_link_fields_to_model === "always" &&
-                _linkValueFromEvent(field, form.model, event),
+            field && _linkValueFromEvent(field, form.model, event),
             /** Execution step may need work */
             field && _setValueChanges(form.value_changes, field),
             callbacks && _executeValidationCallbacks("before", callbacks),
@@ -985,7 +911,7 @@
                 .validator(form.model, form.validation_options.options)
                 .then((errors) => {
                 _executeCallbacks([
-                    _handleValidationSideEffects(form, errors, required_fields, field, event),
+                    _handleValidationSideEffects(form, errors, required_fields, field),
                     _hasStateChanged(form.value_changes, form.changed),
                     callbacks && _executeValidationCallbacks("after", callbacks),
                 ]);
@@ -997,7 +923,7 @@
                 .validator(form.model)
                 .then((errors) => {
                 _executeCallbacks([
-                    _handleValidationSideEffects(form, errors, required_fields, field, event),
+                    _handleValidationSideEffects(form, errors, required_fields, field),
                     _hasStateChanged(form.value_changes, form.changed),
                     callbacks && _executeValidationCallbacks("after", callbacks),
                 ]);
@@ -1091,13 +1017,6 @@
                 /**  This is validation for the whole form! */
                 _linkAllErrors(errors, form.fields, form.validation_options?.error_display, form.node);
             }
-            /**
-             * If the config tells us to link the values only when the form
-             * is valid, then link them here.
-             */
-            field &&
-                form.validation_options?.when_link_fields_to_model === "valid" &&
-                _linkValueFromEvent(field, form.model, event);
             form.clearErrors(); /** Clear form errors */
             form.valid.set(true); /** Form is valid! */
         }
@@ -1312,6 +1231,80 @@
     }
 
     /**
+     * All constructor values are optional so we can create a blank Validation
+     * Error object, for whatever reason we need.
+     * The error.field_key links to it's corresponding field.name
+     */
+    class ValidationError {
+        constructor(field_name, errors, extra_data) {
+            if (field_name)
+                this.field_key = field_name;
+            if (errors)
+                this.errors = errors;
+            if (extra_data)
+                Object.assign(this, extra_data);
+        }
+        field_key;
+        field_value;
+        errors;
+    }
+    //#endregion
+    // #region Events
+    /**
+     * * Enabled By Default: blur, input, change, submit
+     *
+     * Determines which event listeners are added to each field.
+     *
+     * You can insert event listeners just by adding a [string]: boolean
+     * to the constructor's init object.
+     */
+    class OnEvents {
+        constructor(init, disableAll = false) {
+            // If disableAll is false, turn off all event listeners
+            if (disableAll) {
+                let k;
+                for (k in this) {
+                    this[k] = false;
+                }
+            }
+            Object.assign(this, init);
+        }
+        /** On each keystroke */
+        aggressive = false;
+        /** Essentially on blur */
+        lazy = false;
+        /** On form submission */
+        passive = false;
+        /**
+         * @TODO Create easy mechanism for using "eager" validation.
+         *
+         * First, use passive.
+         * If invalid, use aggressive validation.
+         * When valid, use passive again.
+         */
+        eager = false;
+        input = true;
+        change = true;
+        submit = true;
+        blur = true;
+        focus = false;
+        click = false;
+        dblclick = false;
+        keydown = false;
+        keypress = false;
+        keyup = false;
+        mount = false;
+        mousedown = false;
+        mouseenter = false;
+        mouseleave = false;
+        mousemove = false;
+        mouseout = false;
+        mouseover = false;
+        mouseup = false;
+    }
+    //#endregion
+
+    /**
      * @Recomended_Use
      *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
      *  - Set the model (if you didn't in the first step)
@@ -1424,8 +1417,6 @@
          */
         validation_options = {
             validator: async () => [],
-            /** When to link this.field values to this.model values */
-            when_link_fields_to_model: "always",
             /** How to display errors */
             error_display: { dom: { type: "ul" } },
         };

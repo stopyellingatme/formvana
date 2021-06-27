@@ -67,8 +67,6 @@ export interface ValidationOptions<ModelType extends Object> {
             error_styles?: string[];
         };
     } | "custom";
-    /** When to link this.field values to this.model values */
-    when_link_fields_to_model?: LinkOnEvent;
 }
 /**
  * * Enabled By Default: blur, input, change, submit
