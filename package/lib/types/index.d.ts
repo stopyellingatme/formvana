@@ -43,7 +43,7 @@ declare class ValidationError {
     };
 }
 /** Form Validation Options  */
-interface ValidationOptions<ModelType extends Object> {
+interface ValidationProperties<ModelType extends Object> {
     /**
      * This is the (validation) function that will be called when validating.
      * You can use any validation library you like, as long as this function
@@ -72,6 +72,37 @@ interface ValidationOptions<ModelType extends Object> {
         };
     } | "custom";
 }
+declare class ValidationProperties<ModelType extends Object> implements ValidationProperties<ModelType> {
+    constructor(validator?: (model: ModelType, options?: Record<string, any> | Object) => Promise<ValidationError[]>, options?: Record<string, any> | Object, display?: ErrorDisplay, properties?: Partial<ValidationProperties<ModelType>>);
+    /**
+     * This is the (validation) function that will be called when validating.
+     * You can use any validation library you like, as long as this function
+     * takes the model and returns Promise<ValidationError[]>
+     */
+    validator: (model: ModelType, options?: Record<string, any> | Object) => Promise<ValidationError[]>;
+    /**
+     * THIS IS THE SECOND PARAMETER BEING PASSED TO THE VALIDATOR FUNCTION.
+     * The other is form.model.
+     *
+     * This makes using other validation libraries easier.
+     * See the examples for more details.
+     */
+    options?: Record<string, any> | Object;
+    /**
+     * How should the errors be displayed?
+     */
+    error_display: ErrorDisplay;
+}
+type ErrorDisplay = "constraint" | {
+    dom: {
+        type: "ul" | "ol" | "span";
+        wrapper_classes?: string[];
+        wrapper_styles?: string[];
+        attributes?: string[];
+        error_classes?: string[];
+        error_styles?: string[];
+    };
+} | "custom";
 //#endregion
 // #region Events
 /**
@@ -98,6 +129,17 @@ declare class OnEvents<T extends HTMLElementEventMap> {
      * When valid, use passive again.
      */
     eager: boolean;
+    /**
+     * Steps for using eager validation.
+     *
+     * 1. use passive until for is submitted.
+     *  - Must detect if form has been submited.
+     *
+     * 2. If form is invalid, use aggressive until field is valid.
+     *  - This is the hardest part.
+     *
+     * 3. When all valid, go back to passive validation.
+     */
     input: boolean;
     change: boolean;
     submit: boolean;
@@ -117,11 +159,6 @@ declare class OnEvents<T extends HTMLElementEventMap> {
     mouseover: boolean;
     mouseup: boolean;
 }
-/**
- * Should we link the values always?
- * Or only if the form is valid?
- */
-type LinkOnEvent = "always" | "valid";
 type LinkValuesOnEvent = "all" | "field";
 //#endregion
 // #region Misc
@@ -154,15 +191,15 @@ type InitialFormState<ModelType extends Object> = {
 };
 /**
  * Data format for the reference data items
- * Form.refs are of type Record<string, RefDataItem[]>
+ * Form.refs are of type Record<string, ReferenceDataItem[]>
  */
-interface RefDataItem {
+interface ReferenceDataItem {
     label: string;
     value: any;
     meta?: any;
 }
 /** Helpful shape for loading in reference data for the Form */
-type RefData = Record<string, RefDataItem[]>;
+type ReferenceData = Record<string, ReferenceDataItem[]>;
 /** This gives us a pretty exhaustive typesafe map of element attributes */
 type FieldAttributes = Record<ElementAttributesMap & string, any>;
 /** This provides solid type completion for field attributes */
@@ -434,10 +471,10 @@ declare class FieldConfig<T extends Object> {
     label?: string | string[];
     /** Hint can be sting or array of strings */
     hint?: string | string[];
-    /** Linked to form.refs via RefData[ref_key] */
+    /** Linked to form.refs via ReferenceData[ref_key] */
     ref_key?: string;
     /** Used if there is a set of "options" to choose from. */
-    options?: RefDataItem[];
+    options?: ReferenceDataItem[];
     /** Pretty self-explainitory, disable the field. */
     disabled?: boolean;
     /** Pretty self-explainitory, hide the field. */
@@ -520,13 +557,13 @@ declare class FieldStepper {
  * @TODO Add debug mode to inspect event listeners and form state snapshots
  *
  */
-declare function newForm<ModelType extends Object>(model: ModelType, validation_options?: Partial<ValidationOptions<ModelType>>, form_properties?: Partial<Form<ModelType>>): Writable<Form<ModelType>>;
+declare function newForm<ModelType extends Object>(model: ModelType, validation_options?: Partial<ValidationProperties<ModelType>>, form_properties?: Partial<Form<ModelType>>): Writable<Form<ModelType>>;
 /**
  * ---------------------------------------------------------------------------
  * Formvana Form Class
  *
  * Main Concept: fields and model are separate.
- * Fields are built using the model, via the @field() decorator.
+ * Fields are built from the model, via the @field() decorator.
  * We keep the fields and the model in sync via model property names
  * and field[name].
  *
@@ -540,7 +577,7 @@ declare function newForm<ModelType extends Object>(model: ModelType, validation_
  */
 declare class Form<ModelType extends Object> {
     #private;
-    constructor(model: ModelType, validation_options?: Partial<ValidationOptions<ModelType>>, form_properties?: Partial<Form<ModelType>>);
+    constructor(model: ModelType, validation_options?: Partial<ValidationProperties<ModelType>> | Object, form_properties?: Partial<Form<ModelType>>);
     //#region ** Fields **
     /**
      * HTML Node of form object.
@@ -574,7 +611,7 @@ declare class Form<ModelType extends Object> {
      * validating the form as well as linking errors to fields
      * and displaying the errors
      */
-    validation_options?: ValidationOptions<ModelType>;
+    validation_options?: ValidationProperties<ModelType>;
     /** Which events should the form dispatch side effects? */
     on_events: OnEvents<HTMLElementEventMap>;
     /** Is the form valid? */
@@ -588,7 +625,7 @@ declare class Form<ModelType extends Object> {
     /**
      * refs hold any reference data you'll be using in the form
      *
-     * Call attachRefData() to link reference data to form or pass it
+     * Call attachReferenceData() to link reference data to form or pass it
      * via the constrictor.
      *
      * Fields & reference data are linked via field.ref_key
@@ -598,7 +635,7 @@ declare class Form<ModelType extends Object> {
      *
      * @UseCase seclet dropdowns, radio buttons, etc.
      */
-    refs?: RefData;
+    refs?: ReferenceData;
     /**
      * Form Template Layout
      *
@@ -669,6 +706,15 @@ declare class Form<ModelType extends Object> {
      * to the given function (e.g. use:useField(node: HTMLElement)).
      */
     useForm: (node: HTMLFormElement) => void;
+    /**
+     * This is used to hook up event listeners to a field.
+     *
+     * You can also use this to add form controls to the Form class.
+     * @example form control is outside of the form element so
+     * use:useField is added to the element to hook enent listens into it,
+     * same as all other controls inside the form element
+     */
+    useField: (node: FieldNode<ModelType>) => void;
     //#endregion
     // #region - Validation
     /**
@@ -707,7 +753,7 @@ declare class Form<ModelType extends Object> {
     /**
      * Pass in the reference data to add options to fields.
      */
-    attachRefData: (refs?: RefData | undefined) => void;
+    attachReferenceData: (refs?: ReferenceData | undefined) => void;
     /**
      *! Make sure to call this when the component is unloaded/destroyed
      * Removes all event listeners.
@@ -806,4 +852,4 @@ declare class FormStepper extends FormManager {
 declare class FormGroup extends FormManager {
     constructor(forms: FormDictionary, props?: Partial<FormManager>);
 }
-export { FieldConfig, FieldStepper, newForm, Form, field, ValidationCallback, ValidatorFunction, ValidationError, ValidationOptions, OnEvents, LinkOnEvent, LinkValuesOnEvent, FormFieldSchema, FieldNode, ElementEvent, AcceptedDataType, InitialFormState, RefDataItem, RefData, FieldAttributes, ElementAttributesMap, FormMetaDataKeys, Callback, FormManager, FormStepper, FormGroup };
+export { FieldConfig, FieldStepper, newForm, Form, field, ValidationCallback, ValidatorFunction, ValidationError, ValidationProperties, ErrorDisplay, OnEvents, LinkValuesOnEvent, FormFieldSchema, FieldNode, ElementEvent, AcceptedDataType, InitialFormState, ReferenceDataItem, ReferenceData, FieldAttributes, ElementAttributesMap, FormMetaDataKeys, Callback, FormManager, FormStepper, FormGroup };

@@ -53,7 +53,7 @@ export class ValidationError {
 }
 
 /** Form Validation Options  */
-export interface ValidationOptions<ModelType extends Object> {
+export interface ValidationProperties<ModelType extends Object> {
   /**
    * This is the (validation) function that will be called when validating.
    * You can use any validation library you like, as long as this function
@@ -81,15 +81,78 @@ export interface ValidationOptions<ModelType extends Object> {
     | {
         dom: {
           type: "ul" | "ol" | "span";
+
           wrapper_classes?: string[];
           wrapper_styles?: string[];
+
           attributes?: string[];
+
           error_classes?: string[];
           error_styles?: string[];
         };
       }
     | "custom";
 }
+
+export class ValidationProperties<ModelType extends Object>
+  implements ValidationProperties<ModelType>
+{
+  constructor(
+    validator?: (
+      model: ModelType,
+      options?: Record<string, any> | Object
+    ) => Promise<ValidationError[]>,
+    options?: Record<string, any> | Object,
+    display?: ErrorDisplay,
+    properties?: Partial<ValidationProperties<ModelType>>
+  ) {
+    if (properties) Object.assign(this, properties);
+    if (validator) this.validator = validator;
+    if (options) this.options = options;
+    if (display) this.error_display = display;
+  }
+  /**
+   * This is the (validation) function that will be called when validating.
+   * You can use any validation library you like, as long as this function
+   * takes the model and returns Promise<ValidationError[]>
+   */
+  validator: (
+    model: ModelType,
+    options?: Record<string, any> | Object
+  ) => Promise<ValidationError[]> = async () => [];
+
+  /**
+   * THIS IS THE SECOND PARAMETER BEING PASSED TO THE VALIDATOR FUNCTION.
+   * The other is form.model.
+   *
+   * This makes using other validation libraries easier.
+   * See the examples for more details.
+   */
+  options?: Record<string, any> | Object;
+
+  /**
+   * How should the errors be displayed?
+   */
+  error_display: ErrorDisplay = { dom: { type: "ul" } };
+}
+
+export type ErrorDisplay =
+  | "constraint"
+  | {
+      dom: {
+        type: "ul" | "ol" | "span";
+
+        wrapper_classes?: string[];
+        wrapper_styles?: string[];
+
+        attributes?: string[];
+
+        error_classes?: string[];
+        error_styles?: string[];
+      };
+    }
+  | "custom";
+
 //#endregion
 
 // #region Events
@@ -128,6 +191,18 @@ export class OnEvents<T extends HTMLElementEventMap> {
    */
   eager: boolean = false;
 
+  /**
+   * Steps for using eager validation.
+   *
+   * 1. use passive until for is submitted.
+   *  - Must detect if form has been submited.
+   *
+   * 2. If form is invalid, use aggressive until field is valid.
+   *  - This is the hardest part.
+   *
+   * 3. When all valid, go back to passive validation.
+   */
+
   input: boolean = true;
   change: boolean = true;
   submit: boolean = true;
@@ -148,12 +223,6 @@ export class OnEvents<T extends HTMLElementEventMap> {
   mouseover: boolean = false;
   mouseup: boolean = false;
 }
-
-/**
- * Should we link the values always?
- * Or only if the form is valid?
- */
-export type LinkOnEvent = "always" | "valid";
 
 export type LinkValuesOnEvent = "all" | "field";
 
@@ -204,16 +273,16 @@ export type InitialFormState<ModelType extends Object> = {
 
 /**
  * Data format for the reference data items
- * Form.refs are of type Record<string, RefDataItem[]>
+ * Form.refs are of type Record<string, ReferenceDataItem[]>
  */
-export interface RefDataItem {
+export interface ReferenceDataItem {
   label: string;
   value: any;
   meta?: any;
 }
 
 /** Helpful shape for loading in reference data for the Form */
-export type RefData = Record<string, RefDataItem[]>;
+export type ReferenceData = Record<string, ReferenceDataItem[]>;
 
 /** This gives us a pretty exhaustive typesafe map of element attributes */
 export type FieldAttributes = Record<ElementAttributesMap & string, any>;

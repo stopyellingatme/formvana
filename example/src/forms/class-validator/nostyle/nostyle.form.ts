@@ -1,19 +1,19 @@
-import { get, Writable, writable } from "svelte/store";
 import {
-  Form,
-  FormGroup,
-  OnEvents,
-  RefData,
-  ValidationCallback,
-  ValidationError,
+    Form,
+    FormGroup,
+    OnEvents,
+    ReferenceData,
+    ValidationCallback,
+    ValidationError
 } from "@formvana";
+import { validate, ValidationError as VError } from "class-validator";
+import { get, Writable, writable } from "svelte/store";
 import { ExampleModel as GroupForm1 } from "../../../models/GroupForm1";
 import { ExampleModel as GroupForm2 } from "../../../models/GroupForm2";
-import { validate, ValidationError as VError } from "class-validator";
-
 import NoStyleTemplate from "../../../templates/NoStyle.template.svelte";
 
-const ref_data: RefData = {
+
+const ref_data: ReferenceData = {
   statuses: [
     { label: "ACTIVE", value: 0 },
     { label: "PENDING", value: 1 },

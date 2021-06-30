@@ -7,9 +7,9 @@ import {
   FieldAttributes,
   FieldNode,
   OnEvents,
-  RefDataItem,
+  ReferenceDataItem,
   ValidationCallback,
-  ValidationError,
+  ValidationError
 } from "./Types";
 
 /**
@@ -138,10 +138,10 @@ export class FieldConfig<T extends Object> {
   /** Hint can be sting or array of strings */
   hint?: string | string[];
 
-  /** Linked to form.refs via RefData[ref_key] */
+  /** Linked to form.refs via ReferenceData[ref_key] */
   ref_key?: string;
   /** Used if there is a set of "options" to choose from. */
-  options?: RefDataItem[];
+  options?: ReferenceDataItem[];
 
   /** Pretty self-explainitory, disable the field. */
   disabled?: boolean;

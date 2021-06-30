@@ -1,22 +1,14 @@
-import { get, Writable, writable } from "svelte/store";
 import {
-  Form,
-  OnEvents,
-  RefData,
-  ValidationError,
-  FieldConfig,
-  FormFieldSchema,
+    FieldConfig, Form, FormFieldSchema, OnEvents,
+    ReferenceData,
+    ValidationError
 } from "@formvana";
 import {
-  validate,
-  object,
-  number,
-  string,
-  array,
-  StructError,
+    array, number, object, string, StructError, validate
 } from "superstruct";
+import { get, Writable, writable } from "svelte/store";
 
-const refs: RefData = {
+const refs: ReferenceData = {
   tags: [
     { label: "News", value: "news" },
     { label: "Features", value: "features" },

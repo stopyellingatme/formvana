@@ -1,6 +1,6 @@
 import { SvelteComponent } from "svelte";
 import { Writable } from "svelte/store";
-import { AcceptedDataType, Callback, FieldAttributes, FieldNode, OnEvents, RefDataItem, ValidationCallback, ValidationError } from "./Types";
+import { AcceptedDataType, Callback, FieldAttributes, FieldNode, OnEvents, ReferenceDataItem, ValidationCallback, ValidationError } from "./Types";
 /**
  * ---------------------------------------------------------------------------
  *
@@ -71,10 +71,10 @@ export declare class FieldConfig<T extends Object> {
     label?: string | string[];
     /** Hint can be sting or array of strings */
     hint?: string | string[];
-    /** Linked to form.refs via RefData[ref_key] */
+    /** Linked to form.refs via ReferenceData[ref_key] */
     ref_key?: string;
     /** Used if there is a set of "options" to choose from. */
-    options?: RefDataItem[];
+    options?: ReferenceDataItem[];
     /** Pretty self-explainitory, disable the field. */
     disabled?: boolean;
     /** Pretty self-explainitory, hide the field. */

@@ -180,7 +180,7 @@ class FieldConfig {
     label;
     /** Hint can be sting or array of strings */
     hint;
-    /** Linked to form.refs via RefData[ref_key] */
+    /** Linked to form.refs via ReferenceData[ref_key] */
     ref_key;
     /** Used if there is a set of "options" to choose from. */
     options;
@@ -900,7 +900,9 @@ function _executeValidationEvent(form, required_fields, field, callbacks, event)
      * If validation options are present, use them.
      * Else, just fire the callbacks and be done.
      */
-    if (form.validation_options && form.validation_options.options) {
+    if (form.validation_options &&
+        form.validation_options.options &&
+        form.validation_options.validator) {
         return form.validation_options
             .validator(form.model, form.validation_options.options)
             .then((errors) => {
@@ -912,7 +914,9 @@ function _executeValidationEvent(form, required_fields, field, callbacks, event)
             return errors;
         });
     }
-    else if (form.validation_options && !form.validation_options.options) {
+    else if (form.validation_options &&
+        form.validation_options.validator &&
+        !form.validation_options.options) {
         return form.validation_options
             .validator(form.model)
             .then((errors) => {
@@ -979,7 +983,7 @@ function _executeCallbacks(callbacks) {
  *
  * @Hotpath
  */
-async function _handleValidationSideEffects(form, errors, required_fields, field, event) {
+async function _handleValidationSideEffects(form, errors, required_fields, field) {
     /**  There are errors! */
     if (errors && errors.length > 0) {
         form.errors = errors;
@@ -1181,7 +1185,10 @@ function _hanldeFieldGroups(fields) {
 // #region HTML Event Helpers
 /**
  * Attach the OnEvents events to each form.field.
- * Parent: form.useField(...)
+ * Each field with a corresponding model.name will have event listeners
+ * attached.
+ * Children fields of the form, where useForm has been attached, will have
+ * event listeners attached.
  */
 function _attachEventListeners(field, on_events, callback) {
     Object.entries(on_events).forEach(([event_name, should_listen]) => {
@@ -1242,6 +1249,36 @@ class ValidationError {
     field_value;
     errors;
 }
+class ValidationProperties {
+    constructor(validator, options, display, properties) {
+        if (properties)
+            Object.assign(this, properties);
+        if (validator)
+            this.validator = validator;
+        if (options)
+            this.options = options;
+        if (display)
+            this.error_display = display;
+    }
+    /**
+     * This is the (validation) function that will be called when validating.
+     * You can use any validation library you like, as long as this function
+     * takes the model and returns Promise<ValidationError[]>
+     */
+    validator = async () => [];
+    /**
+     * THIS IS THE SECOND PARAMETER BEING PASSED TO THE VALIDATOR FUNCTION.
+     * The other is form.model.
+     *
+     * This makes using other validation libraries easier.
+     * See the examples for more details.
+     */
+    options;
+    /**
+     * How should the errors be displayed?
+     */
+    error_display = { dom: { type: "ul" } };
+}
 //#endregion
 // #region Events
 /**
@@ -1277,6 +1314,17 @@ class OnEvents {
      * When valid, use passive again.
      */
     eager = false;
+    /**
+     * Steps for using eager validation.
+     *
+     * 1. use passive until for is submitted.
+     *  - Must detect if form has been submited.
+     *
+     * 2. If form is invalid, use aggressive until field is valid.
+     *  - This is the hardest part.
+     *
+     * 3. When all valid, go back to passive validation.
+     */
     input = true;
     change = true;
     submit = true;
@@ -1332,7 +1380,7 @@ function newForm(model, validation_options, form_properties) {
  * Formvana Form Class
  *
  * Main Concept: fields and model are separate.
- * Fields are built using the model, via the @field() decorator.
+ * Fields are built from the model, via the @field() decorator.
  * We keep the fields and the model in sync via model property names
  * and field[name].
  *
@@ -1360,10 +1408,10 @@ class Form {
             Object.assign(this.validation_options, validation_options);
         }
         else {
-            throw new Error("Please add a validator that returns Promise<ValidationError[]>");
+            console.warn("No ValidationProperties have been added.");
         }
         if (this.refs)
-            this.attachRefData();
+            this.attachReferenceData();
         if (this.disabled_fields)
             _setFieldAttributes(this.disabled_fields, this.fields, {
                 disabled: true,
@@ -1409,11 +1457,7 @@ class Form {
      * validating the form as well as linking errors to fields
      * and displaying the errors
      */
-    validation_options = {
-        validator: async () => [],
-        /** How to display errors */
-        error_display: { dom: { type: "ul" } },
-    };
+    validation_options = new ValidationProperties();
     /** Which events should the form dispatch side effects? */
     on_events = new OnEvents();
     /** Is the form valid? */
@@ -1427,7 +1471,7 @@ class Form {
     /**
      * refs hold any reference data you'll be using in the form
      *
-     * Call attachRefData() to link reference data to form or pass it
+     * Call attachReferenceData() to link reference data to form or pass it
      * via the constrictor.
      *
      * Fields & reference data are linked via field.ref_key
@@ -1493,11 +1537,12 @@ class Form {
      */
     #field_order;
     /**
-     * We keep track of required fields because we let class-validator handle everything
+     * We keep track of required fields because validation handles everything
      * except *required* (field.required)
-     * If there are no required fields, but there ARE errors, the form is still
+     * @example If there are no required fields, but there ARE errors, the form is still
      * valid. Get it?
-     * Keep track of the fields so we can validate faster.
+     *
+     * Keeping track of the required fields allows us to  validate faster.
      */
     #required_fields = [];
     //#endregion ^^ Fields ^^
@@ -1542,11 +1587,11 @@ class Form {
             const elements = node.querySelectorAll(`[name="${key}"]`);
             if (elements && elements.length === 1) {
                 const element = elements[0];
-                this.#useField(element);
+                this.useField(element);
             }
             else if (elements.length > 1) {
                 elements.forEach((element) => {
-                    this.#useField(element);
+                    this.useField(element);
                 });
             }
         }
@@ -1555,9 +1600,14 @@ class Form {
         }
     };
     /**
-     * This is used to hook up event listeners to the given fields.
+     * This is used to hook up event listeners to a field.
+     *
+     * You can also use this to add form controls to the Form class.
+     * @example form control is outside of the form element so
+     * use:useField is added to the element to hook enent listens into it,
+     * same as all other controls inside the form element
      */
-    #useField = (node) => {
+    useField = (node) => {
         /** Attach HTML Node to field so we can remove event listeners later */
         const field = _get(node.name, this.fields);
         field.node = node;
@@ -1616,9 +1666,7 @@ class Form {
     //#endregion
     // #region - Utility Methods
     /** Get Field by name */
-    get = (field_name) => {
-        return _get(field_name, this.fields);
-    };
+    get = (field_name) => _get(field_name, this.fields);
     /**
      * Load new data into the form and build the fields.
      * Data is updated IN PLACE by default.
@@ -1663,7 +1711,7 @@ class Form {
     /**
      * Pass in the reference data to add options to fields.
      */
-    attachRefData = (refs) => {
+    attachReferenceData = (refs) => {
         /** Get all fields with ref_key property */
         const fields_with_ref_keys = this.fields.filter((f) => f.ref_key);
         /** Check if there are refs being passed in */
@@ -3082,5 +3130,5 @@ class FormGroup extends FormManager {
     }
 }
 
-export { FieldConfig, FieldStepper, Form, FormGroup, FormManager, FormStepper, OnEvents, ValidationError, field, newForm };
+export { FieldConfig, FieldStepper, Form, FormGroup, FormManager, FormStepper, OnEvents, ValidationError, ValidationProperties, field, newForm };
 //# sourceMappingURL=index.mjs.map

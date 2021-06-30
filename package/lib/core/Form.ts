@@ -24,10 +24,10 @@ import {
   FormMetaDataKeys,
   InitialFormState,
   OnEvents,
-  RefData,
+  ReferenceData,
   ValidationCallback,
   ValidationError,
-  ValidationOptions
+  ValidationProperties
 } from "./Types";
 
 /**
@@ -58,7 +58,7 @@ import {
 
 export function newForm<ModelType extends Object>(
   model: ModelType,
-  validation_options?: Partial<ValidationOptions<ModelType>>,
+  validation_options?: Partial<ValidationProperties<ModelType>>,
   form_properties?: Partial<Form<ModelType>>
 ): Writable<Form<ModelType>> {
   const form = new Form(model, validation_options, form_properties);
@@ -70,7 +70,7 @@ export function newForm<ModelType extends Object>(
  * Formvana Form Class
  *
  * Main Concept: fields and model are separate.
- * Fields are built using the model, via the @field() decorator.
+ * Fields are built from the model, via the @field() decorator.
  * We keep the fields and the model in sync via model property names
  * and field[name].
  *
@@ -85,7 +85,7 @@ export function newForm<ModelType extends Object>(
 export class Form<ModelType extends Object> {
   constructor(
     model: ModelType,
-    validation_options?: Partial<ValidationOptions<ModelType>>,
+    validation_options?: Partial<ValidationProperties<ModelType>> | Object,
     form_properties?: Partial<Form<ModelType>>
   ) {
     if (form_properties) Object.assign(this, form_properties);
@@ -101,12 +101,10 @@ export class Form<ModelType extends Object> {
     if (validation_options) {
       Object.assign(this.validation_options, validation_options);
     } else {
-      throw new Error(
-        "Please add a validator that returns Promise<ValidationError[]>"
-      );
+      console.warn("No ValidationProperties have been added.");
     }
 
-    if (this.refs) this.attachRefData();
+    if (this.refs) this.attachReferenceData();
 
     if (this.disabled_fields)
       _setFieldAttributes(this.disabled_fields, this.fields, {
@@ -161,11 +159,8 @@ export class Form<ModelType extends Object> {
    * validating the form as well as linking errors to fields
    * and displaying the errors
    */
-  validation_options?: ValidationOptions<ModelType> = {
-    validator: async () => [],
-    /** How to display errors */
-    error_display: { dom: { type: "ul" } },
-  };
+  validation_options?: ValidationProperties<ModelType> =
+    new ValidationProperties<ModelType>();
 
   /** Which events should the form dispatch side effects? */
   on_events: OnEvents<HTMLElementEventMap> = new OnEvents();
@@ -182,7 +177,7 @@ export class Form<ModelType extends Object> {
   /**
    * refs hold any reference data you'll be using in the form
    *
-   * Call attachRefData() to link reference data to form or pass it
+   * Call attachReferenceData() to link reference data to form or pass it
    * via the constrictor.
    *
    * Fields & reference data are linked via field.ref_key
@@ -192,7 +187,7 @@ export class Form<ModelType extends Object> {
    *
    * @UseCase seclet dropdowns, radio buttons, etc.
    */
-  refs?: RefData;
+  refs?: ReferenceData;
 
   /**
    * Form Template Layout
@@ -263,11 +258,12 @@ export class Form<ModelType extends Object> {
   #field_order?: Array<keyof ModelType>;
 
   /**
-   * We keep track of required fields because we let class-validator handle everything
+   * We keep track of required fields because validation handles everything
    * except *required* (field.required)
-   * If there are no required fields, but there ARE errors, the form is still
+   * @example If there are no required fields, but there ARE errors, the form is still
    * valid. Get it?
-   * Keep track of the fields so we can validate faster.
+   *
+   * Keeping track of the required fields allows us to  validate faster.
    */
   #required_fields: Array<keyof ModelType> = [];
 
@@ -322,10 +318,10 @@ export class Form<ModelType extends Object> {
 
       if (elements && elements.length === 1) {
         const element = elements[0];
-        this.#useField(element as FieldNode<ModelType>);
+        this.useField(element as FieldNode<ModelType>);
       } else if (elements.length > 1) {
         elements.forEach((element) => {
-          this.#useField(element as FieldNode<ModelType>);
+          this.useField(element as FieldNode<ModelType>);
         });
       }
     }
@@ -336,9 +332,14 @@ export class Form<ModelType extends Object> {
   };
 
   /**
-   * This is used to hook up event listeners to the given fields.
+   * This is used to hook up event listeners to a field.
+   *
+   * You can also use this to add form controls to the Form class.
+   * @example form control is outside of the form element so
+   * use:useField is added to the element to hook enent listens into it,
+   * same as all other controls inside the form element
    */
-  #useField = (node: FieldNode<ModelType>): void => {
+  useField = (node: FieldNode<ModelType>): void => {
     /** Attach HTML Node to field so we can remove event listeners later */
     const field = _get(node.name, this.fields);
     field.node = node;
@@ -437,9 +438,8 @@ export class Form<ModelType extends Object> {
   // #region - Utility Methods
 
   /** Get Field by name */
-  get = <T extends ModelType>(field_name: keyof T): FieldConfig<T> => {
-    return _get(field_name, this.fields);
-  };
+  get = <T extends ModelType>(field_name: keyof T): FieldConfig<T> =>
+    _get(field_name, this.fields);
 
   /**
    * Load new data into the form and build the fields.
@@ -493,7 +493,7 @@ export class Form<ModelType extends Object> {
   /**
    * Pass in the reference data to add options to fields.
    */
-  attachRefData = (refs?: RefData): void => {
+  attachReferenceData = (refs?: ReferenceData): void => {
     /** Get all fields with ref_key property */
     const fields_with_ref_keys = this.fields.filter((f) => f.ref_key);
     /** Check if there are refs being passed in */

@@ -31,5 +31,5 @@ declare function _executeCallbacks(callbacks: Callback | Callback[]): void;
  *
  * @Hotpath
  */
-declare function _handleValidationSideEffects<T extends Object>(form: Form<T>, errors: ValidationError[], required_fields: Array<keyof T>, field?: FieldConfig<T>, event?: ElementEvent): Promise<ValidationError[]>;
+declare function _handleValidationSideEffects<T extends Object>(form: Form<T>, errors: ValidationError[], required_fields: Array<keyof T>, field?: FieldConfig<T>): Promise<ValidationError[]>;
 export { _executeValidationEvent, _executeCallbacks, _handleValidationSideEffects, };

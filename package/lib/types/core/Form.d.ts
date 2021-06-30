@@ -1,7 +1,7 @@
 import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
 import { Writable } from "svelte/store";
 import { FieldConfig } from "./FieldConfig";
-import { Callback, FormFieldSchema, InitialFormState, OnEvents, RefData, ValidationCallback, ValidationError, ValidationOptions } from "./Types";
+import { Callback, FieldNode, FormFieldSchema, InitialFormState, OnEvents, ReferenceData, ValidationCallback, ValidationError, ValidationProperties } from "./Types";
 /**
  * @Recomended_Use
  *  - Initialize let form = new Form(model, {refs: REFS, template: TEMPLATE, etc.})
@@ -27,13 +27,13 @@ import { Callback, FormFieldSchema, InitialFormState, OnEvents, RefData, Validat
  * @TODO Add debug mode to inspect event listeners and form state snapshots
  *
  */
-export declare function newForm<ModelType extends Object>(model: ModelType, validation_options?: Partial<ValidationOptions<ModelType>>, form_properties?: Partial<Form<ModelType>>): Writable<Form<ModelType>>;
+export declare function newForm<ModelType extends Object>(model: ModelType, validation_options?: Partial<ValidationProperties<ModelType>>, form_properties?: Partial<Form<ModelType>>): Writable<Form<ModelType>>;
 /**
  * ---------------------------------------------------------------------------
  * Formvana Form Class
  *
  * Main Concept: fields and model are separate.
- * Fields are built using the model, via the @field() decorator.
+ * Fields are built from the model, via the @field() decorator.
  * We keep the fields and the model in sync via model property names
  * and field[name].
  *
@@ -47,7 +47,7 @@ export declare function newForm<ModelType extends Object>(model: ModelType, vali
  */
 export declare class Form<ModelType extends Object> {
     #private;
-    constructor(model: ModelType, validation_options?: Partial<ValidationOptions<ModelType>>, form_properties?: Partial<Form<ModelType>>);
+    constructor(model: ModelType, validation_options?: Partial<ValidationProperties<ModelType>> | Object, form_properties?: Partial<Form<ModelType>>);
     /**
      * HTML Node of form object.
      */
@@ -80,7 +80,7 @@ export declare class Form<ModelType extends Object> {
      * validating the form as well as linking errors to fields
      * and displaying the errors
      */
-    validation_options?: ValidationOptions<ModelType>;
+    validation_options?: ValidationProperties<ModelType>;
     /** Which events should the form dispatch side effects? */
     on_events: OnEvents<HTMLElementEventMap>;
     /** Is the form valid? */
@@ -94,7 +94,7 @@ export declare class Form<ModelType extends Object> {
     /**
      * refs hold any reference data you'll be using in the form
      *
-     * Call attachRefData() to link reference data to form or pass it
+     * Call attachReferenceData() to link reference data to form or pass it
      * via the constrictor.
      *
      * Fields & reference data are linked via field.ref_key
@@ -104,7 +104,7 @@ export declare class Form<ModelType extends Object> {
      *
      * @UseCase seclet dropdowns, radio buttons, etc.
      */
-    refs?: RefData;
+    refs?: ReferenceData;
     /**
      * Form Template Layout
      *
@@ -173,6 +173,15 @@ export declare class Form<ModelType extends Object> {
      */
     useForm: (node: HTMLFormElement) => void;
     /**
+     * This is used to hook up event listeners to a field.
+     *
+     * You can also use this to add form controls to the Form class.
+     * @example form control is outside of the form element so
+     * use:useField is added to the element to hook enent listens into it,
+     * same as all other controls inside the form element
+     */
+    useField: (node: FieldNode<ModelType>) => void;
+    /**
      * Validate the form!
      * You can pass in callbacks as needed.
      * Callbacks can be called "before" or "after" validation.
@@ -206,7 +215,7 @@ export declare class Form<ModelType extends Object> {
     /**
      * Pass in the reference data to add options to fields.
      */
-    attachRefData: (refs?: RefData | undefined) => void;
+    attachReferenceData: (refs?: ReferenceData | undefined) => void;
     /**
      *! Make sure to call this when the component is unloaded/destroyed
      * Removes all event listeners.

@@ -1,10 +1,10 @@
 import { get } from "svelte/store";
 import { FieldConfig } from "../core/FieldConfig";
 import {
-  ElementEvent,
-  FieldNode,
-  ValidationError,
-  ValidationOptions
+    ElementEvent,
+    FieldNode,
+    ValidationError,
+    ValidationProperties
 } from "../core/Types";
 import { _get } from "./formUtilities";
 const max_int = Number.MAX_SAFE_INTEGER;
@@ -30,7 +30,7 @@ const max_int = Number.MAX_SAFE_INTEGER;
 function _linkFieldErrors<T extends Object>(
   errors: ValidationError[],
   field: FieldConfig<T>,
-  error_display?: ValidationOptions<T>["error_display"],
+  error_display?: ValidationProperties<T>["error_display"],
   form_node?: HTMLFormElement
 ): void {
   const error = errors.filter((e) => e["field_key"] === field.name);
@@ -59,7 +59,7 @@ function _linkFieldErrors<T extends Object>(
 function _linkAllErrors<T extends Object>(
   errors: ValidationError[],
   fields: FieldConfig<T>[],
-  error_display?: ValidationOptions<T>["error_display"],
+  error_display?: ValidationProperties<T>["error_display"],
   form_node?: HTMLFormElement
 ): void {
   /** Loop over the errors! */
@@ -92,7 +92,7 @@ function _linkAllErrors<T extends Object>(
 function _handleErrorDisplay<T extends Object>(
   field: FieldConfig<T>,
   error: ValidationError | undefined,
-  error_display: ValidationOptions<T>["error_display"],
+  error_display: ValidationProperties<T>["error_display"],
   form_node: HTMLFormElement
 ): void {
   if (error_display === "constraint") {
@@ -126,7 +126,7 @@ function _handleErrorDisplay<T extends Object>(
 function _handleDomErrorDisplay<T extends Object>(
   field: FieldConfig<T>,
   error: ValidationError | undefined,
-  error_display: ValidationOptions<T>["error_display"],
+  error_display: ValidationProperties<T>["error_display"],
   form_node: HTMLFormElement
 ) {
   if (typeof error_display === "object")
@@ -156,7 +156,7 @@ function _handleDomErrorDisplay<T extends Object>(
 function _handleDomListErrorDisplay<T extends Object>(
   field: FieldConfig<T>,
   error: ValidationError | undefined,
-  error_display: ValidationOptions<T>["error_display"],
+  error_display: ValidationProperties<T>["error_display"],
   form_node: HTMLFormElement
 ) {
   if (typeof error_display === "object") {
@@ -229,7 +229,7 @@ function _handleDomListErrorDisplay<T extends Object>(
 function _handleDomSingleErrorDisplay<T extends Object>(
   field: FieldConfig<T>,
   error: ValidationError | undefined,
-  error_display: ValidationOptions<T>["error_display"],
+  error_display: ValidationProperties<T>["error_display"],
   form_node: HTMLFormElement
 ) {
   if (typeof error_display === "object")
@@ -491,9 +491,9 @@ function _parseNumberOrValue(value: any): Number | any | undefined {
 //#endregion
 
 export {
-  _linkAllErrors,
-  _linkFieldErrors,
-  _linkValueFromEvent,
-  _linkAllValues,
+    _linkAllErrors,
+    _linkFieldErrors,
+    _linkValueFromEvent,
+    _linkAllValues,
 };
 

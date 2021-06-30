@@ -23,7 +23,7 @@
   $: active_step = $form_state.active_step;
 </script>
 
-<div class="w-screen max-w-7xl">
+<div class="w-screen m-auto max-w-7xl">
   {#each $form_state.forms as form, current_index}
     {#if current_index === $active_step}
       <svelte:component
@@ -34,11 +34,11 @@
         on:event={(e) => handleSubmit(e)}
       />
 
-      <!-- 
-        /\ /\ /\ 
+      <!--
+        /\ /\ /\
         || || ||
 
-        Either of these will work!  
+        Either of these will work!
 
         || || ||
         \/ \/ \/

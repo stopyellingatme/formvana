@@ -176,9 +176,9 @@ If the model's fields already have data, the field data will be reflected in for
 
 **REFERENCE DATA:**
 
-Attach reference data to dropdowns by calling form.attachRefData(refData).
+Attach reference data to dropdowns by calling form.attachReferenceData(ReferenceData).
 
-**Note:** attachRefData can only be called after fields are built. You gotta have fields to attach the data too.
+**Note:** attachReferenceData can only be called after fields are built. You gotta have fields to attach the data too.
 
 **Another Note:** Reference data MUST BE in the format (for now):
 

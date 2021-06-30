@@ -1,9 +1,5 @@
 import {
-  FieldConfig,
-  OnEvents,
-  Callback,
-  Form,
-  ValidationCallback,
+  Callback, FieldConfig, Form, OnEvents, ValidationCallback
 } from "../core";
 import { _executeValidationEvent } from "./formValidation";
 
@@ -164,7 +160,10 @@ function _hanldeFieldGroups<T extends Object>(
 
 /**
  * Attach the OnEvents events to each form.field.
- * Parent: form.useField(...)
+ * Each field with a corresponding model.name will have event listeners
+ * attached.
+ * Children fields of the form, where useForm has been attached, will have
+ * event listeners attached.
  */
 function _attachEventListeners<T extends Object>(
   field: FieldConfig<T>,
@@ -241,3 +240,4 @@ export {
   _addCallbackToField,
   _hanldeFieldGroups,
 };
+

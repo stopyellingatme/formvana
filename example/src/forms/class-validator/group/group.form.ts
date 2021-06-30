@@ -1,19 +1,19 @@
-import { get, Writable, writable } from "svelte/store";
 import {
   Form,
   FormGroup,
   OnEvents,
-  RefData,
+  ReferenceData,
   ValidationCallback,
-  ValidationError,
+  ValidationError
 } from "@formvana";
+import { validate, ValidationError as VError } from "class-validator";
+import { get, Writable, writable } from "svelte/store";
 import { ExampleModel as GroupForm1 } from "../../../models/GroupForm1";
 import { ExampleModel as GroupForm2 } from "../../../models/GroupForm2";
-import { validate, ValidationError as VError } from "class-validator";
-
 import GroupTemplate from "../../../templates/Group.template.svelte";
 
-const ref_data: RefData = {
+
+const ref_data: ReferenceData = {
   statuses: [
     { label: "ACTIVE", value: 0 },
     { label: "PENDING", value: 1 },
@@ -39,7 +39,7 @@ function initStore() {
       on_events: new OnEvents({ focus: false }),
       template: GroupTemplate,
       refs: ref_data,
-      // hidden_fields: ["description_3", "name_10"],
+      // hidden_fields: ["description_3"],
       disabled_fields: ["email_2", "email_4"],
     }
   );
@@ -90,50 +90,6 @@ export const init = () => {
     setTimeout(() => {
       get(form_state).loading.set(false);
     }, 1000);
-
-    // setTimeout(() => {
-    // const callbacks: ValidationCallback[] = [
-    //   {
-    //     callback: () => {
-    //       console.log("Weeehoo!");
-    //     },
-    //     when: "after",
-    //   },
-    //   {
-    //     callback: () => {
-    //       get(form_state)
-    //         .forms[0].get("name_10")
-    //         .value.set("some value jfkdsalfjdsk");
-    //       get(form_state).validateAll();
-    //     },
-    //     when: "before",
-    //   },
-    // ];
-    // get(form_state).validateAll(callbacks);
-    // get(form_state).forms[0].valid.set(true);
-    // get(form_state).forms[1].valid.set(true);
-    // }, 2000);
-
-    // setTimeout(() => {
-    // console.log(get(form_state));
-    // }, 3000);
-
-    /** Don't over subscribe to this bad boy */
-    // get(form_state).all_value_changes.subscribe((val) => {
-    //   console.log("CHANGE: ", val);
-    // });
-
-    // get(form_state).all_valid.subscribe((val) => {
-    //   console.log("ALL VALID: ", val);
-    // });
-
-    // get(form_state).all_pristine.subscribe((val) => {
-    //   console.log("ALL PRISTINE: ", val);
-    // });
-
-    // get(form_state).all_changed.subscribe((val) => {
-    //   console.log("ALL CHANGED: ", val);
-    // });
 
     initialized = true;
   }

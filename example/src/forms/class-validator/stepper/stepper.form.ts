@@ -1,20 +1,18 @@
-import { get, Writable, writable } from "svelte/store";
 import {
-  Form,
-  OnEvents,
-  RefData,
-  ValidationCallback,
-  ValidationError,
-  FormStepper,
+    Form, FormStepper, OnEvents,
+    ReferenceData,
+    ValidationCallback,
+    ValidationError
 } from "@formvana";
+import { validate, ValidationError as VError } from "class-validator";
+import { get, Writable, writable } from "svelte/store";
 import { ExampleModel as StepperForm1 } from "../../../models/StepperForm1";
 import { ExampleModel as StepperForm2 } from "../../../models/StepperForm2";
-import { validate, ValidationError as VError } from "class-validator";
 //@ts-ignore
 import StepperTemplate from "../../../templates/Stepper.template.svelte";
 import { validator } from "../validator";
 
-const ref_data: RefData = {
+const ref_data: ReferenceData = {
   statuses: [
     { label: "ACTIVE", value: 0 },
     { label: "PENDING", value: 1 },

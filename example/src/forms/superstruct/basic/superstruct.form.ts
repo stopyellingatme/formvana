@@ -1,24 +1,15 @@
-import { get, Writable, writable } from "svelte/store";
 import {
-  Form,
-  OnEvents,
-  RefData,
-  ValidationError,
-  FieldConfig,
-  FormFieldSchema,
-  ValidationOptions,
+    FieldConfig, Form, FormFieldSchema, OnEvents,
+    ReferenceData,
+    ValidationError, ValidationProperties
 } from "@formvana";
 import {
-  validate,
-  object,
-  number,
-  string,
-  array,
-  StructError,
+    array, number, object, string, StructError, validate
 } from "superstruct";
+import { get, Writable, writable } from "svelte/store";
 import DefaultTemplate from "../../../templates/Default.template.svelte";
 
-const refs: RefData = {
+const refs: ReferenceData = {
   tags: [
     { label: "News", value: "news" },
     { label: "Features", value: "features" },
@@ -224,7 +215,7 @@ const doValidation = async (model, struct): Promise<ValidationError[]> => {
   );
 };
 
-const options: Partial<ValidationOptions<Object>> = {
+const options: Partial<ValidationProperties<Object>> = {
   validator: doValidation,
   options: validation_options,
   error_display: {

@@ -1,12 +1,17 @@
 import { get } from "svelte/store";
 import {
   Callback,
-  ElementEvent, FieldConfig, Form, ValidationCallback,
+  ElementEvent,
+  FieldConfig,
+  Form,
+  ValidationCallback,
   ValidationError
 } from "../core";
 import { _hasStateChanged, _setValueChanges } from "./formState";
 import {
-  _linkAllErrors, _linkFieldErrors, _linkValueFromEvent
+  _linkAllErrors,
+  _linkFieldErrors,
+  _linkValueFromEvent
 } from "./linkMethods";
 /**
  * ---------------------------------------------------------------------------
@@ -53,35 +58,31 @@ function _executeValidationEvent<T extends Object>(
    * If validation options are present, use them.
    * Else, just fire the callbacks and be done.
    */
-  if (form.validation_options && form.validation_options.options) {
+  if (
+    form.validation_options &&
+    form.validation_options.options &&
+    form.validation_options.validator
+  ) {
     return form.validation_options
       .validator(form.model, form.validation_options.options)
       .then((errors: ValidationError[]) => {
         _executeCallbacks([
-          _handleValidationSideEffects(
-            form,
-            errors,
-            required_fields,
-            field,
-            event
-          ),
+          _handleValidationSideEffects(form, errors, required_fields, field),
           _hasStateChanged(form.value_changes, form.changed),
           callbacks && _executeValidationCallbacks("after", callbacks),
         ]);
         return errors;
       });
-  } else if (form.validation_options && !form.validation_options.options) {
+  } else if (
+    form.validation_options &&
+    form.validation_options.validator &&
+    !form.validation_options.options
+  ) {
     return form.validation_options
       .validator(form.model)
       .then((errors: ValidationError[]) => {
         _executeCallbacks([
-          _handleValidationSideEffects(
-            form,
-            errors,
-            required_fields,
-            field,
-            event
-          ),
+          _handleValidationSideEffects(form, errors, required_fields, field),
           _hasStateChanged(form.value_changes, form.changed),
           callbacks && _executeValidationCallbacks("after", callbacks),
         ]);
@@ -154,8 +155,7 @@ async function _handleValidationSideEffects<T extends Object>(
   form: Form<T>,
   errors: ValidationError[],
   required_fields: Array<keyof T>,
-  field?: FieldConfig<T>,
-  event?: ElementEvent
+  field?: FieldConfig<T>
 ): Promise<ValidationError[]> {
   /**  There are errors! */
   if (errors && errors.length > 0) {

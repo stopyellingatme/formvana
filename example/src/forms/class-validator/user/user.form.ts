@@ -1,10 +1,10 @@
+import { Form, FormStepper, OnEvents, ValidationProperties } from "@formvana";
 import { get, Writable, writable } from "svelte/store";
-import { Form, OnEvents, ValidationOptions, FormStepper } from "@formvana";
 import { UserExampleModel } from "../../../models/UserExampleModel";
-
 import StepperTemplate from "../../../templates/Stepper.template.svelte";
 import { validator } from "../validator";
-const validator_options: Partial<ValidationOptions<UserExampleModel>> = {
+
+const validator_options: Partial<ValidationProperties<UserExampleModel>> = {
   validator: validator,
   error_display: {
     dom: { type: "ol", error_classes: ["text-sm", "text-red-600", "mt-2"] },

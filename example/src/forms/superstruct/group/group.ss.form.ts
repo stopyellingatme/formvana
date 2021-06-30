@@ -1,24 +1,21 @@
-import { get, Writable, writable } from "svelte/store";
 import {
-  Form,
-  FormGroup,
-  OnEvents,
-  RefData,
-  ValidationCallback,
-  ValidationError,
-  ValidationOptions,
+    Form,
+    FormGroup,
+    OnEvents,
+    ReferenceData,
+    ValidationCallback,
+    ValidationError,
+    ValidationProperties
 } from "@formvana";
-import {
-  field_configs,
-  data_model,
-  superstruct_validation_options,
-  refs,
-} from "./group.ss.model";
-import { doValidation } from "../validationFormatter";
-
+import { get, Writable, writable } from "svelte/store";
 import GroupTemplate from "../../../templates/Group.template.svelte";
+import { doValidation } from "../validationFormatter";
+import {
+    data_model, field_configs, refs, superstruct_validation_options
+} from "./group.ss.model";
 
-const options: Partial<ValidationOptions<Object>> = {
+
+const options: Partial<ValidationProperties<Object>> = {
   validator: doValidation,
   options: superstruct_validation_options,
   error_display: {

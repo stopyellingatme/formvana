@@ -1,18 +1,10 @@
+import { Form, OnEvents, ReferenceData, ValidationProperties } from "@formvana";
 import { get, Writable, writable } from "svelte/store";
-import {
-  Form,
-  OnEvents,
-  RefData,
-  ValidationCallback,
-  ValidationError,
-  ValidationOptions,
-} from "@formvana";
 import { ExampleModel } from "../../../models/BigForm";
-import { ValidatorOptions } from "class-validator";
 import DefaultTemplate from "../../../templates/Default.template.svelte";
 import { validator } from "../validator";
 
-const ref_data: RefData = {
+const ref_data: ReferenceData = {
   statuses: [
     { label: "ACTIVE", value: 0 },
     { label: "PENDING", value: 1 },
@@ -21,30 +13,29 @@ const ref_data: RefData = {
   ],
 };
 
-const class_validator_options: ValidatorOptions = {
-  skipMissingProperties: false,
-  dismissDefaultMessages: false,
-  validationError: {
-    target: false,
-    value: false,
+const options = new ValidationProperties<ExampleModel>(
+  validator,
+  {
+    skipMissingProperties: false,
+    dismissDefaultMessages: false,
+    validationError: {
+      target: false,
+      value: false,
+    },
+    forbidUnknownValues: true,
+    stopAtFirstError: true,
   },
-  forbidUnknownValues: true,
-  stopAtFirstError: true,
-};
+  {
+    dom: { type: "ul", error_classes: ["text-red-600", "text-sm"] },
+  }
+  // "constraint"
+);
 
 function initStore() {
   // Initialize the form(vana) object
   let form = new Form(
     new ExampleModel(),
-    {
-      validator: validator,
-      /** (Optional) Tweak for better perf, if needed. */
-      options: class_validator_options,
-      error_display: {
-        dom: { type: "ul", error_classes: ["text-red-600", "text-sm"] },
-      },
-      // error_display: "constraint"
-    },
+    options,
     /** Partial Form Model Properties */
     {
       on_events: new OnEvents({ focus: false }),
