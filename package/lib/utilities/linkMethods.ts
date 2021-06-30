@@ -1,10 +1,10 @@
 import { get } from "svelte/store";
 import { FieldConfig } from "../core/FieldConfig";
 import {
-    ElementEvent,
-    FieldNode,
-    ValidationError,
-    ValidationProperties
+  ElementEvent,
+  FieldNode,
+  ValidationError,
+  ValidationProperties
 } from "../core/Types";
 import { _get } from "./formUtilities";
 const max_int = Number.MAX_SAFE_INTEGER;
@@ -97,15 +97,7 @@ function _handleErrorDisplay<T extends Object>(
 ): void {
   if (error_display === "constraint") {
     /** Constraint implementation goes here */
-    if (error && error.errors) {
-      const message: Record<string, string> = error.errors;
-      Object.keys(message).forEach((key) => {
-        field.node?.setCustomValidity(`${key}: ${message[key]}`);
-      });
-    } else {
-      field.node?.setCustomValidity("");
-    }
-    field.node?.reportValidity();
+    _handleConstraintValidation(field, error, form_node);
   } else if (error_display === "custom") {
     /**
      * If "custom", the library user will have to create their own component
@@ -116,6 +108,22 @@ function _handleErrorDisplay<T extends Object>(
     /** If there is only one error message */
     _handleDomErrorDisplay(field, error, error_display, form_node);
   }
+}
+
+function _handleConstraintValidation<T extends Object>(
+  field: FieldConfig<T>,
+  error: ValidationError | undefined,
+  form_node: HTMLFormElement
+) {
+  if (error && error.errors) {
+    const message: Record<string, string> = error.errors;
+    Object.keys(message).forEach((key) => {
+      field.node?.setCustomValidity(`${key}: ${message[key]}`);
+    });
+  } else {
+    field.node?.setCustomValidity("");
+  }
+  form_node.reportValidity();
 }
 
 /**
@@ -491,9 +499,9 @@ function _parseNumberOrValue(value: any): Number | any | undefined {
 //#endregion
 
 export {
-    _linkAllErrors,
-    _linkFieldErrors,
-    _linkValueFromEvent,
-    _linkAllValues,
+  _linkAllErrors,
+  _linkFieldErrors,
+  _linkValueFromEvent,
+  _linkAllValues,
 };
 

@@ -14,12 +14,13 @@
 
   const options = {
     validator: validator,
-    error_display: {
-      dom: {
-        type: "ol",
-        error_classes: ["text-sm", "text-red-600", "mt-2"],
-      },
-    },
+    // error_display: {
+    //   dom: {
+    //     type: "ol",
+    //     error_classes: ["text-sm", "text-red-600", "mt-2"],
+    //   },
+    // },
+    error_display: "constraint",
   };
 
   $: form = new Form(new UserExampleModel(), options);

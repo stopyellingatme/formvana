@@ -444,16 +444,7 @@
     function _handleErrorDisplay(field, error, error_display, form_node) {
         if (error_display === "constraint") {
             /** Constraint implementation goes here */
-            if (error && error.errors) {
-                const message = error.errors;
-                Object.keys(message).forEach((key) => {
-                    field.node?.setCustomValidity(`${key}: ${message[key]}`);
-                });
-            }
-            else {
-                field.node?.setCustomValidity("");
-            }
-            field.node?.reportValidity();
+            _handleConstraintValidation(field, error, form_node);
         }
         else if (error_display === "custom") {
             /**
@@ -466,6 +457,18 @@
             /** If there is only one error message */
             _handleDomErrorDisplay(field, error, error_display, form_node);
         }
+    }
+    function _handleConstraintValidation(field, error, form_node) {
+        if (error && error.errors) {
+            const message = error.errors;
+            Object.keys(message).forEach((key) => {
+                field.node?.setCustomValidity(`${key}: ${message[key]}`);
+            });
+        }
+        else {
+            field.node?.setCustomValidity("");
+        }
+        form_node.reportValidity();
     }
     /**
      * This one is pretty harry.
