@@ -11,10 +11,10 @@
   import GroupSSFrom from "./forms/superstruct/group/Group.ss.form.svelte";
 
   const validators = ["class-validator", "superstruct"];
-  let examples = ["basic", "group", "stepper", "no style", "user"];
+  let examples = ["basic", "group", "stepper", "no style", "user", "huge form"];
 
   $: selected_validator = validators[0];
-  $: selected = examples[0];
+  $: selected = examples[5];
 
   const filterExamples = () => {
     switch (selected_validator) {
@@ -29,7 +29,7 @@
         ];
         return;
       case "superstruct":
-        examples = ["basic", "group", "stepper", "huge form"];
+        examples = ["basic", "group", "stepper"];
         return;
       default:
         return;
@@ -70,14 +70,8 @@
     {/each}
   </div>
 
-  <!-- 
-    This is the beautiful nested if statement used to display the different
-    form generator/validation examples
-   -->
-
   {#if selected_validator === "class-validator"}
     {#if selected === examples[0]}
-      <!-- <ExampleForm /> -->
       <SimpleExample />
     {:else if selected === examples[1]}
       <FormGroup />
@@ -87,14 +81,13 @@
       <NoStyleForm />
     {:else if selected === examples[4]}
       <UserForm />
+    {:else if selected === examples[5]}
+      <ExampleForm />
     {/if}
   {:else if selected_validator === "superstruct"}
     {#if selected === examples[0]}
       <SuperstructForm />
     {:else if selected === examples[1]}
-      <!-- <div class="flex items-center justify-center w-full">
-        <p class="m-10 font-mono text-lg capitalize">Stepper Goes Here</p>
-      </div> -->
       <GroupSSFrom />
     {:else if selected === examples[2]}
       <div class="flex items-center justify-center w-full">

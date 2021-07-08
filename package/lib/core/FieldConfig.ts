@@ -56,19 +56,25 @@ export class FieldConfig<T extends Object> {
       this.attributes["aria-label"] = this.label || this.name;
     }
 
+    /**
+     * If required is passed in then make sure the attributes reflect that
+     * the field is required.
+     */
     if (this.required) {
       this.attributes["required"] = true;
       this.attributes["aria-required"] = true;
     }
 
     /**
-     * This is here becuase i spent about 45min trying to figure out why
-     * the file explorer would not open when I clicked the file input label.
-     * Well, it's because it needs an Id. Duh.
+     * This is here becuase i spent ~45min trying to figure out why the
+     * file explorer would not open when I clicked the file input label.
+     * Well, it's because it needs an Id, not just a name. Duh.
      */
     if (this.data_type === "file" || this.data_type === "files") {
       if (!this.attributes["id"]) this.attributes["id"] = this.name;
     }
+
+    if (this.data_set) this.setDataSet(this.data_set);
   }
 
   /**
@@ -149,13 +155,6 @@ export class FieldConfig<T extends Object> {
   hidden?: boolean;
 
   /**
-   * @TODO Add hooks for this when setting up field.
-   *
-   * Element.dataset hook, so you can do the really wild things!
-   */
-  data_set?: string[];
-
-  /**
    * * If you set this, you must set form.for_form!
    *
    * In case you'd like to filter some fields for a specific form
@@ -164,14 +163,6 @@ export class FieldConfig<T extends Object> {
    * use this specific field on one form instead of other. Or whatever.
    */
   for_form?: string | string[];
-
-  /**
-   * If you're using a validation library that supports
-   * a validation rules pattern, this is here for you.
-   *
-   * @TODO No example for this yet.
-   */
-  validation_rules?: Object | any;
 
   /**
    * You may need to excude some event listeners.
@@ -188,75 +179,127 @@ export class FieldConfig<T extends Object> {
   include_events?: Array<keyof OnEvents<HTMLElementEventMap>>;
 
   /** Are you grouping multiple fields togethter? */
-  group?: string | string[];
+  group?: number | string | string[];
   /**
    * Step is used when field is part of a multi-step form.
    */
   step?: number | string;
 
+  /**
+   * @TODO Add hooks for this when setting up field.
+   *
+   * Element.dataset hook, so you can do the really wild things!
+   */
+  data_set?: Record<string, any>;
+
+  /** Is the field valid? */
+  public get valid(): boolean {
+    if (!get(this.errors)) return true;
+    return false;
+  }
+
+  setErrors = (errors: ValidationError): FieldConfig<T> => {
+    this.errors.set(errors);
+    return this;
+  };
+
   /** Clear the field's errors */
-  clearErrors = (): void => {
+  clearErrors = (): FieldConfig<T> => {
     this.errors.set(undefined);
+    return this;
   };
 
   /** Add event listeners to the field in a more typesafe way. */
   addEventListener = (
-    event: keyof HTMLElementEventMap,
+    event: keyof HTMLElementEventMap | Array<keyof HTMLElementEventMap>,
     callback: ValidationCallback | Callback
   ) => {
     if (this.node) {
-      this.node.addEventListener(
-        event,
-        /** Check if the callback is directly executable */
-        (e: InputEvent | Event) =>
-          callback instanceof Function ? callback(e) : callback,
-        /** No extra options being passed in */
-        false
-      );
+      if (Array.isArray(event)) {
+        event.forEach((_event) => {
+          this.node &&
+            this.node.addEventListener(
+              _event,
+              /** Check if the callback is directly executable */
+              (e: InputEvent | Event) =>
+                callback instanceof Function ? callback(e) : callback,
+              /** No extra options being passed in */
+              false
+            );
+        });
+      } else {
+        this.node.addEventListener(
+          event,
+          /** Check if the callback is directly executable */
+          (e: InputEvent | Event) =>
+            callback instanceof Function ? callback(e) : callback,
+          /** No extra options being passed in */
+          false
+        );
+      }
     } else {
       throw new Error(
-        "Node is missing! No Html Node to attach event listener too!"
+        "Node is missing! There is no Html Node to attach event listener too!"
       );
     }
+    return this;
   };
 
+  /** Remove event listeners from the field in a more typesafe way. */
+  removeEventListener = (
+    event: keyof HTMLElementEventMap | Array<keyof HTMLElementEventMap>,
+    callback: ValidationCallback | Callback
+  ) => {
+    if (this.node) {
+      if (Array.isArray(event)) {
+        event.forEach((_event) => {
+          this.node &&
+            this.node.removeEventListener(
+              _event,
+              /** Check if the callback is directly executable */
+              (e: InputEvent | Event) =>
+                callback instanceof Function ? callback(e) : callback,
+              /** No extra options being passed in */
+              false
+            );
+        });
+      } else {
+        this.node.removeEventListener(
+          event,
+          /** Check if the callback is directly executable */
+          (e: InputEvent | Event) =>
+            callback instanceof Function ? callback(e) : callback,
+          /** No extra options being passed in */
+          false
+        );
+      }
+    } else {
+      throw new Error(
+        "Node is missing! There is no Html Node to attach event listener too!"
+      );
+    }
+    return this;
+  };
+
+  /**
+   * This will fire the an HTMLElementEventMap event.
+   *
+   * @example you want to manually fire the change event
+   */
   emitEvent(event_name: keyof HTMLElementEventMap): boolean | undefined {
     const event = new Event(event_name);
     return this.node?.dispatchEvent(event);
   }
-}
 
-type FieldDictionary = Array<FieldConfig<Object>>;
-
-export class FieldStepper {
-  constructor(fields: FieldDictionary, active_index?: keyof FieldDictionary) {
-    this.fields = fields;
-
-    if (active_index) {
-      this.active_step = active_index;
-    } else {
-      /** Get the first set, and set the active_index */
-      let k: keyof FieldDictionary,
-        first = true;
-      for (k in fields) {
-        if (first) this.active_step = k;
+  /** Use this if you're altering the data_set property */
+  setDataSet(data: Record<string, any>) {
+    this.data_set = data;
+    if (this.data_set) {
+      let k: keyof Record<string, any>;
+      for (k in this.data_set) {
+        this.node && (this.node.dataset[k] = this.data_set[k]);
       }
     }
-  }
-
-  fields: FieldDictionary;
-
-  active_step: keyof FieldDictionary | undefined;
-
-  public get fields_valid(): Writable<boolean> {
-    let valid = true,
-      k: keyof FieldDictionary;
-    for (k in this.fields) {
-      /** If there's an error, set valid to false. */
-      if (get(this.fields[k].errors)) {
-        valid = false;
-      }
-    }
-    return writable(valid);
+    return this;
   }
 }

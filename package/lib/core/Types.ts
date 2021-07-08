@@ -176,25 +176,10 @@ export class OnEvents<T extends HTMLElementEventMap> {
     Object.assign(this, init);
   }
 
-  /** On each keystroke */
-  aggressive: boolean = false;
-  /** Essentially on blur */
-  lazy: boolean = false;
-  /** On form submission */
-  passive: boolean = false;
-  /**
-   * @TODO Create easy mechanism for using "eager" validation.
-   *
-   * First, use passive.
-   * If invalid, use aggressive validation.
-   * When valid, use passive again.
-   */
-  eager: boolean = false;
-
   /**
    * Steps for using eager validation.
    *
-   * 1. use passive until for is submitted.
+   * 1. use passive until form is submitted.
    *  - Must detect if form has been submited.
    *
    * 2. If form is invalid, use aggressive until field is valid.
@@ -203,10 +188,10 @@ export class OnEvents<T extends HTMLElementEventMap> {
    * 3. When all valid, go back to passive validation.
    */
 
-  input: boolean = true;
-  change: boolean = true;
-  submit: boolean = true;
-  blur: boolean = true;
+  input: boolean = false;
+  change: boolean = false;
+  submit: boolean = false;
+  blur: boolean = false;
   focus: boolean = false;
 
   click: boolean = false;
@@ -299,23 +284,6 @@ export type ElementAttributesMap =
   | keyof HTMLCanvasElement
   | keyof HTMLOptionElement
   | keyof AriaAttributes;
-
-/**
- * These are the types of form meta-data allowed.
- * If you would like something further, push it into the "object" field
- */
-export type FormMetaDataKeys =
-  | "for_form"
-  | "description"
-  | "header"
-  | "label"
-  | "classes"
-  | "styles"
-  /**
-   * Added "object" so a user can pass anything they want, while still getting
-   * some type completion on the rest of the meta-data
-   */
-  | "object";
 
 /** Catchall type for giving callbacks a bit more typesafety */
 export type Callback =
@@ -543,5 +511,24 @@ interface AriaAttributes {
   /** Defines the human readable text alternative of aria-valuenow for a range widget. */
   "aria-valuetext"?: string;
 }
+
+/**
+ * @depricated makes the for_form functionality wayyy to clunky
+ * 
+ * These are the types of form meta-data allowed.
+ * If you would like something further, push it into the "object" field
+ */
+//  export type FormMetaDataKeys =
+//  | "for_form"
+//  | "description"
+//  | "header"
+//  | "label"
+//  | "classes"
+//  | "styles"
+//  /**
+//   * Added "object" so a user can pass anything they want, while still getting
+//   * some type completion on the rest of the meta-data
+//   */
+//  | "object";
 
 //#endregion

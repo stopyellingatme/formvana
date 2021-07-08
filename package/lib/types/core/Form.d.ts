@@ -21,8 +21,7 @@ import { Callback, FieldNode, FormFieldSchema, InitialFormState, OnEvents, Refer
  *
  * @TODO Add more superstruct examples for each form type (this should show how easy the template pattern really is)
  * @TODO Add that aggressive/lazy/passive validation thing.
- * @TODO Strip out all svelte (or as much as possible) and use vanilla variables
- *    instead of writable stores
+ * @TODO Add cypress tests!
  *
  * @TODO Add debug mode to inspect event listeners and form state snapshots
  *
@@ -155,7 +154,7 @@ export declare class Form<ModelType extends Object> {
      * Builds the field configs via this.model using metadata-reflection.
      * Or via form.field_shcema
      */
-    buildFields: (model?: ModelType) => void;
+    buildFields: (model?: ModelType) => Form<ModelType>;
     /**
      * * Required for form setup.
      *
@@ -180,7 +179,7 @@ export declare class Form<ModelType extends Object> {
      * use:useField is added to the element to hook enent listens into it,
      * same as all other controls inside the form element
      */
-    useField: (node: FieldNode<ModelType>) => void;
+    useField: (node: FieldNode<ModelType>) => FieldConfig<ModelType>;
     /**
      * Validate the form!
      * You can pass in callbacks as needed.

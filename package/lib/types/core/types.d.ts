@@ -108,13 +108,8 @@ export declare type ErrorDisplay = "constraint" | {
  * to the constructor's init object.
  */
 export declare class OnEvents<T extends HTMLElementEventMap> {
+    #private;
     constructor(init?: Partial<OnEvents<T>>, disableAll?: boolean);
-    /** On each keystroke */
-    aggressive: boolean;
-    /** Essentially on blur */
-    lazy: boolean;
-    /** On form submission */
-    passive: boolean;
     /**
      * @TODO Create easy mechanism for using "eager" validation.
      *
@@ -126,7 +121,7 @@ export declare class OnEvents<T extends HTMLElementEventMap> {
     /**
      * Steps for using eager validation.
      *
-     * 1. use passive until for is submitted.
+     * 1. use passive until form is submitted.
      *  - Must detect if form has been submited.
      *
      * 2. If form is invalid, use aggressive until field is valid.
@@ -196,16 +191,6 @@ export declare type ReferenceData = Record<string, ReferenceDataItem[]>;
 export declare type FieldAttributes = Record<ElementAttributesMap & string, any>;
 /** This provides solid type completion for field attributes */
 export declare type ElementAttributesMap = keyof HTMLElement | keyof HTMLInputElement | keyof HTMLSelectElement | keyof HTMLFieldSetElement | keyof HTMLImageElement | keyof HTMLOutputElement | keyof HTMLButtonElement | keyof HTMLCanvasElement | keyof HTMLOptionElement | keyof AriaAttributes;
-/**
- * These are the types of form meta-data allowed.
- * If you would like something further, push it into the "object" field
- */
-export declare type FormMetaDataKeys = "for_form" | "description" | "header" | "label" | "classes" | "styles"
-/**
- * Added "object" so a user can pass anything they want, while still getting
- * some type completion on the rest of the meta-data
- */
- | "object";
 /** Catchall type for giving callbacks a bit more typesafety */
 export declare type Callback = ((...args: any[]) => any) | (() => any) | void | undefined | boolean | string | Promise<any>;
 /**
@@ -399,3 +384,9 @@ interface AriaAttributes {
     "aria-valuetext"?: string;
 }
 export {};
+/**
+ * @depricated makes the for_form functionality wayyy to clunky
+ *
+ * These are the types of form meta-data allowed.
+ * If you would like something further, push it into the "object" field
+ */

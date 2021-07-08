@@ -4,16 +4,17 @@
   import { UserExampleModel } from "./models/UserExampleModel";
   import ButtonArea from "./components/controls/ButtonArea.svelte";
 
-  const validator = (model, options) => {
-    return validate(model, options).then((errors) => {
-      return errors.map((error) => {
-        return new ValidationError(error.property, error.constraints);
-      });
-    });
-  };
-
   const options = {
-    validator: validator,
+    validator: (model, options) =>
+      validate(model, options).then((errors) => {
+        /**
+         * We have to format class-validator errors into the proper
+         * shape for the formvana validator callback chain.
+         */
+        return errors.map((error) => {
+          return new ValidationError(error.property, error.constraints);
+        });
+      }),
     // error_display: {
     //   dom: {
     //     type: "ol",

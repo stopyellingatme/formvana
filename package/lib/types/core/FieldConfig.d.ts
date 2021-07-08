@@ -80,12 +80,6 @@ export declare class FieldConfig<T extends Object> {
     /** Pretty self-explainitory, hide the field. */
     hidden?: boolean;
     /**
-     * @TODO Add hooks for this when setting up field.
-     *
-     * Element.dataset hook, so you can do the really wild things!
-     */
-    data_set?: string[];
-    /**
      * * If you set this, you must set form.for_form!
      *
      * In case you'd like to filter some fields for a specific form
@@ -94,13 +88,6 @@ export declare class FieldConfig<T extends Object> {
      * use this specific field on one form instead of other. Or whatever.
      */
     for_form?: string | string[];
-    /**
-     * If you're using a validation library that supports
-     * a validation rules pattern, this is here for you.
-     *
-     * @TODO No example for this yet.
-     */
-    validation_rules?: Object | any;
     /**
      * You may need to excude some event listeners.
      *
@@ -114,22 +101,32 @@ export declare class FieldConfig<T extends Object> {
      */
     include_events?: Array<keyof OnEvents<HTMLElementEventMap>>;
     /** Are you grouping multiple fields togethter? */
-    group?: string | string[];
+    group?: number | string | string[];
     /**
      * Step is used when field is part of a multi-step form.
      */
     step?: number | string;
+    /**
+     * @TODO Add hooks for this when setting up field.
+     *
+     * Element.dataset hook, so you can do the really wild things!
+     */
+    data_set?: Record<string, any>;
+    /** Is the field valid? */
+    get valid(): boolean;
+    setErrors: (errors: ValidationError) => FieldConfig<T>;
     /** Clear the field's errors */
-    clearErrors: () => void;
+    clearErrors: () => FieldConfig<T>;
     /** Add event listeners to the field in a more typesafe way. */
-    addEventListener: (event: keyof HTMLElementEventMap, callback: ValidationCallback | Callback) => void;
+    addEventListener: (event: keyof HTMLElementEventMap | Array<keyof HTMLElementEventMap>, callback: ValidationCallback | Callback) => this;
+    /** Remove event listeners from the field in a more typesafe way. */
+    removeEventListener: (event: keyof HTMLElementEventMap | Array<keyof HTMLElementEventMap>, callback: ValidationCallback | Callback) => this;
+    /**
+     * This will fire the an HTMLElementEventMap event.
+     *
+     * @example you want to manually fire the change event
+     */
     emitEvent(event_name: keyof HTMLElementEventMap): boolean | undefined;
+    /** Use this if you're altering the data_set property */
+    setDataSet(data: Record<string, any>): this;
 }
-declare type FieldDictionary = Array<FieldConfig<Object>>;
-export declare class FieldStepper {
-    constructor(fields: FieldDictionary, active_index?: keyof FieldDictionary);
-    fields: FieldDictionary;
-    active_step: keyof FieldDictionary | undefined;
-    get fields_valid(): Writable<boolean>;
-}
-export {};

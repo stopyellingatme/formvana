@@ -21,7 +21,6 @@ import {
   ElementEvent,
   FieldNode,
   FormFieldSchema,
-  FormMetaDataKeys,
   InitialFormState,
   OnEvents,
   ReferenceData,
@@ -49,8 +48,7 @@ import {
  *
  * @TODO Add more superstruct examples for each form type (this should show how easy the template pattern really is)
  * @TODO Add that aggressive/lazy/passive validation thing.
- * @TODO Strip out all svelte (or as much as possible) and use vanilla variables
- *    instead of writable stores
+ * @TODO Add cypress tests!
  *
  * @TODO Add debug mode to inspect event listeners and form state snapshots
  *
@@ -121,7 +119,7 @@ export class Form<ModelType extends Object> {
     _setInitialState(this, this.initial_state);
   }
 
-  //#region ** Fields **
+  //#region ---------------- Fields ----------------
 
   /**
    * HTML Node of form object.
@@ -163,7 +161,12 @@ export class Form<ModelType extends Object> {
     new ValidationProperties<ModelType>();
 
   /** Which events should the form dispatch side effects? */
-  on_events: OnEvents<HTMLElementEventMap> = new OnEvents();
+  on_events: OnEvents<HTMLElementEventMap> = new OnEvents({
+    input: true,
+    change: true,
+    blur: true,
+    submit: true,
+  });
 
   /** Is the form valid? */
   valid: Writable<boolean> = writable(false);
@@ -267,9 +270,9 @@ export class Form<ModelType extends Object> {
    */
   #required_fields: Array<keyof ModelType> = [];
 
-  //#endregion ^^ Fields ^^
+  //#endregion xxxxxxxxxxxxxxxx Fields xxxxxxxxxxxxxxxx
 
-  // #region ** Form API **
+  // #region ---------------- Form API ----------------
 
   // #region - Form Setup
 
@@ -278,7 +281,7 @@ export class Form<ModelType extends Object> {
    * Builds the field configs via this.model using metadata-reflection.
    * Or via form.field_shcema
    */
-  buildFields = (model: ModelType = this.model): void => {
+  buildFields = (model: ModelType = this.model): Form<ModelType> => {
     if (this.field_schema) {
       this.fields = _buildFormFieldsWithSchema(
         this.field_schema,
@@ -291,6 +294,7 @@ export class Form<ModelType extends Object> {
     this.#required_fields = this.fields
       .filter((f) => f.required)
       .map((f) => f.name as keyof ModelType);
+    return this;
   };
 
   /**
@@ -326,9 +330,8 @@ export class Form<ModelType extends Object> {
       }
     }
 
-    if (!this.validation_options || !this.validation_options.validator) {
+    if (this.validation_options?.error_display !== "constraint")
       this.node.noValidate = true;
-    }
   };
 
   /**
@@ -339,7 +342,7 @@ export class Form<ModelType extends Object> {
    * use:useField is added to the element to hook enent listens into it,
    * same as all other controls inside the form element
    */
-  useField = (node: FieldNode<ModelType>): void => {
+  useField = (node: FieldNode<ModelType>): FieldConfig<ModelType> => {
     /** Attach HTML Node to field so we can remove event listeners later */
     const field = _get(node.name, this.fields);
     field.node = node;
@@ -354,6 +357,7 @@ export class Form<ModelType extends Object> {
           e
         )
       );
+    return field;
   };
 
   //#endregion
@@ -415,9 +419,9 @@ export class Form<ModelType extends Object> {
     /** If there are multiple fields passed in then loop over to add callbacks */
     if (Array.isArray(field_names)) {
       const fields = field_names.map((f) => _get(f, this.fields));
-      fields.forEach((f) => {
-        _addCallbackToField(this, f, event, callback, this.#required_fields);
-      });
+      fields.forEach((f) =>
+        _addCallbackToField(this, f, event, callback, this.#required_fields)
+      );
     } else {
       /** If there is one field, add callback to field */
       const field = _get(field_names, this.fields);
@@ -605,5 +609,5 @@ export class Form<ModelType extends Object> {
 
   //#endregion
 
-  //#endregion ^^ Form API ^^
+  //#endregion xxxxxxxxxxxxxxxx Form API xxxxxxxxxxxxxxxx
 }

@@ -35,19 +35,20 @@ function _linkFieldErrors<T extends Object>(
 ): void {
   const error = errors.filter((e) => e["field_key"] === field.name);
 
+  /** Used when we _handleErrorDisplay */
+  let field_error = undefined;
+
   /** Check if there's an error for the field */
   if (error && error.length > 0) {
-    field.errors.set(error[0]);
-    field.node?.setAttribute("aria-invalid", "true");
-    if (error_display && form_node)
-      _handleErrorDisplay(field, error[0], error_display, form_node);
+    field.setErrors(error[0]).node?.setAttribute("aria-invalid", "true");
+    field_error = error[0];
   } else {
     /**  Remove errors from field and hanlde error display.  */
-    field.errors.set(undefined);
-    field.node?.removeAttribute("aria-invalid");
-    if (error_display && form_node)
-      _handleErrorDisplay(field, undefined, error_display, form_node);
+    field.clearErrors().node?.removeAttribute("aria-invalid");
   }
+
+  if (error_display && form_node)
+    _handleErrorDisplay(field, field_error, error_display, form_node);
 }
 
 /**
@@ -81,8 +82,7 @@ function _linkAllErrors<T extends Object>(
   fields.forEach((field) => {
     /** If not, then remove the all errors from the field. */
     if (!errors || !fields_with_errors.includes(field.name as string)) {
-      field.errors.set(undefined);
-      field.node?.removeAttribute("aria-invalid");
+      field.clearErrors().node?.removeAttribute("aria-invalid");
       if (error_display && form_node)
         _handleErrorDisplay(field, undefined, error_display, form_node);
     }
@@ -191,8 +191,7 @@ function _handleDomListErrorDisplay<T extends Object>(
             text_node = document.createTextNode(message || "");
 
           message_element.appendChild(text_node);
-          error_display.dom.error_classes &&
-            message_element.classList.add(...error_display.dom?.error_classes);
+          _setErrorElementStyling(error_display, message_element);
 
           error_node.appendChild(message_element);
         }
@@ -213,8 +212,7 @@ function _handleDomListErrorDisplay<T extends Object>(
           /** Append text node to the new list item element */
           message_element.appendChild(text_node);
           /** Apply any classes being passed in through config */
-          error_display.dom.error_classes &&
-            message_element.classList.add(...error_display.dom?.error_classes);
+          _setErrorElementStyling(error_display, message_element);
           /** Add the new list item to the parent list element */
           list_element.appendChild(message_element);
         }
@@ -231,6 +229,22 @@ function _handleDomListErrorDisplay<T extends Object>(
         });
       }
     }
+  }
+}
+
+function _setErrorElementStyling<T extends Object>(
+  error_display: ValidationProperties<T>["error_display"],
+  message_element: HTMLLIElement
+) {
+  if (typeof error_display === "object") {
+    if (error_display.dom.error_classes)
+      message_element.classList.add(...error_display.dom?.error_classes);
+
+    if (error_display.dom.error_styles)
+      message_element.setAttribute(
+        "style",
+        error_display.dom.error_styles?.join("; ")
+      );
   }
 }
 

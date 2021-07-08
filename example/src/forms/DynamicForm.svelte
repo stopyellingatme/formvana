@@ -32,7 +32,7 @@
     this={$form.template}
     {form}
     {...$$props}
-    on:event={(e) => dispatch(e.type || e.detail.type, e)}
+    on:event={(e) => dispatch(e.detail.type || e.type, e)}
   />
   <!-- 
     ***************************************************** 

@@ -115,19 +115,25 @@
                 /** If no aria-label then set it to the label or if !label then name */
                 this.attributes["aria-label"] = this.label || this.name;
             }
+            /**
+             * If required is passed in then make sure the attributes reflect that
+             * the field is required.
+             */
             if (this.required) {
                 this.attributes["required"] = true;
                 this.attributes["aria-required"] = true;
             }
             /**
-             * This is here becuase i spent about 45min trying to figure out why
-             * the file explorer would not open when I clicked the file input label.
-             * Well, it's because it needs an Id. Duh.
+             * This is here becuase i spent ~45min trying to figure out why the
+             * file explorer would not open when I clicked the file input label.
+             * Well, it's because it needs an Id, not just a name. Duh.
              */
             if (this.data_type === "file" || this.data_type === "files") {
                 if (!this.attributes["id"])
                     this.attributes["id"] = this.name;
             }
+            if (this.data_set)
+                this.setDataSet(this.data_set);
         }
         /**
          * Name of the class property.
@@ -195,12 +201,6 @@
         /** Pretty self-explainitory, hide the field. */
         hidden;
         /**
-         * @TODO Add hooks for this when setting up field.
-         *
-         * Element.dataset hook, so you can do the really wild things!
-         */
-        data_set;
-        /**
          * * If you set this, you must set form.for_form!
          *
          * In case you'd like to filter some fields for a specific form
@@ -209,13 +209,6 @@
          * use this specific field on one form instead of other. Or whatever.
          */
         for_form;
-        /**
-         * If you're using a validation library that supports
-         * a validation rules pattern, this is here for you.
-         *
-         * @TODO No example for this yet.
-         */
-        validation_rules;
         /**
          * You may need to excude some event listeners.
          *
@@ -234,53 +227,98 @@
          * Step is used when field is part of a multi-step form.
          */
         step;
+        /**
+         * @TODO Add hooks for this when setting up field.
+         *
+         * Element.dataset hook, so you can do the really wild things!
+         */
+        data_set;
+        /** Is the field valid? */
+        get valid() {
+            if (!get_store_value(this.errors))
+                return true;
+            return false;
+        }
+        setErrors = (errors) => {
+            this.errors.set(errors);
+            return this;
+        };
         /** Clear the field's errors */
         clearErrors = () => {
             this.errors.set(undefined);
+            return this;
         };
         /** Add event listeners to the field in a more typesafe way. */
         addEventListener = (event, callback) => {
             if (this.node) {
-                this.node.addEventListener(event, 
-                /** Check if the callback is directly executable */
-                (e) => callback instanceof Function ? callback(e) : callback, 
-                /** No extra options being passed in */
-                false);
+                if (Array.isArray(event)) {
+                    event.forEach((_event) => {
+                        this.node &&
+                            this.node.addEventListener(_event, 
+                            /** Check if the callback is directly executable */
+                            (e) => callback instanceof Function ? callback(e) : callback, 
+                            /** No extra options being passed in */
+                            false);
+                    });
+                }
+                else {
+                    this.node.addEventListener(event, 
+                    /** Check if the callback is directly executable */
+                    (e) => callback instanceof Function ? callback(e) : callback, 
+                    /** No extra options being passed in */
+                    false);
+                }
             }
             else {
-                throw new Error("Node is missing! No Html Node to attach event listener too!");
+                throw new Error("Node is missing! There is no Html Node to attach event listener too!");
             }
+            return this;
         };
+        /** Remove event listeners from the field in a more typesafe way. */
+        removeEventListener = (event, callback) => {
+            if (this.node) {
+                if (Array.isArray(event)) {
+                    event.forEach((_event) => {
+                        this.node &&
+                            this.node.removeEventListener(_event, 
+                            /** Check if the callback is directly executable */
+                            (e) => callback instanceof Function ? callback(e) : callback, 
+                            /** No extra options being passed in */
+                            false);
+                    });
+                }
+                else {
+                    this.node.removeEventListener(event, 
+                    /** Check if the callback is directly executable */
+                    (e) => callback instanceof Function ? callback(e) : callback, 
+                    /** No extra options being passed in */
+                    false);
+                }
+            }
+            else {
+                throw new Error("Node is missing! There is no Html Node to attach event listener too!");
+            }
+            return this;
+        };
+        /**
+         * This will fire the an HTMLElementEventMap event.
+         *
+         * @example you want to manually fire the change event
+         */
         emitEvent(event_name) {
             const event = new Event(event_name);
             return this.node?.dispatchEvent(event);
         }
-    }
-    class FieldStepper {
-        constructor(fields, active_index) {
-            this.fields = fields;
-            if (active_index) {
-                this.active_step = active_index;
-            }
-            else {
-                /** Get the first set, and set the active_index */
+        /** Use this if you're altering the data_set property */
+        setDataSet(data) {
+            this.data_set = data;
+            if (this.data_set) {
                 let k;
-                for (k in fields) {
-                    this.active_step = k;
+                for (k in this.data_set) {
+                    this.node && (this.node.dataset[k] = this.data_set[k]);
                 }
             }
-        }
-        fields;
-        active_step;
-        get fields_valid() {
-            let valid = true, k;
-            for (k in this.fields) {
-                /** If there's an error, set valid to false. */
-                if (get_store_value(this.fields[k].errors)) {
-                    valid = false;
-                }
-            }
-            return writable(valid);
+            return this;
         }
     }
 
@@ -350,6 +388,95 @@
      * ---------------------------------------------------------------------------
      */
     /**
+     * I wanted a way to handle field groups in an effective but lightweight
+     * manner. I believe this achieves that goal.
+     *
+     *
+     */
+    function _hanldeFieldGroups(fields) {
+        if (fields && fields.length > 0) {
+            /**
+             * Use a blank object to store/map field groups.
+             */
+            let field_groups = {};
+            /** This sets up the return type to be easily itterable. */
+            const getSortedFields = () => {
+                /** Array for storing the field config or array of field configs */
+                const new_fields = [];
+                Object.keys(field_groups).forEach((key) => {
+                    new_fields.push(field_groups[key]);
+                });
+                /** Return our crazy array structure. */
+                return new_fields;
+            };
+            /** is the field.group in the field_groups map already? */
+            const isGroupInFieldGroups = (group_name) => {
+                if (Array.isArray(field_groups[group_name]))
+                    return true;
+                /** If we made it here, there was no match */
+                return false;
+            };
+            for (let i = 0; fields.length > i; ++i) {
+                const field = fields[i];
+                /** Is the field part of a group? */
+                if (field.group) {
+                    if (Array.isArray(field.group)) {
+                        field.group.forEach((name) => {
+                            /**
+                             * Have we already created a group (in our object above)
+                             * for the field.group?
+                             */
+                            const isInGroupResult = isGroupInFieldGroups(name);
+                            if (isInGroupResult) {
+                                field_groups[name].push(field);
+                            }
+                            else {
+                                /**
+                                 * If not, we add key for the field.gorup and initialize
+                                 * it with an array of the field.
+                                 * We use the array so we can add more fields later when we
+                                 * find more fields with the same group name.
+                                 */
+                                field_groups[name] = [field];
+                            }
+                        });
+                    }
+                    else if (typeof field.group === "string") {
+                        /**
+                         * Have we already created a group (in our object above)
+                         * for the field.group?
+                         */
+                        const isInGroupResult = isGroupInFieldGroups(field.group);
+                        if (isInGroupResult) {
+                            field_groups[field.group].push(field);
+                        }
+                        else {
+                            /**
+                             * If not, we add key for the field.gorup and initialize
+                             * it with an array of the field.
+                             * We use the array so we can add more fields later when we
+                             * find more fields with the same group name.
+                             */
+                            field_groups[field.group] = [field];
+                        }
+                    }
+                }
+                else {
+                    /**
+                     * If the field does not have a group then we use this identifier
+                     * to ensure all fields stay in order after this manipulation.
+                     */
+                    field_groups[`field_${i}`] = field;
+                }
+            }
+            const _fields = getSortedFields();
+            return _fields;
+        }
+        else {
+            return fields;
+        }
+    }
+    /**
      * Using this.field_order, rearrange the order of the fields.
      */
     function _setFieldOrder(field_order, fields) {
@@ -393,20 +520,19 @@
      */
     function _linkFieldErrors(errors, field, error_display, form_node) {
         const error = errors.filter((e) => e["field_key"] === field.name);
+        /** Used when we _handleErrorDisplay */
+        let field_error = undefined;
         /** Check if there's an error for the field */
         if (error && error.length > 0) {
-            field.errors.set(error[0]);
-            field.node?.setAttribute("aria-invalid", "true");
-            if (error_display && form_node)
-                _handleErrorDisplay(field, error[0], error_display, form_node);
+            field.setErrors(error[0]).node?.setAttribute("aria-invalid", "true");
+            field_error = error[0];
         }
         else {
             /**  Remove errors from field and hanlde error display.  */
-            field.errors.set(undefined);
-            field.node?.removeAttribute("aria-invalid");
-            if (error_display && form_node)
-                _handleErrorDisplay(field, undefined, error_display, form_node);
+            field.clearErrors().node?.removeAttribute("aria-invalid");
         }
+        if (error_display && form_node)
+            _handleErrorDisplay(field, field_error, error_display, form_node);
     }
     /**
      * Link all Validation Errors on Form.errors to each field via the
@@ -434,8 +560,7 @@
         fields.forEach((field) => {
             /** If not, then remove the all errors from the field. */
             if (!errors || !fields_with_errors.includes(field.name)) {
-                field.errors.set(undefined);
-                field.node?.removeAttribute("aria-invalid");
+                field.clearErrors().node?.removeAttribute("aria-invalid");
                 if (error_display && form_node)
                     _handleErrorDisplay(field, undefined, error_display, form_node);
             }
@@ -516,8 +641,7 @@
                     for (let i = 0; messages.length > i; ++i) {
                         const message = messages[i], message_element = document.createElement("li"), text_node = document.createTextNode(message || "");
                         message_element.appendChild(text_node);
-                        error_display.dom.error_classes &&
-                            message_element.classList.add(...error_display.dom?.error_classes);
+                        _setErrorElementStyling(error_display, message_element);
                         error_node.appendChild(message_element);
                     }
                 }
@@ -538,8 +662,7 @@
                         /** Append text node to the new list item element */
                         message_element.appendChild(text_node);
                         /** Apply any classes being passed in through config */
-                        error_display.dom.error_classes &&
-                            message_element.classList.add(...error_display.dom?.error_classes);
+                        _setErrorElementStyling(error_display, message_element);
                         /** Add the new list item to the parent list element */
                         list_element.appendChild(message_element);
                     }
@@ -557,6 +680,14 @@
                     });
                 }
             }
+        }
+    }
+    function _setErrorElementStyling(error_display, message_element) {
+        if (typeof error_display === "object") {
+            if (error_display.dom.error_classes)
+                message_element.classList.add(...error_display.dom?.error_classes);
+            if (error_display.dom.error_styles)
+                message_element.setAttribute("style", error_display.dom.error_styles?.join("; "));
         }
     }
     function _handleDomSingleErrorDisplay(field, error, error_display, form_node) {
@@ -1040,9 +1171,9 @@
     function _requiredFieldsValid(errors, required_fields) {
         if (errors.length === 0)
             return true;
-        // Go ahead and return if there are no errors
+        /** Go ahead and return if there are no errors */
         let i = 0, len = required_fields.length;
-        // If there are no required fields, just go ahead and return
+        /** If there are no required fields, just go ahead and return */
         if (len === 0)
             return true;
         /**
@@ -1102,95 +1233,6 @@
         }
         return fields;
     }
-    /**
-     * I wanted a way to handle field groups in an effective but lightweight
-     * manner. I believe this achieves that goal.
-     *
-     *
-     */
-    function _hanldeFieldGroups(fields) {
-        if (fields && fields.length > 0) {
-            /**
-             * Use a blank object to store/map field groups.
-             */
-            let field_groups = {};
-            /** This sets up the return type to be easily itterable. */
-            const getSortedFields = () => {
-                /** Array for storing the field config or array of field configs */
-                const new_fields = [];
-                Object.keys(field_groups).forEach((key) => {
-                    new_fields.push(field_groups[key]);
-                });
-                /** Return our crazy array structure. */
-                return new_fields;
-            };
-            /** is the field.group in the field_groups map already? */
-            const isGroupInFieldGroups = (group_name) => {
-                if (Array.isArray(field_groups[group_name]))
-                    return true;
-                /** If we made it here, there was no match */
-                return false;
-            };
-            for (let i = 0; fields.length > i; ++i) {
-                const field = fields[i];
-                /** Is the field part of a group? */
-                if (field.group) {
-                    if (Array.isArray(field.group)) {
-                        field.group.forEach((name) => {
-                            /**
-                             * Have we already created a group (in our object above)
-                             * for the field.group?
-                             */
-                            const isInGroupResult = isGroupInFieldGroups(name);
-                            if (isInGroupResult) {
-                                field_groups[name].push(field);
-                            }
-                            else {
-                                /**
-                                 * If not, we add key for the field.gorup and initialize
-                                 * it with an array of the field.
-                                 * We use the array so we can add more fields later when we
-                                 * find more fields with the same group name.
-                                 */
-                                field_groups[name] = [field];
-                            }
-                        });
-                    }
-                    else if (typeof field.group === "string") {
-                        /**
-                         * Have we already created a group (in our object above)
-                         * for the field.group?
-                         */
-                        const isInGroupResult = isGroupInFieldGroups(field.group);
-                        if (isInGroupResult) {
-                            field_groups[field.group].push(field);
-                        }
-                        else {
-                            /**
-                             * If not, we add key for the field.gorup and initialize
-                             * it with an array of the field.
-                             * We use the array so we can add more fields later when we
-                             * find more fields with the same group name.
-                             */
-                            field_groups[field.group] = [field];
-                        }
-                    }
-                }
-                else {
-                    /**
-                     * If the field does not have a group then we use this identifier
-                     * to ensure all fields stay in order after this manipulation.
-                     */
-                    field_groups[`field_${i}`] = field;
-                }
-            }
-            const _fields = getSortedFields();
-            return _fields;
-        }
-        else {
-            return fields;
-        }
-    }
     // #region HTML Event Helpers
     /**
      * Attach the OnEvents events to each form.field.
@@ -1238,6 +1280,70 @@
         else {
             field.addEventListener(event, callback);
         }
+    }
+    /**
+     * This is going to be a full on Form method I think.
+     *
+     * 1. use passive (only validate on form submission)
+     *  until form is submitted.
+     *  - Must detect if form has been submited.
+     *
+     * 2. If form is invalid, use aggressive until field is valid.
+     *  - This is the hardest part.
+     *
+     * 3. When all valid, go back to passive validation.
+     */
+    function _handleEagerValidationSetup(form, form_node, required_fields) {
+        /**
+         * Add "submit" event listener so we detect when the user submits the form.
+         *  - This is for the "passive" stage
+         */
+        form_node.addEventListener("submit", (event) => {
+            console.log("Made it here");
+            event.preventDefault();
+            form.validate();
+            /**
+             * If the form is not valid then prevent the default action
+             * and add aggressive event listeners to the invalid fields.
+             *
+             * When the field is valid, remove the aggressive listener.
+             */
+            if (!form.valid) {
+                const invalid_fields = form.fields.filter((f) => !f.valid), first_invalid_field = invalid_fields[0], aggressive_events = [
+                    "input",
+                    "change",
+                    "blur",
+                ];
+                /** Focus on the first field. */
+                if (first_invalid_field) {
+                    first_invalid_field.node?.focus();
+                }
+                /** Add aggressive event listeners to the invalid fields. */
+                invalid_fields.forEach((field) => {
+                    const callback = (e) => _executeValidationEvent(form, required_fields, field, undefined, e);
+                    /**
+                     * Now we have to detect when the field is valid and remove the
+                     * aggressive event listeners
+                     */
+                    const aggressiveListenerCallback = () => {
+                        /**
+                         * If the field is valid, remove the aggressive event listeners as well as
+                         * the aggressiveListenerCallback itself.
+                         */
+                        console.log("Validity: ", field.valid);
+                        if (field.valid) {
+                            console.log("Field is valid");
+                            field
+                                .removeEventListener(aggressive_events, callback)
+                                .removeEventListener(aggressive_events, aggressiveListenerCallback);
+                        }
+                    };
+                    field
+                        .addEventListener(aggressive_events, callback)
+                        .addEventListener(aggressive_events, aggressiveListenerCallback);
+                });
+            }
+        });
     }
 
     /**
@@ -1310,11 +1416,11 @@
             Object.assign(this, init);
         }
         /** On each keystroke */
-        aggressive = false;
+        #aggressive = false;
         /** Essentially on blur */
-        lazy = false;
+        #lazy = false;
         /** On form submission */
-        passive = false;
+        #passive = false;
         /**
          * @TODO Create easy mechanism for using "eager" validation.
          *
@@ -1322,11 +1428,11 @@
          * If invalid, use aggressive validation.
          * When valid, use passive again.
          */
-        eager = false;
+        eager = true;
         /**
          * Steps for using eager validation.
          *
-         * 1. use passive until for is submitted.
+         * 1. use passive until form is submitted.
          *  - Must detect if form has been submited.
          *
          * 2. If form is invalid, use aggressive until field is valid.
@@ -1334,10 +1440,10 @@
          *
          * 3. When all valid, go back to passive validation.
          */
-        input = true;
-        change = true;
-        submit = true;
-        blur = true;
+        input = false;
+        change = false;
+        submit = false;
+        blur = false;
         focus = false;
         click = false;
         dblclick = false;
@@ -1353,6 +1459,24 @@
         mouseover = false;
         mouseup = false;
     }
+    /**
+     * @depricated makes the for_form functionality wayyy to clunky
+     *
+     * These are the types of form meta-data allowed.
+     * If you would like something further, push it into the "object" field
+     */
+    //  export type FormMetaDataKeys =
+    //  | "for_form"
+    //  | "description"
+    //  | "header"
+    //  | "label"
+    //  | "classes"
+    //  | "styles"
+    //  /**
+    //   * Added "object" so a user can pass anything they want, while still getting
+    //   * some type completion on the rest of the meta-data
+    //   */
+    //  | "object";
     //#endregion
 
     /**
@@ -1374,8 +1498,7 @@
      *
      * @TODO Add more superstruct examples for each form type (this should show how easy the template pattern really is)
      * @TODO Add that aggressive/lazy/passive validation thing.
-     * @TODO Strip out all svelte (or as much as possible) and use vanilla variables
-     *    instead of writable stores
+     * @TODO Add cypress tests!
      *
      * @TODO Add debug mode to inspect event listeners and form state snapshots
      *
@@ -1433,7 +1556,7 @@
             /** Wait until everything is initalized, then set the inital state. */
             _setInitialState(this, this.initial_state);
         }
-        //#region ** Fields **
+        //#region ---------------- Fields ----------------
         /**
          * HTML Node of form object.
          */
@@ -1554,8 +1677,8 @@
          * Keeping track of the required fields allows us to  validate faster.
          */
         #required_fields = [];
-        //#endregion ^^ Fields ^^
-        // #region ** Form API **
+        //#endregion xxxxxxxxxxxxxxxx Fields xxxxxxxxxxxxxxxx
+        // #region ---------------- Form API ----------------
         // #region - Form Setup
         /**
          * Builds the fields from the model.
@@ -1572,6 +1695,7 @@
             this.#required_fields = this.fields
                 .filter((f) => f.required)
                 .map((f) => f.name);
+            return this;
         };
         /**
          * * Required for form setup.
@@ -1604,9 +1728,10 @@
                     });
                 }
             }
-            if (!this.validation_options || !this.validation_options.validator) {
+            if (this.on_events.eager)
+                _handleEagerValidationSetup(this, this.node, this.#required_fields);
+            if (this.validation_options?.error_display !== "constraint")
                 this.node.noValidate = true;
-            }
         };
         /**
          * This is used to hook up event listeners to a field.
@@ -1622,6 +1747,7 @@
             field.node = node;
             if (this.on_events)
                 _attachEventListeners(field, this.on_events, (e) => _executeValidationEvent(this, this.#required_fields, field, undefined, e));
+            return field;
         };
         //#endregion
         // #region - Validation
@@ -1655,9 +1781,7 @@
             /** If there are multiple fields passed in then loop over to add callbacks */
             if (Array.isArray(field_names)) {
                 const fields = field_names.map((f) => _get(f, this.fields));
-                fields.forEach((f) => {
-                    _addCallbackToField(this, f, event, callback, this.#required_fields);
-                });
+                fields.forEach((f) => _addCallbackToField(this, f, event, callback, this.#required_fields));
             }
             else {
                 /** If there is one field, add callback to field */
@@ -3140,7 +3264,6 @@
     }
 
     exports.FieldConfig = FieldConfig;
-    exports.FieldStepper = FieldStepper;
     exports.Form = Form;
     exports.FormGroup = FormGroup;
     exports.FormManager = FormManager;

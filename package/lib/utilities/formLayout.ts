@@ -12,6 +12,95 @@ import { _get } from "./formUtilities";
  */
 
 /**
+ * I wanted a way to handle field groups in an effective but lightweight
+ * manner. I believe this achieves that goal.
+ *
+ *
+ */
+function _hanldeFieldGroups<T extends Object>(
+  fields: Array<FieldConfig<T>>
+): Array<FieldConfig<T> | Array<FieldConfig<T>>> {
+  if (fields && fields.length > 0) {
+    /**
+     * Use a blank object to store/map field groups.
+     */
+    let field_groups: Record<string, any> = {};
+    /** This sets up the return type to be easily itterable. */
+    const getSortedFields = () => {
+      /** Array for storing the field config or array of field configs */
+      const new_fields: Array<FieldConfig<T> | Array<FieldConfig<T>>> = [];
+      Object.keys(field_groups).forEach((key) => {
+        new_fields.push(field_groups[key]);
+      });
+      /** Return our crazy array structure. */
+      return new_fields;
+    };
+
+    /** is the field.group in the field_groups map already? */
+    const isGroupInFieldGroups = (group_name: string): boolean => {
+      if (Array.isArray(field_groups[group_name])) return true;
+      /** If we made it here, there was no match */
+      return false;
+    };
+
+    for (let i = 0; fields.length > i; ++i) {
+      const field = fields[i];
+      /** Is the field part of a group? */
+      if (field.group) {
+        if (Array.isArray(field.group)) {
+          field.group.forEach((name) => {
+            /**
+             * Have we already created a group (in our object above)
+             * for the field.group?
+             */
+            const isInGroupResult = isGroupInFieldGroups(name);
+            if (isInGroupResult) {
+              field_groups[name].push(field);
+            } else {
+              /**
+               * If not, we add key for the field.gorup and initialize
+               * it with an array of the field.
+               * We use the array so we can add more fields later when we
+               * find more fields with the same group name.
+               */
+              field_groups[name] = [field];
+            }
+          });
+        } else if (typeof field.group === "string") {
+          /**
+           * Have we already created a group (in our object above)
+           * for the field.group?
+           */
+          const isInGroupResult = isGroupInFieldGroups(field.group);
+          if (isInGroupResult) {
+            field_groups[field.group].push(field);
+          } else {
+            /**
+             * If not, we add key for the field.gorup and initialize
+             * it with an array of the field.
+             * We use the array so we can add more fields later when we
+             * find more fields with the same group name.
+             */
+            field_groups[field.group] = [field];
+          }
+        }
+      } else {
+        /**
+         * If the field does not have a group then we use this identifier
+         * to ensure all fields stay in order after this manipulation.
+         */
+        field_groups[`field_${i}`] = field;
+      }
+    }
+
+    const _fields = getSortedFields();
+    return _fields;
+  } else {
+    return fields;
+  }
+}
+
+/**
  * Using this.field_order, rearrange the order of the fields.
  */
 function _setFieldOrder<T extends Object>(
@@ -39,4 +128,5 @@ function _setFieldOrder<T extends Object>(
   return fields;
 }
 
-export { _setFieldOrder };
+export { _hanldeFieldGroups, _setFieldOrder };
+

@@ -2,7 +2,6 @@
 const fs = require("fs-extra");
 
 const src1 = "./package/lib";
-const delete1 = "./package/lib/types";
 const src2 = "./package/package.json";
 
 const dest = "./example/node_modules/@formvana";

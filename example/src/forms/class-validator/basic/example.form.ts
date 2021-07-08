@@ -26,19 +26,19 @@ const options = new ValidationProperties<ExampleModel>(
     stopAtFirstError: true,
   },
   {
-    dom: { type: "ul", error_classes: ["text-red-600", "text-sm"] },
+    dom: { type: "ul", error_classes: ["text-red-600", "text-sm", "mt-1", "ml-2"] },
   }
   // "constraint"
 );
 
 function initStore() {
-  // Initialize the form(vana) object
+  /** Initialize the form(vana) object */
   let form = new Form(
     new ExampleModel(),
     options,
     /** Partial Form Model Properties */
     {
-      on_events: new OnEvents({ focus: false }),
+      // on_events: new OnEvents({ input: true }),
       template: DefaultTemplate,
       refs: ref_data,
       hidden_fields: ["description_3"],
@@ -89,7 +89,7 @@ export const init = () => {
       //     when: "before",
       //   },
       // ];
-      get(form_state).validate();
+      // get(form_state).validate();
     }, 500);
 
     // setTimeout(() => {

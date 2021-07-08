@@ -114,13 +114,8 @@ type ErrorDisplay = "constraint" | {
  * to the constructor's init object.
  */
 declare class OnEvents<T extends HTMLElementEventMap> {
+    #private;
     constructor(init?: Partial<OnEvents<T>>, disableAll?: boolean);
-    /** On each keystroke */
-    aggressive: boolean;
-    /** Essentially on blur */
-    lazy: boolean;
-    /** On form submission */
-    passive: boolean;
     /**
      * @TODO Create easy mechanism for using "eager" validation.
      *
@@ -132,7 +127,7 @@ declare class OnEvents<T extends HTMLElementEventMap> {
     /**
      * Steps for using eager validation.
      *
-     * 1. use passive until for is submitted.
+     * 1. use passive until form is submitted.
      *  - Must detect if form has been submited.
      *
      * 2. If form is invalid, use aggressive until field is valid.
@@ -204,11 +199,6 @@ type ReferenceData = Record<string, ReferenceDataItem[]>;
 type FieldAttributes = Record<ElementAttributesMap & string, any>;
 /** This provides solid type completion for field attributes */
 type ElementAttributesMap = keyof HTMLElement | keyof HTMLInputElement | keyof HTMLSelectElement | keyof HTMLFieldSetElement | keyof HTMLImageElement | keyof HTMLOutputElement | keyof HTMLButtonElement | keyof HTMLCanvasElement | keyof HTMLOptionElement | keyof AriaAttributes;
-/**
- * These are the types of form meta-data allowed.
- * If you would like something further, push it into the "object" field
- */
-type FormMetaDataKeys = "for_form" | "description" | "header" | "label" | "classes" | "styles" | "object";
 /** Catchall type for giving callbacks a bit more typesafety */
 type Callback = ((...args: any[]) => any) | (() => any) | void | undefined | boolean | string | Promise<any>;
 /**
@@ -480,12 +470,6 @@ declare class FieldConfig<T extends Object> {
     /** Pretty self-explainitory, hide the field. */
     hidden?: boolean;
     /**
-     * @TODO Add hooks for this when setting up field.
-     *
-     * Element.dataset hook, so you can do the really wild things!
-     */
-    data_set?: string[];
-    /**
      * * If you set this, you must set form.for_form!
      *
      * In case you'd like to filter some fields for a specific form
@@ -494,13 +478,6 @@ declare class FieldConfig<T extends Object> {
      * use this specific field on one form instead of other. Or whatever.
      */
     for_form?: string | string[];
-    /**
-     * If you're using a validation library that supports
-     * a validation rules pattern, this is here for you.
-     *
-     * @TODO No example for this yet.
-     */
-    validation_rules?: Object | any;
     /**
      * You may need to excude some event listeners.
      *
@@ -514,23 +491,34 @@ declare class FieldConfig<T extends Object> {
      */
     include_events?: Array<keyof OnEvents<HTMLElementEventMap>>;
     /** Are you grouping multiple fields togethter? */
-    group?: string | string[];
+    group?: number | string | string[];
     /**
      * Step is used when field is part of a multi-step form.
      */
     step?: number | string;
+    /**
+     * @TODO Add hooks for this when setting up field.
+     *
+     * Element.dataset hook, so you can do the really wild things!
+     */
+    data_set?: Record<string, any>;
+    /** Is the field valid? */
+    get valid(): boolean;
+    setErrors: (errors: ValidationError) => FieldConfig<T>;
     /** Clear the field's errors */
-    clearErrors: () => void;
+    clearErrors: () => FieldConfig<T>;
     /** Add event listeners to the field in a more typesafe way. */
-    addEventListener: (event: keyof HTMLElementEventMap, callback: ValidationCallback | Callback) => void;
+    addEventListener: (event: keyof HTMLElementEventMap | Array<keyof HTMLElementEventMap>, callback: ValidationCallback | Callback) => this;
+    /** Remove event listeners from the field in a more typesafe way. */
+    removeEventListener: (event: keyof HTMLElementEventMap | Array<keyof HTMLElementEventMap>, callback: ValidationCallback | Callback) => this;
+    /**
+     * This will fire the an HTMLElementEventMap event.
+     *
+     * @example you want to manually fire the change event
+     */
     emitEvent(event_name: keyof HTMLElementEventMap): boolean | undefined;
-}
-type FieldDictionary = Array<FieldConfig<Object>>;
-declare class FieldStepper {
-    constructor(fields: FieldDictionary, active_index?: keyof FieldDictionary);
-    fields: FieldDictionary;
-    active_step: keyof FieldDictionary | undefined;
-    get fields_valid(): Writable<boolean>;
+    /** Use this if you're altering the data_set property */
+    setDataSet(data: Record<string, any>): this;
 }
 /**
  * @Recomended_Use
@@ -551,8 +539,7 @@ declare class FieldStepper {
  *
  * @TODO Add more superstruct examples for each form type (this should show how easy the template pattern really is)
  * @TODO Add that aggressive/lazy/passive validation thing.
- * @TODO Strip out all svelte (or as much as possible) and use vanilla variables
- *    instead of writable stores
+ * @TODO Add cypress tests!
  *
  * @TODO Add debug mode to inspect event listeners and form state snapshots
  *
@@ -578,7 +565,7 @@ declare function newForm<ModelType extends Object>(model: ModelType, validation_
 declare class Form<ModelType extends Object> {
     #private;
     constructor(model: ModelType, validation_options?: Partial<ValidationProperties<ModelType>> | Object, form_properties?: Partial<Form<ModelType>>);
-    //#region ** Fields **
+    //#region ---------------- Fields ----------------
     /**
      * HTML Node of form object.
      */
@@ -681,15 +668,15 @@ declare class Form<ModelType extends Object> {
     hidden_fields?: Array<keyof ModelType>;
     /** Use the NAME of the field (field.name) to disable/hide the field. */
     disabled_fields?: Array<keyof ModelType>;
-    //#endregion ^^ Fields ^^
-    // #region ** Form API **
+    //#endregion xxxxxxxxxxxxxxxx Fields xxxxxxxxxxxxxxxx
+    // #region ---------------- Form API ----------------
     // #region - Form Setup
     /**
      * Builds the fields from the model.
      * Builds the field configs via this.model using metadata-reflection.
      * Or via form.field_shcema
      */
-    buildFields: (model?: ModelType) => void;
+    buildFields: (model?: ModelType) => Form<ModelType>;
     /**
      * * Required for form setup.
      *
@@ -714,7 +701,7 @@ declare class Form<ModelType extends Object> {
      * use:useField is added to the element to hook enent listens into it,
      * same as all other controls inside the form element
      */
-    useField: (node: FieldNode<ModelType>) => void;
+    useField: (node: FieldNode<ModelType>) => FieldConfig<ModelType>;
     //#endregion
     // #region - Validation
     /**
@@ -852,4 +839,4 @@ declare class FormStepper extends FormManager {
 declare class FormGroup extends FormManager {
     constructor(forms: FormDictionary, props?: Partial<FormManager>);
 }
-export { FieldConfig, FieldStepper, newForm, Form, field, ValidationCallback, ValidatorFunction, ValidationError, ValidationProperties, ErrorDisplay, OnEvents, LinkValuesOnEvent, FormFieldSchema, FieldNode, ElementEvent, AcceptedDataType, InitialFormState, ReferenceDataItem, ReferenceData, FieldAttributes, ElementAttributesMap, FormMetaDataKeys, Callback, FormManager, FormStepper, FormGroup };
+export { FieldConfig, newForm, Form, field, ValidationCallback, ValidatorFunction, ValidationError, ValidationProperties, ErrorDisplay, OnEvents, LinkValuesOnEvent, FormFieldSchema, FieldNode, ElementEvent, AcceptedDataType, InitialFormState, ReferenceDataItem, ReferenceData, FieldAttributes, ElementAttributesMap, Callback, FormManager, FormStepper, FormGroup };

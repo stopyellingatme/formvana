@@ -1,5 +1,10 @@
 import {
-  Callback, FieldConfig, Form, OnEvents, ValidationCallback
+  Callback,
+  ElementEvent,
+  FieldConfig,
+  Form,
+  OnEvents,
+  ValidationCallback
 } from "../core";
 import { _executeValidationEvent } from "./formValidation";
 
@@ -65,95 +70,6 @@ function _buildFormFieldsWithSchema<T extends Object>(
   }
 
   return fields;
-}
-
-/**
- * I wanted a way to handle field groups in an effective but lightweight
- * manner. I believe this achieves that goal.
- *
- *
- */
-function _hanldeFieldGroups<T extends Object>(
-  fields: Array<FieldConfig<T>>
-): Array<FieldConfig<T> | Array<FieldConfig<T>>> {
-  if (fields && fields.length > 0) {
-    /**
-     * Use a blank object to store/map field groups.
-     */
-    let field_groups: Record<string, any> = {};
-    /** This sets up the return type to be easily itterable. */
-    const getSortedFields = () => {
-      /** Array for storing the field config or array of field configs */
-      const new_fields: Array<FieldConfig<T> | Array<FieldConfig<T>>> = [];
-      Object.keys(field_groups).forEach((key) => {
-        new_fields.push(field_groups[key]);
-      });
-      /** Return our crazy array structure. */
-      return new_fields;
-    };
-
-    /** is the field.group in the field_groups map already? */
-    const isGroupInFieldGroups = (group_name: string): boolean => {
-      if (Array.isArray(field_groups[group_name])) return true;
-      /** If we made it here, there was no match */
-      return false;
-    };
-
-    for (let i = 0; fields.length > i; ++i) {
-      const field = fields[i];
-      /** Is the field part of a group? */
-      if (field.group) {
-        if (Array.isArray(field.group)) {
-          field.group.forEach((name) => {
-            /**
-             * Have we already created a group (in our object above)
-             * for the field.group?
-             */
-            const isInGroupResult = isGroupInFieldGroups(name);
-            if (isInGroupResult) {
-              field_groups[name].push(field);
-            } else {
-              /**
-               * If not, we add key for the field.gorup and initialize
-               * it with an array of the field.
-               * We use the array so we can add more fields later when we
-               * find more fields with the same group name.
-               */
-              field_groups[name] = [field];
-            }
-          });
-        } else if (typeof field.group === "string") {
-          /**
-           * Have we already created a group (in our object above)
-           * for the field.group?
-           */
-          const isInGroupResult = isGroupInFieldGroups(field.group);
-          if (isInGroupResult) {
-            field_groups[field.group].push(field);
-          } else {
-            /**
-             * If not, we add key for the field.gorup and initialize
-             * it with an array of the field.
-             * We use the array so we can add more fields later when we
-             * find more fields with the same group name.
-             */
-            field_groups[field.group] = [field];
-          }
-        }
-      } else {
-        /**
-         * If the field does not have a group then we use this identifier
-         * to ensure all fields stay in order after this manipulation.
-         */
-        field_groups[`field_${i}`] = field;
-      }
-    }
-
-    const _fields = getSortedFields();
-    return _fields;
-  } else {
-    return fields;
-  }
 }
 
 // #region HTML Event Helpers
@@ -233,11 +149,90 @@ function _addCallbackToField<T extends Object>(
   }
 }
 
+/**
+ * @deprecated
+ * 
+ * This is going to be a full on Form method I think.
+ *
+ * 1. use passive (only validate on form submission)
+ *  until form is submitted.
+ *  - Must detect if form has been submited.
+ *
+ * 2. If form is invalid, use aggressive until field is valid.
+ *  - This is the hardest part.
+ *
+ * 3. When all valid, go back to passive validation.
+ */
+// function _handleEagerValidationSetup<T extends Object>(
+//   form: Form<T>,
+//   form_node: HTMLFormElement,
+//   required_fields: (keyof T)[]
+// ) {
+//   /**
+//    * Add "submit" event listener so we detect when the user submits the form.
+//    *  - This is for the "passive" stage
+//    */
+//   form_node.addEventListener("submit", (event: Event) => {
+//     console.log("Made it here");
+
+//     event.preventDefault();
+//     form.validate();
+//     /**
+//      * If the form is not valid then prevent the default action
+//      * and add aggressive event listeners to the invalid fields.
+//      *
+//      * When the field is valid, remove the aggressive listener.
+//      */
+//     if (!form.valid) {
+//       const invalid_fields = form.fields.filter((f) => !f.valid),
+//         first_invalid_field = invalid_fields[0],
+//         aggressive_events: Array<keyof HTMLElementEventMap> = [
+//           "input",
+//           "change",
+//           "blur",
+//         ];
+//       /** Focus on the first field. */
+//       if (first_invalid_field) {
+//         first_invalid_field.node?.focus();
+//       }
+//       /** Add aggressive event listeners to the invalid fields. */
+//       invalid_fields.forEach((field) => {
+//         const callback: Callback = (e: ElementEvent) =>
+//           _executeValidationEvent(form, required_fields, field, undefined, e);
+//         /**
+//          * Now we have to detect when the field is valid and remove the
+//          * aggressive event listeners
+//          */
+//         const aggressiveListenerCallback = () => {
+//           /**
+//            * If the field is valid, remove the aggressive event listeners as well as
+//            * the aggressiveListenerCallback itself.
+//            */
+//           console.log("Validity: ", field.valid);
+
+//           if (field.valid) {
+//             console.log("Field is valid");
+
+//             field
+//               .removeEventListener(aggressive_events, callback)
+//               .removeEventListener(
+//                 aggressive_events,
+//                 aggressiveListenerCallback
+//               );
+//           }
+//         };
+//         field
+//           .addEventListener(aggressive_events, callback)
+//           .addEventListener(aggressive_events, aggressiveListenerCallback);
+//       });
+//     }
+//   });
+// }
+
 export {
   _buildFormFields,
   _buildFormFieldsWithSchema,
   _attachEventListeners,
-  _addCallbackToField,
-  _hanldeFieldGroups,
+  _addCallbackToField
 };
 

@@ -225,10 +225,10 @@ function _requiredFieldsValid<T extends Object>(
   required_fields: Array<keyof T>
 ): boolean {
   if (errors.length === 0) return true;
-  // Go ahead and return if there are no errors
+  /** Go ahead and return if there are no errors */
   let i = 0,
     len = required_fields.length;
-  // If there are no required fields, just go ahead and return
+  /** If there are no required fields, just go ahead and return */
   if (len === 0) return true;
   /**
    * Otherwise we have to map the names of the errors so we can
