@@ -1,5 +1,6 @@
 import { SvelteComponent, SvelteComponentDev } from "svelte/internal";
 import { get, writable, Writable } from "svelte/store";
+import { isThisTypeNode } from "typescript";
 import {
   _addCallbackToField,
   _attachEventListeners,
@@ -47,8 +48,9 @@ import {
  * @TODO Time to redo the readme.md file! Lots have changed since then!
  *
  * @TODO Add more superstruct examples for each form type (this should show how easy the template pattern really is)
- * @TODO Add that aggressive/lazy/passive validation thing.
  * @TODO Add cypress tests!
+ *
+ * @TODO I think a Form class refactor may be in order.
  *
  * @TODO Add debug mode to inspect event listeners and form state snapshots
  *
@@ -115,7 +117,10 @@ export class Form<ModelType extends Object> {
         hidden: true,
       });
 
-    /** Wait until everything is initalized, then set the inital state. */
+    /**
+     * Wait until everything is initalized, then set the inital state.
+     * Don't call updateInitialState because it sets changed = false.
+     */
     _setInitialState(this, this.initial_state);
   }
 
@@ -269,11 +274,9 @@ export class Form<ModelType extends Object> {
    * Keeping track of the required fields allows us to  validate faster.
    */
   #required_fields: Array<keyof ModelType> = [];
-
   //#endregion xxxxxxxxxxxxxxxx Fields xxxxxxxxxxxxxxxx
 
   // #region ---------------- Form API ----------------
-
   // #region - Form Setup
 
   /**
@@ -294,6 +297,7 @@ export class Form<ModelType extends Object> {
     this.#required_fields = this.fields
       .filter((f) => f.required)
       .map((f) => f.name as keyof ModelType);
+    /** NOTE: Returning this allows method chaining. */
     return this;
   };
 
@@ -385,7 +389,7 @@ export class Form<ModelType extends Object> {
     field_name: keyof ModelType,
     with_message?: string,
     callbacks?: ValidationCallback[]
-  ): void => {
+  ): Form<ModelType> => {
     const field = _get(field_name, this.fields);
     if (!with_message) {
       _executeValidationEvent(this, this.#required_fields, field, callbacks);
@@ -404,6 +408,8 @@ export class Form<ModelType extends Object> {
           this.node
         );
     }
+    /** NOTE: Returning this allows method chaining. */
+    return this;
   };
 
   /**
@@ -415,7 +421,7 @@ export class Form<ModelType extends Object> {
     event: keyof HTMLElementEventMap,
     callback: Callback | ValidationCallback,
     field_names: keyof ModelType | Array<keyof ModelType>
-  ): void => {
+  ): Form<ModelType> => {
     /** If there are multiple fields passed in then loop over to add callbacks */
     if (Array.isArray(field_names)) {
       const fields = field_names.map((f) => _get(f, this.fields));
@@ -427,14 +433,18 @@ export class Form<ModelType extends Object> {
       const field = _get(field_names, this.fields);
       _addCallbackToField(this, field, event, callback, this.#required_fields);
     }
+    /** NOTE: Returning this allows method chaining. */
+    return this;
   };
 
   /** Clear ALL the errors. */
-  clearErrors = (): void => {
+  clearErrors = (): Form<ModelType> => {
     this.errors = [];
     this.fields.forEach((f) => {
       f.clearErrors();
     });
+    /** NOTE: Returning this allows method chaining. */
+    return this;
   };
 
   //#endregion
@@ -470,6 +480,7 @@ export class Form<ModelType extends Object> {
 
     if (update_initial_state) this.updateInitialState();
 
+    /** NOTE: Returning this allows method chaining. */
     return this;
   };
 
@@ -480,7 +491,7 @@ export class Form<ModelType extends Object> {
   setValue = (
     field_names: Array<keyof ModelType> | keyof ModelType,
     value: any
-  ): void => {
+  ): Form<ModelType> => {
     if (Array.isArray(field_names)) {
       field_names.forEach((f) => {
         const field = _get(f, this.fields);
@@ -492,12 +503,14 @@ export class Form<ModelType extends Object> {
       field.value.set(value);
       this.model[field_names] = value;
     }
+    /** NOTE: Returning this allows method chaining. */
+    return this;
   };
 
   /**
    * Pass in the reference data to add options to fields.
    */
-  attachReferenceData = (refs?: ReferenceData): void => {
+  attachReferenceData = (refs?: ReferenceData): Form<ModelType> => {
     /** Get all fields with ref_key property */
     const fields_with_ref_keys = this.fields.filter((f) => f.ref_key);
     /** Check if there are refs being passed in */
@@ -513,13 +526,15 @@ export class Form<ModelType extends Object> {
           field.options = this.refs[field.ref_key];
       });
     }
+    /** NOTE: Returning this allows method chaining. */
+    return this;
   };
 
   /**
    *! Make sure to call this when the component is unloaded/destroyed
    * Removes all event listeners.
    */
-  destroy = (): void => {
+  destroy = (): Form<ModelType> => {
     if (this.fields && this.fields.length > 0) {
       // For each field...
       this.fields.forEach((f) => {
@@ -539,6 +554,8 @@ export class Form<ModelType extends Object> {
           });
       });
     }
+    /** NOTE: Returning this allows method chaining. */
+    return this;
   };
 
   //#endregion
@@ -550,14 +567,18 @@ export class Form<ModelType extends Object> {
    *
    * Only model and errors are saved in initial state.
    */
-  reset = (): void => {
+  reset = (): Form<ModelType> => {
     _resetState(this, this.initial_state);
+    /** NOTE: Returning this allows method chaining. */
+    return this;
   };
 
   /** Well, this updates the initial state of the form. */
-  updateInitialState = (): void => {
+  updateInitialState = (): Form<ModelType> => {
     _setInitialState(this, this.initial_state);
     this.changed.set(false);
+    /** NOTE: Returning this allows method chaining. */
+    return this;
   };
 
   //#endregion
@@ -576,11 +597,13 @@ export class Form<ModelType extends Object> {
    * names in the order to be displayed.
    * Leftover fields are appended to bottom of form.
    */
-  setFieldOrder = (order: Array<keyof ModelType>): void => {
+  setFieldOrder = (order: Array<keyof ModelType>): Form<ModelType> => {
     if (order && order.length > 0) {
       this.#field_order = order;
       this.fields = _setFieldOrder(this.#field_order, this.fields);
     }
+    /** NOTE: Returning this allows method chaining. */
+    return this;
   };
 
   /**
@@ -593,7 +616,7 @@ export class Form<ModelType extends Object> {
   setFieldAttributes = (
     names: string | Array<keyof ModelType>,
     attributes: Partial<FieldConfig<ModelType>>
-  ): void => {
+  ): Form<ModelType> => {
     if (names) {
       if (Array.isArray(names)) {
         _setFieldAttributes(names, this.fields, attributes);
@@ -605,6 +628,8 @@ export class Form<ModelType extends Object> {
         );
       }
     }
+    /** NOTE: Returning this allows method chaining. */
+    return this;
   };
 
   //#endregion

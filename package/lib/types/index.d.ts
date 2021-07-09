@@ -114,16 +114,7 @@ type ErrorDisplay = "constraint" | {
  * to the constructor's init object.
  */
 declare class OnEvents<T extends HTMLElementEventMap> {
-    #private;
     constructor(init?: Partial<OnEvents<T>>, disableAll?: boolean);
-    /**
-     * @TODO Create easy mechanism for using "eager" validation.
-     *
-     * First, use passive.
-     * If invalid, use aggressive validation.
-     * When valid, use passive again.
-     */
-    eager: boolean;
     /**
      * Steps for using eager validation.
      *
@@ -538,8 +529,9 @@ declare class FieldConfig<T extends Object> {
  * @TODO Time to redo the readme.md file! Lots have changed since then!
  *
  * @TODO Add more superstruct examples for each form type (this should show how easy the template pattern really is)
- * @TODO Add that aggressive/lazy/passive validation thing.
  * @TODO Add cypress tests!
+ *
+ * @TODO I think a Form class refactor may be in order.
  *
  * @TODO Add debug mode to inspect event listeners and form state snapshots
  *
@@ -711,15 +703,15 @@ declare class Form<ModelType extends Object> {
      */
     validate: (callbacks?: ValidationCallback[] | undefined) => Promise<ValidationError[]> | undefined;
     /** If want to (in)validate a specific field for any reason */
-    validateField: (field_name: keyof ModelType, with_message?: string | undefined, callbacks?: ValidationCallback[] | undefined) => void;
+    validateField: (field_name: keyof ModelType, with_message?: string | undefined, callbacks?: ValidationCallback[] | undefined) => Form<ModelType>;
     /**
      * Attach a callback to a field or array of fields.
      * If the callback if type ValidationCallback it will be added
      * to the validation handler
      */
-    attachCallbacks: (event: keyof HTMLElementEventMap, callback: Callback | ValidationCallback, field_names: keyof ModelType | Array<keyof ModelType>) => void;
+    attachCallbacks: (event: keyof HTMLElementEventMap, callback: Callback | ValidationCallback, field_names: keyof ModelType | Array<keyof ModelType>) => Form<ModelType>;
     /** Clear ALL the errors. */
-    clearErrors: () => void;
+    clearErrors: () => Form<ModelType>;
     //#endregion
     // #region - Utility Methods
     /** Get Field by name */
@@ -736,16 +728,16 @@ declare class Form<ModelType extends Object> {
      * Set the value for a field or set of fields.
      * Sets both field.value and model value.
      */
-    setValue: (field_names: Array<keyof ModelType> | keyof ModelType, value: any) => void;
+    setValue: (field_names: Array<keyof ModelType> | keyof ModelType, value: any) => Form<ModelType>;
     /**
      * Pass in the reference data to add options to fields.
      */
-    attachReferenceData: (refs?: ReferenceData | undefined) => void;
+    attachReferenceData: (refs?: ReferenceData | undefined) => Form<ModelType>;
     /**
      *! Make sure to call this when the component is unloaded/destroyed
      * Removes all event listeners.
      */
-    destroy: () => void;
+    destroy: () => Form<ModelType>;
     //#endregion
     // #region - Form State
     /**
@@ -753,9 +745,9 @@ declare class Form<ModelType extends Object> {
      *
      * Only model and errors are saved in initial state.
      */
-    reset: () => void;
+    reset: () => Form<ModelType>;
     /** Well, this updates the initial state of the form. */
-    updateInitialState: () => void;
+    updateInitialState: () => Form<ModelType>;
     //#endregion
     // #region - Layout
     getFieldGroups: () => Array<FieldConfig<ModelType> | Array<FieldConfig<ModelType>>>;
@@ -765,7 +757,7 @@ declare class Form<ModelType extends Object> {
      * names in the order to be displayed.
      * Leftover fields are appended to bottom of form.
      */
-    setFieldOrder: (order: Array<keyof ModelType>) => void;
+    setFieldOrder: (order: Array<keyof ModelType>) => Form<ModelType>;
     /**
      * Set attributes on a given set of fields.
      *
@@ -773,7 +765,7 @@ declare class Form<ModelType extends Object> {
      * names = [field.name, field.name],
      * attributes = { hidden: true };
      */
-    setFieldAttributes: (names: string | Array<keyof ModelType>, attributes: Partial<FieldConfig<ModelType>>) => void;
+    setFieldAttributes: (names: string | Array<keyof ModelType>, attributes: Partial<FieldConfig<ModelType>>) => Form<ModelType>;
 }
 declare function field<T extends Object>(config: Partial<FieldConfig<T>>): (target: any, propertyKey: string) => void;
 /**

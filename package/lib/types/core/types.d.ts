@@ -108,16 +108,7 @@ export declare type ErrorDisplay = "constraint" | {
  * to the constructor's init object.
  */
 export declare class OnEvents<T extends HTMLElementEventMap> {
-    #private;
     constructor(init?: Partial<OnEvents<T>>, disableAll?: boolean);
-    /**
-     * @TODO Create easy mechanism for using "eager" validation.
-     *
-     * First, use passive.
-     * If invalid, use aggressive validation.
-     * When valid, use passive again.
-     */
-    eager: boolean;
     /**
      * Steps for using eager validation.
      *

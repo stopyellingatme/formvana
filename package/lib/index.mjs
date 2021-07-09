@@ -1275,70 +1275,6 @@ function _addCallbackToField(form, field, event, callback, required_fields) {
         field.addEventListener(event, callback);
     }
 }
-/**
- * This is going to be a full on Form method I think.
- *
- * 1. use passive (only validate on form submission)
- *  until form is submitted.
- *  - Must detect if form has been submited.
- *
- * 2. If form is invalid, use aggressive until field is valid.
- *  - This is the hardest part.
- *
- * 3. When all valid, go back to passive validation.
- */
-function _handleEagerValidationSetup(form, form_node, required_fields) {
-    /**
-     * Add "submit" event listener so we detect when the user submits the form.
-     *  - This is for the "passive" stage
-     */
-    form_node.addEventListener("submit", (event) => {
-        console.log("Made it here");
-        event.preventDefault();
-        form.validate();
-        /**
-         * If the form is not valid then prevent the default action
-         * and add aggressive event listeners to the invalid fields.
-         *
-         * When the field is valid, remove the aggressive listener.
-         */
-        if (!form.valid) {
-            const invalid_fields = form.fields.filter((f) => !f.valid), first_invalid_field = invalid_fields[0], aggressive_events = [
-                "input",
-                "change",
-                "blur",
-            ];
-            /** Focus on the first field. */
-            if (first_invalid_field) {
-                first_invalid_field.node?.focus();
-            }
-            /** Add aggressive event listeners to the invalid fields. */
-            invalid_fields.forEach((field) => {
-                const callback = (e) => _executeValidationEvent(form, required_fields, field, undefined, e);
-                /**
-                 * Now we have to detect when the field is valid and remove the
-                 * aggressive event listeners
-                 */
-                const aggressiveListenerCallback = () => {
-                    /**
-                     * If the field is valid, remove the aggressive event listeners as well as
-                     * the aggressiveListenerCallback itself.
-                     */
-                    console.log("Validity: ", field.valid);
-                    if (field.valid) {
-                        console.log("Field is valid");
-                        field
-                            .removeEventListener(aggressive_events, callback)
-                            .removeEventListener(aggressive_events, aggressiveListenerCallback);
-                    }
-                };
-                field
-                    .addEventListener(aggressive_events, callback)
-                    .addEventListener(aggressive_events, aggressiveListenerCallback);
-            });
-        }
-    });
-}
 
 /**
  * All constructor values are optional so we can create a blank Validation
@@ -1409,20 +1345,6 @@ class OnEvents {
         }
         Object.assign(this, init);
     }
-    /** On each keystroke */
-    #aggressive = false;
-    /** Essentially on blur */
-    #lazy = false;
-    /** On form submission */
-    #passive = false;
-    /**
-     * @TODO Create easy mechanism for using "eager" validation.
-     *
-     * First, use passive.
-     * If invalid, use aggressive validation.
-     * When valid, use passive again.
-     */
-    eager = true;
     /**
      * Steps for using eager validation.
      *
@@ -1491,8 +1413,9 @@ class OnEvents {
  * @TODO Time to redo the readme.md file! Lots have changed since then!
  *
  * @TODO Add more superstruct examples for each form type (this should show how easy the template pattern really is)
- * @TODO Add that aggressive/lazy/passive validation thing.
  * @TODO Add cypress tests!
+ *
+ * @TODO I think a Form class refactor may be in order.
  *
  * @TODO Add debug mode to inspect event listeners and form state snapshots
  *
@@ -1547,7 +1470,10 @@ class Form {
             _setFieldAttributes(this.hidden_fields, this.fields, {
                 hidden: true,
             });
-        /** Wait until everything is initalized, then set the inital state. */
+        /**
+         * Wait until everything is initalized, then set the inital state.
+         * Don't call updateInitialState because it sets changed = false.
+         */
         _setInitialState(this, this.initial_state);
     }
     //#region ---------------- Fields ----------------
@@ -1585,7 +1511,12 @@ class Form {
      */
     validation_options = new ValidationProperties();
     /** Which events should the form dispatch side effects? */
-    on_events = new OnEvents();
+    on_events = new OnEvents({
+        input: true,
+        change: true,
+        blur: true,
+        submit: true,
+    });
     /** Is the form valid? */
     valid = writable(false);
     /** Has the form state changed from it's initial value? */
@@ -1689,6 +1620,7 @@ class Form {
         this.#required_fields = this.fields
             .filter((f) => f.required)
             .map((f) => f.name);
+        /** NOTE: Returning this allows method chaining. */
         return this;
     };
     /**
@@ -1722,8 +1654,6 @@ class Form {
                 });
             }
         }
-        if (this.on_events.eager)
-            _handleEagerValidationSetup(this, this.node, this.#required_fields);
         if (this.validation_options?.error_display !== "constraint")
             this.node.noValidate = true;
     };
@@ -1765,6 +1695,8 @@ class Form {
             if (this.node)
                 _linkAllErrors(this.errors, this.fields, this.validation_options?.error_display, this.node);
         }
+        /** NOTE: Returning this allows method chaining. */
+        return this;
     };
     /**
      * Attach a callback to a field or array of fields.
@@ -1782,6 +1714,8 @@ class Form {
             const field = _get(field_names, this.fields);
             _addCallbackToField(this, field, event, callback, this.#required_fields);
         }
+        /** NOTE: Returning this allows method chaining. */
+        return this;
     };
     /** Clear ALL the errors. */
     clearErrors = () => {
@@ -1789,6 +1723,8 @@ class Form {
         this.fields.forEach((f) => {
             f.clearErrors();
         });
+        /** NOTE: Returning this allows method chaining. */
+        return this;
     };
     //#endregion
     // #region - Utility Methods
@@ -1815,6 +1751,7 @@ class Form {
         }
         if (update_initial_state)
             this.updateInitialState();
+        /** NOTE: Returning this allows method chaining. */
         return this;
     };
     /**
@@ -1834,6 +1771,8 @@ class Form {
             field.value.set(value);
             this.model[field_names] = value;
         }
+        /** NOTE: Returning this allows method chaining. */
+        return this;
     };
     /**
      * Pass in the reference data to add options to fields.
@@ -1856,6 +1795,8 @@ class Form {
                     field.options = this.refs[field.ref_key];
             });
         }
+        /** NOTE: Returning this allows method chaining. */
+        return this;
     };
     /**
      *! Make sure to call this when the component is unloaded/destroyed
@@ -1873,6 +1814,8 @@ class Form {
                     });
             });
         }
+        /** NOTE: Returning this allows method chaining. */
+        return this;
     };
     //#endregion
     // #region - Form State
@@ -1883,11 +1826,15 @@ class Form {
      */
     reset = () => {
         _resetState(this, this.initial_state);
+        /** NOTE: Returning this allows method chaining. */
+        return this;
     };
     /** Well, this updates the initial state of the form. */
     updateInitialState = () => {
         _setInitialState(this, this.initial_state);
         this.changed.set(false);
+        /** NOTE: Returning this allows method chaining. */
+        return this;
     };
     //#endregion
     // #region - Layout
@@ -1905,6 +1852,8 @@ class Form {
             this.#field_order = order;
             this.fields = _setFieldOrder(this.#field_order, this.fields);
         }
+        /** NOTE: Returning this allows method chaining. */
+        return this;
     };
     /**
      * Set attributes on a given set of fields.
@@ -1922,6 +1871,8 @@ class Form {
                 _setFieldAttributes([names], this.fields, attributes);
             }
         }
+        /** NOTE: Returning this allows method chaining. */
+        return this;
     };
 }
 
