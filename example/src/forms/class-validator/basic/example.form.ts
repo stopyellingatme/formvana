@@ -28,7 +28,6 @@ const options = new ValidationProperties<ExampleModel>(
   {
     dom: { type: "ul", error_classes: ["text-red-600", "text-sm", "mt-1", "ml-2"] },
   }
-  // "constraint"
 );
 
 function initStore() {

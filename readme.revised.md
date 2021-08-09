@@ -4,29 +4,15 @@
 
 **What I Want!**
 
-- Sinlge source of truth for my Forms
+- Sinlge source of truth for forms
 - Form Generator/Dynamic Form (Inspired by Ngx-Formly)
-- Easy Form data IO (form.model to get data, form.buildFields to set data)
-- Strong, fast Validation (via [class-validator](https://github.com/typestack/class-validator))
-- Field Groups/Field Layout is nice too
+- Easy Form data IO (form.model to get data, form.loadModel to set data)
+- Bring your own Validation
+- Field Groups/Field Layout is good too
 
 ---
 
-**To Do:**
-
-1. Better DynamicForm functionality
-   1. Template event passing
-   2. Validate on submit (submission function passing)
-2. Default input templates
-3. Write script to generate 100's of inputs and test perf
-
-
-## VERY EARLY PRE-ALPHA LIBRARY
-
-Currently depends on:
-
-- Svelte (form generation)
-- Tailwindcss (form styling)
+## STILL UNDER ACTIVE DEVELOPMENT
 
 **CONFIG MUST HAVE!!!**
 
@@ -50,94 +36,149 @@ It's also very easy to get data out of the Form by calling Form.model.
 
 ---
 
-\*\* Main things left to tackle:
-
-- Field groups/Field ordering and Layout (group styling)
-- Remove Tailwind dependencies
-- Nested forms?
-- Add more form elements for testing with svelte
-- Do some documentation on this mfer
-- Write tests to generate 100s of form configs, add data/validate, test performance
-- Remove Svelte dependency? - Maybe fork it?
-
----
-
-## &bull; YourTsModel.ts (e.g. Business.ts)
+## &bull; Simple Example
 
 <details>
 
-<summary>Simple Example with 4 editable fields.</summary>
+<summary>User Model Exmaple</summary>
 
 ```ts
-// Business.ts
 import { Length, IsEmail, IsString } from "class-validator";
-import { field } from "../typescript.utils";
-import { FieldConfig } from "../FieldConfig";
+import { field } from "@formvana";
 
-class Business {
-  id: string;
+export class UserExampleModel {
+  @IsEmail({}, { message: "Please enter a valid email address" })
+  @field({
+    label: "Email",
+    required: true,
+    attributes: { placeholder: "Email", type: "email" },
+  })
+  email: string;
+
+  @Length(10, 90)
+  @field({
+    label: "Password",
+    required: true,
+    attributes: { placeholder: "Enter Password", type: "password" },
+  })
+  password: string;
+
+  @Length(10, 90)
+  @field({
+    label: "Confirm Password",
+    required: true,
+    for_form: "register",
+    attributes: {
+      placeholder: "Confirm Password",
+      type: "password",
+      title: "I know this isn't best practice anymore. It's just an example.",
+    },
+  })
+  confirm_password: string;
 
   @Length(10, 90)
   @IsString()
-  @field(
-    new FieldConfig({
-      el: "input",
-      type: "text",
-      label: "Business Name",
-      required: true,
-      classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Business Name" },
-    })
-  )
-  name: string = "";
+  @field({
+    label: "Display Name",
+    required: true,
+    for_form: "register",
+    attributes: { placeholder: "Your Name. People See" },
+  })
+  display_name: string;
 
-  @IsEmail()
-  @field(
-    new FieldConfig({
-      el: "input",
-      type: "email",
-      label: "Email Address",
-      required: true,
-      classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Email Address" },
-    })
-  )
-  email: string = "";
-
-  @Length(10, 240)
-  @field(
-    new FieldConfig({
-      el: "textarea",
-      type: "text",
-      label: "Description",
-      required: true,
-      classname: "col-span-4 sm:col-span-2",
-      attributes: { placeholder: "Description" },
-    })
-  )
-  description: string = "";
-  avatar_url: string = "";
-
-  // Address
-  address_1: string = "";
-  address_2: string = "";
-  city: string = "";
-  state: string = "";
-  zip: string = "";
-
-  @IsString()
-  @field(
-    new FieldConfig({
-      el: "select",
-      type: "select",
-      label: "Business Status",
-      required: true,
-      classname: "col-span-4 sm:col-span-2",
-      ref_key: "business_statuses",
-    })
-  )
-  status;
+  @field({
+    selector: "file",
+    data_type: "file",
+    label: "Avatar",
+    required: false,
+    for_form: "register",
+    exclude_events: ["focus", "blur"],
+  })
+  avatar: string;
 }
+```
+
+</details>
+
+<details>
+
+<summary>Model Usage</summary>
+
+```html
+<script>
+  import { validate } from "class-validator";
+  import { Form, ValidationError } from "@formvana";
+  import { UserExampleModel } from "./models/UserExampleModel";
+  import ButtonArea from "./components/controls/ButtonArea.svelte";
+
+  const options = {
+    validator: (model, options) =>
+      validate(model, options).then((errors) => {
+        /**
+         * We have to format the errors that class-validator returns
+         * into the proper shape (ValidationError) for the formvana
+         * validator callback chain.
+         */
+        return errors.map((error) => {
+          return new ValidationError(error.property, error.constraints);
+        });
+      }),
+    error_display: "constraint",
+  };
+
+  $: form = new Form(new UserExampleModel(), options);
+
+  $: valid = form.valid;
+  $: changed = form.changed;
+</script>
+
+<form
+  use:form.useForm
+  class="flex flex-col w-full justify-items-center items-centers"
+>
+  <h2>Simple Exmaple</h2>
+  <br />
+  <div class="grid grid-cols-2 gap-6 mt-6">
+    <!-- Loop over the form fields -->
+    {#each form.fields as field}
+      <div class="flex flex-col p-2">
+        {#if field.selector === "textarea"}
+          <label for={field.name}>{field.label}</label>
+          <textarea
+            class="p-1 border-2 border-gray-700 rounded"
+            name={field.name}
+            rows="3"
+            {...field.attributes}
+          />
+        {:else if field.selector === "select"}
+          <select
+            class="p-1 border-2 border-gray-700 rounded"
+            name={field.name}
+            {...field.attributes}
+          >
+            {#each field.options as option}
+              <option value={option.value}>{option.label}</option>
+            {/each}
+          </select>
+        {:else}
+          <!-- Default to simple label and input combo -->
+          <label for={field.name}>{field.label}</label>
+          <input
+            class="p-1 border-2 border-gray-700 rounded"
+            name={field.name}
+            {...field.attributes}
+          />
+        {/if}
+
+        <div data-error-for={field.name} />
+      </div>
+    {/each}
+  </div>
+</form>
+
+<div class="px-8 py-2 pb-12 mx-auto max-w-7xl">
+  <ButtonArea reset={form.reset} {valid} {changed} />
+</div>
 ```
 
 </details>
@@ -169,6 +210,7 @@ Call `form.buildFields()` to build/set the form.fields with the model's field co
 If the model's fields already have data, the field data will be reflected in form.fields.value.
 
 `Validation!`
+
 1. Set validation options via `form.validation_options`.
 2. See available options at [class-validator](https://github.com/typestack/class-validator)
 

@@ -1,16 +1,8 @@
-import {
-  Contains,
-  IsInt,
-  Length,
-  IsEmail,
-  IsFQDN,
-  IsDate,
-  IsEnum,
-  Min,
-  Max,
-  IsString,
-} from "class-validator";
 import { field } from "@formvana";
+import {
+  IsEmail,
+  IsString, Length
+} from "class-validator";
 
 export class UserExampleModel {
   @IsEmail({}, { message: "Please enter a valid email address" })
@@ -61,6 +53,4 @@ export class UserExampleModel {
     exclude_events: ["focus", "blur"],
   })
   avatar: string;
-
-  
 }

@@ -1,6 +1,5 @@
 import { SvelteComponent } from "svelte";
 import { get, writable, Writable } from "svelte/store";
-import { field } from "./Decorators";
 import {
   AcceptedDataType,
   Callback,
